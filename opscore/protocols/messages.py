@@ -7,7 +7,7 @@ Refer to https://trac.sdss3.org/wiki/Ops/Parsing for details.
 # Created 10-Oct-2008 by David Kirkby (dkirkby@uci.edu)
 
 import re
-import ops.core.protocols.types as types
+import opscore.protocols.types as types
 
 class MessageError(Exception):
 	pass

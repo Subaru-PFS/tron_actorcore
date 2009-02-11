@@ -10,9 +10,9 @@ import textwrap
 import imp
 import sys
 
-import ops.core.protocols.types as types
-import ops.core.protocols.messages as messages
-import ops.core.utility.html as html
+import opscore.protocols.types as protoTypes
+import opscore.protocols.messages as protoMess
+import opscore.utility.html as utilHtml
 
 class KeysError(Exception):
 	pass
@@ -53,7 +53,7 @@ class TypedValues(Consumer):
 		self.minVals = 0
 		self.maxVals = 0
 		for vtype in vtypes:
-			if isinstance(vtype,types.RepeatedValueType):
+			if isinstance(vtype,protoTypes.RepeatedValueType):
 				if vtype.minRepeat != vtype.maxRepeat and vtype is not vtypes[-1]:
 					raise KeysError('Repetition range only allowed for last value type')
 				self.minVals += vtype.minRepeat
@@ -62,10 +62,10 @@ class TypedValues(Consumer):
 				else:
 					self.maxVals = None
 				self.vtypes.append(vtype)
-			elif isinstance(vtype,types.ValueType):
+			elif isinstance(vtype,protoTypes.ValueType):
 				self.minVals += 1
 				self.maxVals += 1
-				self.vtypes.append(types.RepeatedValueType(vtype,1,1))
+				self.vtypes.append(protoTypes.RepeatedValueType(vtype,1,1))
 			else:
 				raise KeysError('Invalid value type: %r' % vtype)
 		if self.maxVals == 0:
@@ -84,7 +84,7 @@ class TypedValues(Consumer):
 	def consume(self,values):
 		self.trace(values)
 		# remember the original values in case we need to restore them later
-		self.checkpoint = messages.Values(values)
+		self.checkpoint = protoMess.Values(values)
 		# try to convert each keyword to its expected type
 		self.index = 0
 		for repeat in self.vtypes:
@@ -109,18 +109,18 @@ class TypedValues(Consumer):
 			string = values[self.index]
 			try:
 				values[self.index] = valueType(string)
-			except types.InvalidValueError:
-				values[self.index] = types.InvalidValue
+			except protoTypes.InvalidValueError:
+				values[self.index] = protoTypes.InvalidValue
 			self.index += 1
 			return True
 		except (IndexError,ValueError,TypeError):
 			return False
 	
 	def describeAsHTML(self):
-		content = html.Div(
-			html.Div(
-				html.Span('Values',className='label'),
-				html.Span(self.descriptor,className='value'),
+		content = utilHtml.Div(
+			utilHtml.Div(
+				utilHtml.Span('Values',className='label'),
+				utilHtml.Span(self.descriptor,className='value'),
 				className='descriptor'
 			),
 			className='vtypes'
@@ -168,25 +168,25 @@ class Key(Consumer):
 		"""
 		if len(values) == 1 and isinstance(values[0],list):
 			values = values[0]
-		keyword = messages.Keyword(self.name,values)
+		keyword = protoMess.Keyword(self.name,values)
 		if not self.consume(keyword):
 			raise KeysError('value types do not match for keyword %s: %r'
 				% (self.name,values))
 		return keyword
 	
 	def describeAsHTML(self):
-		content = html.Div(
-			html.Div(
-				html.Span('Keyword',className='label'),
-				html.Span(self.name,className='value'),
+		content = utilHtml.Div(
+			utilHtml.Div(
+				utilHtml.Span('Keyword',className='label'),
+				utilHtml.Span(self.name,className='value'),
 				className='descriptor'
 			),
 			className='key'
 		)
 		if self.help:
-			content.append(html.Div(
-				html.Span('Description',className='label'),
-				html.Span(self.help,className='value'),
+			content.append(utilHtml.Div(
+				utilHtml.Span('Description',className='label'),
+				utilHtml.Span(self.help,className='value'),
 				className='descriptor'
 			))
 		content.append(self.typedValues.describeAsHTML())
@@ -324,8 +324,8 @@ class KeysDictionary(object):
 				'Key': Key,
 				'KeysDictionary': KeysDictionary
 			}
-			for (name,value) in types.__dict__.iteritems():
-				if isinstance(value,type) and issubclass(value,types.ValueType):
+			for (name,value) in protoTypes.__dict__.iteritems():
+				if isinstance(value,type) and issubclass(value,protoTypes.ValueType):
 					symbols[name] = value
 			# evaluate the keys dictionary as a python expression
 			return eval(dictfile.read(),symbols)
@@ -333,69 +333,3 @@ class KeysDictionary(object):
 			raise KeysDictionaryError('unable to load keys for %s' % dictname)
 		finally:
 			if dictfile: dictfile.close()
-	
-import unittest
-
-class KeysTest(unittest.TestCase):
-
-	def setUp(self):
-		import ops.core.protocols.types as types
-		self.k1 = messages.Keyword('key1')
-		self.k2 = messages.Keyword('key2',['-1.2'])
-		self.k3 = messages.Keyword('key3',['0xdead','0xbeef'])
-		self.key1 = Key('key1')
-		self.key2 = Key('key2',types.Float())
-		self.key3 = Key('key3',types.Hex()*2)
-
-	def test00(self):
-		"Key validation passes"
-		self.failUnless(self.key1.consume(self.k1))
-		self.failUnless(self.key2.consume(self.k2))
-		self.failUnless(self.key3.consume(self.k3))
-		self.failUnless(len(self.k1.values) == 0)
-		self.failUnless(self.k2.values[0] == -1.2)
-		self.failUnless(self.k3.values[0] == 0xdead)
-		self.failUnless(self.k3.values[1] == 0xbeef)
-
-	def test01(self):
-		"Key validation fails"
-		self.failIf(self.key1.consume(self.k2))
-		self.failIf(self.key1.consume(self.k3))
-		self.failIf(self.key2.consume(self.k1))
-		self.failIf(self.key2.consume(self.k3))
-		self.failIf(self.key3.consume(self.k1))
-		self.failIf(self.key3.consume(self.k2))
-
-	def test02(self):
-		"Keyword creation with a list of valid string values"
-		self.assertEqual(self.key1.create([]),self.k1)
-		self.assertEqual(self.key2.create(['-1.2']),self.k2)
-		self.assertEqual(self.key3.create(['0xdead','0xbeef']),self.k3)
-
-	def test03(self):
-		"Keyword creation with varargs valid string values"
-		self.assertEqual(self.key1.create(),self.k1)
-		self.assertEqual(self.key2.create('-1.2'),self.k2)
-		self.assertEqual(self.key3.create('0xdead','0xbeef'),self.k3)
-
-	def test04(self):
-		"Keyword creation with valid typed values"
-		self.assertEqual(self.key2.create(-1.2),self.k2)
-		self.assertEqual(self.key3.create(0xdead,0xbeef),self.k3)
-		self.assertEqual(self.key3.create('0xdead',0xbeef),self.k3)
-		self.assertEqual(self.key3.create([0xdead,'0xbeef']),self.k3)
-
-	def test05(self):
-		"Keyword creation with wrong number of values"
-		self.assertRaises(KeysError,lambda: self.key1.create(-1.2))
-		self.assertRaises(KeysError,lambda: self.key2.create())
-		self.assertRaises(KeysError,lambda: self.key3.create('0xdead'))
-
-	def test06(self):
-		"Keyword creation with wrong value types"
-		self.assertRaises(KeysError,lambda: self.key2.create('abc'))
-		self.assertRaises(KeysError,lambda: self.key3.create(0xdead,-1.2))
-		self.assertRaises(KeysError,lambda: self.key3.create(-1.2,'0xdead'))
-
-if __name__ == '__main__':
-	unittest.main()

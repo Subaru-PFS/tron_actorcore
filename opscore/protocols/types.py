@@ -9,7 +9,7 @@ Refer to https://trac.sdss3.org/wiki/Ops/Types
 import re
 import textwrap
 
-import ops.core.utility.html as html
+import opscore.utility.html as html
 
 class ValueTypeError(Exception):
 	pass

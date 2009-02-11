@@ -6,10 +6,10 @@ Refer to https://trac.sdss3.org/wiki/Ops/Validation for details.
 
 # Created 18-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
-from ops.core.protocols.keys import Consumer,Key,CmdKey
+from opscore.protocols.keys import Consumer,Key,CmdKey
 
-import ops.lib.ply.lex as lex
-import ops.lib.ply.yacc as yacc
+import external.ply.lex as lex
+import external.ply.yacc as yacc
 
 class KeysFormatParseError(Exception):
 	pass
@@ -239,7 +239,7 @@ class KeysFormatTest(unittest.TestCase):
 
 	def test01(self):
 		"Valid format string with dict"
-		from ops.core.protocols.keys import KeysDictionary
+		from opscore.protocols.keys import KeysDictionary
 		CmdKey.setKeys(KeysDictionary("<command>",Key("key1"),Key("key2"),Key("key3")))
 		self.p.parse("<key1> <key2> <key3>")
 		self.p.parse("<key1> <key2> [<key3>]")

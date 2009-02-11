@@ -17,10 +17,10 @@ import re
 
 name_pattern = re.compile('[A-Za-z][A-Za-z0-9_.]*$')
 
-from ops.core.protocols.messages import Keyword,RawKeyword,ReplyHeader,Reply,Command,MessageError
+from opscore.protocols.messages import Keyword,RawKeyword,ReplyHeader,Reply,Command,MessageError
 
-import ops.lib.ply.lex as lex
-import ops.lib.ply.yacc as yacc
+import external.ply.lex as lex
+import external.ply.yacc as yacc
 
 class ParseError(Exception):
 	pass
