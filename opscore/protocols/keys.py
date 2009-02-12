@@ -261,6 +261,11 @@ class KeysDictionary(object):
 		integers.
 		"""
 		self.name = name
+		try:
+			(major,minor) = map(int,version)
+		except (ValueError,TypeError):
+			raise KeysDictionaryError(
+			'Invalid version: expected (major,minor) tuple of integers, got %r' % version)
 		self.version = version
 		KeysDictionary.registry[name] = self
 		self.keys = { }
