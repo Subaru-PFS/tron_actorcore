@@ -318,9 +318,9 @@ class KeysDictionary(object):
 		# try to find a corresponding file on the import search path
 		dictfile = None
 		try:
-			# get the path corresponding to the ops.keys package
-			import ops.keys
-			keyspath = sys.modules['ops.keys'].__path__
+			# get the path corresponding to the actorkeys package
+			import actorkeys
+			keyspath = sys.modules['actorkeys'].__path__
 			# open the file corresponding to the requested keys dictionary
 			(dictfile,name,description) = imp.find_module(dictname,keyspath)
 			# create a global symbol table for evaluating the keys dictionary expression
