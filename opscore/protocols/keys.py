@@ -126,7 +126,7 @@ class TypedValues(Consumer):
 			className='vtypes'
 		)
 		for vtype in self.vtypes:
-			content.append(vtype.describeAsHTML())
+			content.extend(vtype.describeAsHTML().children)
 		return content
 	
 	def describe(self):
@@ -176,20 +176,19 @@ class Key(Consumer):
 	
 	def describeAsHTML(self):
 		content = utilHtml.Div(
-			utilHtml.Div(
-				utilHtml.Span('Keyword',className='label'),
-				utilHtml.Span(self.name,className='value'),
-				className='descriptor'
-			),
+			utilHtml.Div(self.name,className='keyname'),
+			
 			className='key'
 		)
+		desc = utilHtml.Div(className='keydesc')
+		content.append(desc)
 		if self.help:
-			content.append(utilHtml.Div(
+			desc.append(utilHtml.Div(
 				utilHtml.Span('Description',className='label'),
 				utilHtml.Span(self.help,className='value'),
 				className='descriptor'
 			))
-		content.append(self.typedValues.describeAsHTML())
+		desc.extend(self.typedValues.describeAsHTML().children)
 		return content		
 	
 	def describe(self):
@@ -301,7 +300,17 @@ class KeysDictionary(object):
 		return text
 		
 	def describeAsHTML(self):
-		pass
+		content = utilHtml.Div(
+			utilHtml.Div(
+				utilHtml.Span(self.name,className='actorName'),
+				utilHtml.Span('%d.%d' % self.version,className='actorVersion'),
+				className='actorHeader'
+			),
+			className='actor'
+		)
+		for name in sorted(self.keys):
+			content.append(self.keys[name].describeAsHTML())
+		return content
 
 	@staticmethod
 	def load(dictname,forceReload=False):
