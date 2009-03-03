@@ -91,9 +91,6 @@ class ValueType(type,Descriptive):
 			'units': get('units'),
 			'help': get('help'),
 			'name': get('name'),
-			'sqlValue': cls.baseType.__repr__,
-			'binLength': getattr(cls,'binLength',None),
-			'binFormat': getattr(cls,'binFormat',None),
 			'__repr__': doRepr,
 			'__str__': doStr
 		}
@@ -117,7 +114,8 @@ class ValueType(type,Descriptive):
 			pad = '\n' + ' '*14
 			formatted = textwrap.fill(textwrap.dedent(cls.help),width=62).replace('\n',pad)
 			cls.descriptors.append(('Description',cls.help))
-		cls.descriptors.append(('Type','%s (%s)' % (cls.__name__,cls.baseType.__name__)))
+		cls.descriptors.append(('Type','%s (%s,%s)' %
+			(cls.__name__,cls.baseType.__name__,cls.storage)))
 		cls.addDescriptors()
 		if cls.invalid:
 			cls.descriptors.append(('Invalid',cls.invalid))
@@ -188,54 +186,55 @@ InvalidValue = Invalid()
 
 class Float(ValueType):
 	baseType = float
-	sqlType = 'real'
+	storage = 'FLT4'
 	def new(cls,value):
 		return float.__new__(cls,cls.validate(value))
 	
 class Double(ValueType):
 	baseType = float
-	sqlType = 'double precision'
-	binLength = 8
-	binFormat = 'd'
+	storage = 'FLT8'
 	def new(cls,value):
 		return float.__new__(cls,cls.validate(value))
 
 class Int(ValueType):
 	baseType = int
-	sqlType = 'integer'
+	storage = 'INT4'
 	def new(cls,value):
 		return int.__new__(cls,cls.validate(value))
-	
+
+class Long(ValueType):
+	baseType = long
+	storage = 'INT8'
+	def new(cls,value):
+		return long.__new__(cls,cls.validate(value))
+
 class String(ValueType):
 	baseType = str
-	sqlType = 'text'
-	binFormat = 's'
+	storage = 'TEXT'
 	def new(cls,value):
 		return str.__new__(cls,cls.validate(value))
-	@classmethod
-	def init(cls,dct,*args,**kwargs):
-		def sql(self):
-			# enclose in single quotes and escape any embedded single quotes as ''
-			return "'%s'" % self.replace("'","''")
-		dct['sqlValue'] = sql
+#	@classmethod
+#	def init(cls,dct,*args,**kwargs):
+#		def sql(self):
+#			# enclose in single quotes and escape any embedded single quotes as ''
+#			return "'%s'" % self.replace("'","''")
+#		dct['sqlValue'] = sql
 
 class Filename(String):
 	pass
 
 class UInt(ValueType):
 	baseType = long
-	sqlType = 'integer'
-	binLength = 4
-	binFormat = 'i'
+	storage = 'INT4'
 	def new(cls,value):
 		lvalue = long(cls.validate(value))
 		if lvalue < 0 or lvalue > 0xffffffff:
 			raise ValueError('Invalid literal for UInt: %r' % value)
 		return long.__new__(cls,value)
-	@classmethod
-	def init(cls,dct,*args,**kwargs):
-		# repr(long(0)) is 0L so use str() to suppress the 'L'
-		dct['sqlValue'] = long.__str__
+#	@classmethod
+#	def init(cls,dct,*args,**kwargs):
+#		# repr(long(0)) is 0L so use str() to suppress the 'L'
+#		dct['sqlValue'] = long.__str__
 
 
 class Hex(UInt):
@@ -250,9 +249,7 @@ class Hex(UInt):
 class Enum(ValueType):
 
 	baseType = int
-	sqlType = 'smallint'
-	binLength = 2
-	binFormat = 'h'
+	storage = 'INT2'
 	
 	@classmethod
 	def init(cls,dct,*args,**kwargs):
@@ -290,7 +287,7 @@ class Enum(ValueType):
 class Bool(ValueType):
 	
 	baseType = int # bool cannot be subclassed
-	sqlType = 'smallint'
+	storage = 'INT2'
 	
 	@classmethod
 	def init(cls,dct,*args,**kwargs):
@@ -329,7 +326,7 @@ class Bool(ValueType):
 class Bits(ValueType):
 	
 	baseType = long
-	sqlType = 'integer'
+	storage = 'INT4'
 	
 	fieldSpec = re.compile('([a-zA-Z0-9_]+)?(?::([0-9]+))?$')
 	
