@@ -186,31 +186,31 @@ InvalidValue = Invalid()
 
 class Float(ValueType):
 	baseType = float
-	storage = 'FLT4'
+	storage = 'flt4'
 	def new(cls,value):
 		return float.__new__(cls,cls.validate(value))
 	
 class Double(ValueType):
 	baseType = float
-	storage = 'FLT8'
+	storage = 'flt8'
 	def new(cls,value):
 		return float.__new__(cls,cls.validate(value))
 
 class Int(ValueType):
 	baseType = int
-	storage = 'INT4'
+	storage = 'int4'
 	def new(cls,value):
 		return int.__new__(cls,cls.validate(value))
 
 class Long(ValueType):
 	baseType = long
-	storage = 'INT8'
+	storage = 'int8'
 	def new(cls,value):
 		return long.__new__(cls,cls.validate(value))
 
 class String(ValueType):
 	baseType = str
-	storage = 'TEXT'
+	storage = 'text'
 	def new(cls,value):
 		return str.__new__(cls,cls.validate(value))
 #	@classmethod
@@ -225,7 +225,7 @@ class Filename(String):
 
 class UInt(ValueType):
 	baseType = long
-	storage = 'INT4'
+	storage = 'int4'
 	def new(cls,value):
 		lvalue = long(cls.validate(value))
 		if lvalue < 0 or lvalue > 0xffffffff:
@@ -249,7 +249,7 @@ class Hex(UInt):
 class Enum(ValueType):
 
 	baseType = int
-	storage = 'INT2'
+	storage = 'int2'
 	
 	@classmethod
 	def init(cls,dct,*args,**kwargs):
@@ -287,7 +287,7 @@ class Enum(ValueType):
 class Bool(ValueType):
 	
 	baseType = int # bool cannot be subclassed
-	storage = 'INT2'
+	storage = 'int2'
 	
 	@classmethod
 	def init(cls,dct,*args,**kwargs):
@@ -326,7 +326,7 @@ class Bool(ValueType):
 class Bits(ValueType):
 	
 	baseType = long
-	storage = 'INT4'
+	storage = 'int4'
 	
 	fieldSpec = re.compile('([a-zA-Z0-9_]+)?(?::([0-9]+))?$')
 	
