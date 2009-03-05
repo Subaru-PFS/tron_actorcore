@@ -213,12 +213,6 @@ class String(ValueType):
 	storage = 'text'
 	def new(cls,value):
 		return str.__new__(cls,cls.validate(value))
-#	@classmethod
-#	def init(cls,dct,*args,**kwargs):
-#		def sql(self):
-#			# enclose in single quotes and escape any embedded single quotes as ''
-#			return "'%s'" % self.replace("'","''")
-#		dct['sqlValue'] = sql
 
 class Filename(String):
 	pass
@@ -231,11 +225,6 @@ class UInt(ValueType):
 		if lvalue < 0 or lvalue > 0xffffffff:
 			raise ValueError('Invalid literal for UInt: %r' % value)
 		return long.__new__(cls,value)
-#	@classmethod
-#	def init(cls,dct,*args,**kwargs):
-#		# repr(long(0)) is 0L so use str() to suppress the 'L'
-#		dct['sqlValue'] = long.__str__
-
 
 class Hex(UInt):
 	reprFmt = '0x%x'
