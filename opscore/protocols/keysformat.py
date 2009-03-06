@@ -220,32 +220,3 @@ class KeysFormatParser(object):
 		"""
 		self.lexer = lex.lex(object=self,debug=self.debug)
 		self.engine = yacc.yacc(module=self,debug=self.debug,write_tables=0)
-
-
-import unittest
-
-class KeysFormatTest(unittest.TestCase):
-
-	def setUp(self):
-		self.p = KeysFormatParser()
-
-	def test00(self):
-		"Valid format string without dict"
-		self.p.parse("key1 key2 key3")
-		self.p.parse("key1 key2 [key3]")
-		self.p.parse("key1 (key2 [key3])")
-		self.p.parse("@key1 key2 key3")
-		self.p.parse("key1 [@key2 [key3]]")
-
-	def test01(self):
-		"Valid format string with dict"
-		from opscore.protocols.keys import KeysDictionary
-		CmdKey.setKeys(KeysDictionary("<command>",Key("key1"),Key("key2"),Key("key3")))
-		self.p.parse("<key1> <key2> <key3>")
-		self.p.parse("<key1> <key2> [<key3>]")
-		self.p.parse("<key1> (<key2> [<key3>])")
-		self.p.parse("@<key1> <key2> <key3>")
-		self.p.parse("<key1> [@<key2> [<key3>]]")		
-		
-if __name__ == '__main__':
-	unittest.main()
