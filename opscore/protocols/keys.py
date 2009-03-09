@@ -9,6 +9,7 @@ Refer to https://trac.sdss3.org/wiki/Ops/Validation for details.
 import textwrap
 import imp
 import sys
+import hashlib
 
 import opscore.protocols.types as protoTypes
 import opscore.protocols.messages as protoMess
@@ -344,7 +345,8 @@ class KeysDictionary(object):
 			# evaluate the keys dictionary as a python expression
 			filedata = dictfile.read()
 			kdict = eval(filedata,symbols)
-			kdict.filedata = filedata
+			# do a checksum so that we can detect changes independently of versioning
+			kdict.checksum = hashlib.md5(filedata).hexdigest()
 			return kdict
 		except ImportError:
 			raise KeysDictionaryError('unable to load keys for %s' % dictname)
