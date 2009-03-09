@@ -342,7 +342,10 @@ class KeysDictionary(object):
 				if isinstance(value,type) and issubclass(value,protoTypes.ValueType):
 					symbols[name] = value
 			# evaluate the keys dictionary as a python expression
-			return eval(dictfile.read(),symbols)
+			filedata = dictfile.read()
+			kdict = eval(filedata,symbols)
+			kdict.filedata = filedata
+			return kdict
 		except ImportError:
 			raise KeysDictionaryError('unable to load keys for %s' % dictname)
 		finally:
