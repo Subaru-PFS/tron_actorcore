@@ -349,6 +349,9 @@ class KeysDictionary(object):
 			kdict.checksum = hashlib.md5(filedata).hexdigest()
 			return kdict
 		except ImportError:
-			raise KeysDictionaryError('unable to load keys for %s' % dictname)
+			raise KeysDictionaryError('no keys dictionary found for %s' % dictname)
+		except SyntaxError:
+			raise KeysDictionaryError('badly formatted keys dictionary in %s'
+				% dictfile.name)
 		finally:
 			if dictfile: dictfile.close()
