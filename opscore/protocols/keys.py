@@ -11,6 +11,8 @@ import imp
 import sys
 import hashlib
 
+import RO.AddCallback
+
 import opscore.protocols.types as protoTypes
 import opscore.protocols.messages as protoMess
 import opscore.utility.html as utilHtml
@@ -249,7 +251,10 @@ class KeysDictionaryError(KeysError):
 	pass
 
 class KeysDictionary(object):
-
+    """A collection of Keys associated with a given name (typically the name of an actor).
+    
+    Note: contains a registry of all known KeysDictionaries, for use by the load method.
+    """
 	registry = { }
 
 	def __init__(self,name,version,*keys):
@@ -316,7 +321,7 @@ class KeysDictionary(object):
 	@staticmethod
 	def load(dictname,forceReload=False):
 		"""
-		Loads a dictionary by name
+		Loads a KeysDictionary by name, returning the result
 		
 		Uses an in-memory copy, if one is available, otherwise loads the
 		dictionary from disk. Use forceReload to force the dictionary to
