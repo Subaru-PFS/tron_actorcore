@@ -18,7 +18,7 @@ from opscore.protocols.keysformat import KeysFormatParser
 class ValidationError(Exception):
 	pass
 	
-class KeysIterator(object):
+class KeywordsIterator(object):
 	"""
 	Iterates through a Keywords instance
 	"""
@@ -40,7 +40,7 @@ class KeysIterator(object):
 		
 	def clone(self):
 		# this could be optimized to only clone keys[index:]
-		return KeysIterator(self.keys.clone(),self.index)
+		return KeywordsIterator(self.keys.clone(),self.index)
 	
 	def copy(self,other):
 		self.keys.copy(other.keys)
@@ -96,7 +96,7 @@ class Cmd(Consumer,DispatchMixin):
 		# restore it after an incomplete keywords validation
 		self.checkpoint = message.clone()
 		# try to match all of this command's keywords against our format string
-		iterator = KeysIterator(message.keywords)
+		iterator = KeywordsIterator(message.keywords)
 		if self.consumer and not self.consumer.consume(iterator):
 			# restore the original message
 			message.copy(self.checkpoint)
@@ -219,7 +219,7 @@ class ReplyHandler(HandlerBase):
 		self.parser = parser.ReplyParser()
 
 	def consumeLine(self,parsed):
-		iterator = KeysIterator(parsed.keywords)
+		iterator = KeywordsIterator(parsed.keywords)
 		next = iterator.keyword()
 		while next:
 			if next.name in self.consumers:
