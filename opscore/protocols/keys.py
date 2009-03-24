@@ -159,6 +159,7 @@ class Key(Consumer):
 			return self.failed('keyword has wrong name')
 		if not self.typedValues.consume(keyword.values):
 			return self.failed('no match for keyword values')
+		keyword.matched = True
 		return self.passed(keyword)
 
 	def create(self,*values):

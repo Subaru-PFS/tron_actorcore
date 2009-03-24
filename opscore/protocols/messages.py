@@ -307,7 +307,6 @@ class Reply(Canonized):
 		self.header = header
 		self.keywords = Keywords(keywords)
 		self.string = string
-		self.matched = False
 
 	def canonical(self):
 		"""
@@ -333,7 +332,6 @@ class Reply(Canonized):
 		"""
 		new = Reply(header=self.header.clone(),keywords=[],string=self.string)
 		new.keywords = self.keywords.clone()
-		new.matched = self.matched
 		return new
 
 	def copy(self,other):
@@ -343,12 +341,9 @@ class Reply(Canonized):
 		self.header.copy(other.header)
 		self.keywords = other.keywords
 		self.string = other.string
-		self.matched = other.matched
 
 	def __repr__(self):
 		result = 'REPLY(%r,%r)' % (self.header,self.keywords)
-		if self.matched:
-			result = '{' + result + '}'
 		return result
 		
 class Command(Canonized):
@@ -376,7 +371,6 @@ class Command(Canonized):
 		self.values = Values(values or [])
 		self.keywords = Keywords(keywords or [])
 		self.string = string
-		self.matched = False
 
 	def canonical(self):
 		"""
@@ -415,7 +409,6 @@ class Command(Canonized):
 		"""
 		new = Command(self.name,self.values,[],self.string)
 		new.keywords = self.keywords.clone()
-		new.matched = self.matched
 		return new
 
 	def copy(self,other):
@@ -426,10 +419,7 @@ class Command(Canonized):
 		self.values = other.values
 		self.keywords = other.keywords
 		self.string = other.string
-		self.matched = other.matched
 
 	def __repr__(self):
 		result = 'CMD(%r=%r;%r)' % (self.name,self.values,self.keywords)
-		if self.matched:
-			result = '{' + result + '}'
 		return result
