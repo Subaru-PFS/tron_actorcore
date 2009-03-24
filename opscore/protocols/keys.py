@@ -11,8 +11,6 @@ import imp
 import sys
 import hashlib
 
-import RO.AddCallback
-
 import opscore.protocols.types as protoTypes
 import opscore.protocols.messages as protoMess
 import opscore.utility.html as utilHtml
