@@ -250,10 +250,10 @@ class KeysDictionaryError(KeysError):
 	pass
 
 class KeysDictionary(object):
-    """A collection of Keys associated with a given name (typically the name of an actor).
-    
-    Note: contains a registry of all known KeysDictionaries, for use by the load method.
-    """
+        """A collection of Keys associated with a given name (typically the name of an actor).
+        
+        Note: contains a registry of all known KeysDictionaries, for use by the load method.
+        """
 	registry = { }
 
 	def __init__(self,name,version,*keys):
