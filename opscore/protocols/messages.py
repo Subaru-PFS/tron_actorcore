@@ -270,6 +270,11 @@ class ReplyHeader(Canonized):
 		except ValueError:
 			raise MessageError("Invalid reply header code: %s" % code)
 
+	@property
+	def commander(self):
+		"""Return commander = program.user"""
+		return ".".join((self.program, self.user))
+
 	def canonical(self):
 		code = ReplyHeader.codes[self.code]
 		return "%s.%s %d %s %s" % (self.program,self.user,self.commandId,self.actor,code)
