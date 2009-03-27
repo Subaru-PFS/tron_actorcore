@@ -79,13 +79,16 @@ TO DO:
 import sys
 import time
 import traceback
+
 import twisted.internet.reactor
 import RO.Alg
 import RO.Comm.HubConnection
 import RO.Constants
 import RO.StringUtil
+
 from opscore.utility.twisted import cancelTimer
-import opscore.protocols.parser
+import opscore.protocols.parser as protoParse
+import opscore.protocols.messages as protoMess
 import msgtypes
 import keyvar
 
@@ -118,7 +121,7 @@ class KeyVarDispatcher(object):
     ):
         self.name = name
 
-        self.parser = opscore.protocols.parser.ReplyParser()
+        self.parser = protoParse.ReplyParser()
         self.reactor = twisted.internet.reactor
         self._isConnected = False
 
@@ -180,7 +183,7 @@ class KeyVarDispatcher(object):
             return
 
         # check isDone
-        if cmdVar.isDone():
+        if cmdVar.isDone:
             return
         
         # if relevant, issue abort command, with no callbacks
@@ -440,7 +443,7 @@ class KeyVarDispatcher(object):
         """
         try:
             typeChar = reply.header.code
-            severity = msgtypes.TypeDict[typeChar][1]
+            severity = msgtypes.MsgCodeSeverityDict[typeChar][1]
             self.logMsg(
                 msgStr = reply.string,
                 severity = severity,
@@ -610,8 +613,8 @@ class KeyVarDispatcher(object):
         """
         if doLog:
             self.logReply(reply)
-        cmdVar.reply(reply)
-        if cmdVar.isDone() and cmdVar.cmdID != None:
+        cmdVar.handleReply(reply)
+        if cmdVar.isDone and cmdVar.cmdID != None:
             try:
                 del (self.cmdDict[cmdVar.cmdID])
             except KeyError:
@@ -697,20 +700,19 @@ if __name__ == "__main__":
         kvd.add(keyVar)
     
     # command callback
-    cmdID = 5
-#     def cmdCall(cmdVar):
-#         print "command callback for actor=%s, cmdID=%d, cmdStr=%r, isDone=%s" % \
-#             (cmdVar.actor, cmdVar.cmdID, cmdVar.cmdStr, cmdVar.isDone)
-#     
-#     # command
-#     cmdVar = keyvar.CmdVar(
-#         cmdStr = "THIS IS A SAMPLE COMMAND",
-#         actor="test",
-#         callFunc=cmdCall,
-#         callTypes = keyvar.DoneTypes,
-#     )
-#     kvd.executeCmd(cmdVar)
-#     cmdID = cmdVar.cmdID
+    def cmdCall(cmdVar):
+        print "command callback for actor=%s, cmdID=%d, cmdStr=%r, isDone=%s" % \
+            (cmdVar.actor, cmdVar.cmdID, cmdVar.cmdStr, cmdVar.isDone)
+    
+    # command
+    cmdVar = keyvar.CmdVar(
+        cmdStr = "THIS IS A SAMPLE COMMAND",
+        actor="test",
+        callFunc=cmdCall,
+        callCodes = protoMess.ReplyHeader.DoneCodes,
+    )
+    kvd.executeCmd(cmdVar)
+    cmdID = cmdVar.cmdID
 
     dataList = [
         "StringKey=hello",
@@ -729,7 +731,7 @@ if __name__ == "__main__":
         msgType = ":",
         dataStr = dataStr,
     )
-    print "\nDispatching message with wrong cmdID; only KeyVar callbacks should called"
+    print "\nDispatching message with wrong cmdID; only KeyVar callbacks should called:"
     kvd.dispatch(reply)
 
     reply = kvd.makeReply(
@@ -738,7 +740,7 @@ if __name__ == "__main__":
         msgType = ":",
         dataStr = dataStr,
     )
-    print "\nDispatching message with wrong actor; no callbacks should be called"
+    print "\nDispatching message with wrong actor; only CmdVar callbacks should be called:"
     kvd.dispatch(reply)
 
     reply = kvd.makeReply(
@@ -747,7 +749,7 @@ if __name__ == "__main__":
         msgType = ":",
         dataStr = dataStr,
     )
-    print "\nDispatching message correctly; all should work:"
+    print "\nDispatching message correctly; CndVar done so only KeyVar callbacks should be called:"
     kvd.dispatch(reply)
     
     print "\nTesting keyVar refresh"

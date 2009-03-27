@@ -259,6 +259,8 @@ class ReplyHeader(Canonized):
 	"""
 	codes = '>iw:f!'
 	MsgCode = types.Enum('QUEUED','INFORMATION','WARNING','FINISHED','ERROR','FATAL',name='code')
+	FailedCodes = set([MsgCode(c) for c in ('ERROR', 'FATAL')])
+	DoneCodes = FailedCodes | set([MsgCode('FINISHED')])
 	
 	def __init__(self,program,user,commandId,actor,code):
 		self.program = program
