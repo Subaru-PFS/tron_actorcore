@@ -36,7 +36,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self.actor = actor
         self.name = key.name
         self.reply = None
-        self._key = key
+        self.key = key
         self._typedValues = key.typedValues
         self.doPrint = bool(doPrint)
         self._valueList = ()
@@ -70,6 +70,76 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """
         return self._valueList[ind]
 
+    def addValueCallback(self, callFunc, ind=0, callNow=True):
+        """Similar to addCallback, but the callback function receives 3 arguments including the specified value.
+        
+        This can simply certain kinds of callbacks, especially for aggregate values (see PVTKeyVar).
+    
+        Note: if the keyvariable has a variable # of values and the one specified
+        by ind is not set, the callback is not called. In general, it is discouraged
+        to use indexed callbacks for variable-length keyvariables.
+
+        Inputs:
+        - callFunc: callback function with arguments:
+          - value: value at the specified index
+          - isCurrent (by name): False if keyVar is not current
+          - keyVar (by name): this keyVar
+        - callNow: if true, execute callFunc immediately, else wait until the keyword is seen
+        
+        Raise IndexError in ind is too large (>= maxVals).
+        """
+        maxVals = self.maxVals
+        if maxVals != None and ind >= self.maxVals:
+            raise IndexError("index too large (%d >= maxVals=%d) for %s" % (ind, maxVals, self,))
+                
+        def fullCallFunc(keyVar, ind=ind):
+            try:
+                val = keyVar.valueList[ind]
+            except IndexError:
+                return
+            callFunc(val, isCurrent=keyVar.isCurrent, keyVar=keyVar)
+        self.addCallback(fullCallFunc, callNow)
+
+# I hope not to need this.
+# If I need it a lot then consider making addCallback work this way again, instead.
+#     def addValueListCallback(self, callFunc, callNow=True):
+#         """Similar to addCallback, but the callback function receives 3 arguments including a list of values.
+# 
+#         Inputs:
+#         - callFunc: callback function with arguments:
+#           - valueList: list of values
+#           - isCurrent (by name): False if keyVar is not current
+#           - keyVar (by name): this keyVar
+#         - callNow: if true, execute callFunc immediately, else wait until the keyword is seen
+#         """
+#         def fullCallFunc(keyVar):
+#             callFunc(keyVar.valueList, isCurrent=keyVar.isCurrent, keyVar=keyVar)
+#         self.addCallback(fullCallFunc, callNow)
+
+    def addROWdg(self, wdg, ind=0, setDefault=False):
+        """Adds an RO.Wdg; these format their own data via the set
+        or setDefault function (depending on setDefault).
+        Typically one uses set for a display widget
+        and setDefault for an Entry widget
+        """
+        if setDefault:
+            self.addValueCallback(wdg.setDefault, ind)
+        else:
+            self.addValueCallback(wdg.set, ind)
+    
+    def addROWdgSet(self, wdgSet, setDefault=False):
+        """Adds a set of RO.Wdg wigets;
+        should be more efficient than adding them one at a time with addROWdg
+        """
+        maxVals = self.maxVals
+        if maxVals != None and len(wdgSet) > maxVals:
+            raise IndexError("too many widgets (%d > maxVals=%d) for %s" % (len(wdgSet), maxVals, self,))
+        if setDefault:
+            callFunc = _SetDefaultWdgSet(wdgSet)
+        else:
+            callFunc = _SetWdgSet(wdgSet)
+        self.addCallback(callFunc)
+
     @property
     def isCurrent(self):
         """Return True if the client is connected to the hub and if
@@ -89,6 +159,18 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """
         return self._isGenuine
     
+    @property
+    def maxVals(self):
+        """Return the maximum number of (converted) values for this KeyVar, or None if no limit
+        """
+        return self.key.typedValues.maxVals
+
+    @property
+    def minVals(self):
+        """Return the minimum number of (converted) values for this KeyVar
+        """
+        return self.key.typedValues.minVals
+
     @property
     def timestamp(self):
         """Return the time (in unix seconds, e.g. time.time()) at which value was last set, or 0 if not set.
@@ -337,7 +419,7 @@ class CmdVar(object):
                 try:
                     callFunc(self)
                 except Exception:
-                    sys.stderr.write ("%s callback %s failed\n" % (self, callFunc))
+                    sys.stderr.write("%s callback %s failed\n" % (self, callFunc))
                     traceback.print_exc(file=sys.stderr)
         if self.lastType in protoMess.ReplyHeader.DoneCodes:
             self._cleanup()
@@ -405,3 +487,26 @@ class CmdVar(object):
     
     def __str__(self):
         return "%s %r" % (self.actor, self.cmdStr)
+
+
+class _SetWdgSet(object):
+    """KeyVar callback to set a collection of RO.Wdg widgets.
+    """
+    def __init__(self, wdgSet):
+        self.wdgSet = wdgSet
+        self.wdgInd = range(len(wdgSet))
+    def __call__(self, keyVar):
+        isCurrent = keyVar.isCurrent
+        for wdg, val in zip(self.wdgSet, keyVar.valueList):
+            wdg.setDefault(val, isCurrent.isCurrent, keyVar=keyVar)
+
+class _SetDefaultWdgSet(object):
+    """KeyVar callback to set the default of a collection of RO.Wdg widgets.
+    """
+    def __init__(self, wdgSet):
+        self.wdgSet = wdgSet
+        self.wdgInd = range(len(wdgSet))
+    def __call__(self, keyVar):
+        isCurrent = keyVar.isCurrent
+        for wdg, val in zip(self.wdgSet, keyVar.valueList):
+            wdg.set(val, isCurrent=isCurrent, keyVar=keyVar)

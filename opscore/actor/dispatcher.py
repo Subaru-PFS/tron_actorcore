@@ -86,6 +86,7 @@ import RO.Constants
 import RO.StringUtil
 
 from opscore.utility.twisted import cancelTimer
+import opscore.protocols.keys as protoKeys
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess
 import msgseverity
@@ -129,6 +130,9 @@ class KeyVarDispatcher(object):
         # values are lists of KeyVars
         # (having a list of KeyVars allows more than one KeyVar for the same actor keyword)
         self.keyVarListDict = dict()
+
+        # set of actors for which loadActorDictionary has been called
+        self.loadedActors = set()
         
         # cmdDict keys are command ID and values are KeyCommands
         self.cmdDict = dict()
@@ -202,7 +206,7 @@ class KeyVarDispatcher(object):
         )
         self._replyCmdVar(cmdVar, errReply)
 
-    def add(self, keyVar):
+    def addKeyVar(self, keyVar):
         """
         Adds a keyword variable (opscore.actor.keyvar.KeyVar) to the collection.
         
@@ -316,12 +320,25 @@ class KeyVarDispatcher(object):
                 # send reply but don't log (that's already been done)
                 self._replyCmdVar(cmdVar, reply, doLog=False)
 
-    def getKeyVarList(self, actor, name):
+    def getKeyVarList(self, actor, keyName):
         """Return the list of KeyVars by this name and actor; return [] if no match.
         
         Do not modify the returned list. It may not be a copy.
         """
-        return self.keyVarListDict.get(self._makeDictKey(actor, name), [])
+        return self.keyVarListDict.get(self._makeDictKey(actor, keyName), [])
+
+    def getKeyVar(self, actor, keyName):
+        """Return a keyVar by this name and actor.
+        
+        If there are multiple matching keyVars returns the first registered;
+        to get a different keyVar use getKeyVarList.
+        
+        Raise LookupError if no such keyword found.
+        """
+        keyVarList = self.getKeyVarList(actor, keyName)
+        if not keyVarList:
+            raise LookupError("Could not find a keyVar with actor=%s, keyName=%s" % (actor, keyName))
+        return keyVarList[0]
                     
     def handleReplyStr(self, replyStr):
         """Read, parse and dispatch a message from the hub.
@@ -588,10 +605,10 @@ class KeyVarDispatcher(object):
         self.refreshCmdDict[(actor, cmdStr)] = keyVar
         self.executeCmd(cmdVar)
     
-    def remove(self, keyVar):
+    def removeKeyVar(self, keyVar):
         """Remove the specified keyword variable, returning the KeyVar if removed, else None
 
-        See also "add".
+        See also "addKeyVar".
 
         Inputs:
         - keyVar: the keyword variable to remove
@@ -667,12 +684,43 @@ class KeyVarDispatcher(object):
         where the first argument is positional and the others are by name
         """
         self.logFunc = logFunc
-    
+
+
+    def loadActorDictionary(self, actor):
+        """Read and process the keys dictionary for an actor.
+        
+        Registers all the keyVars with this dispatcher
+        and returns a dictionary of keyName:keyVar
+        
+        Does nothing and returns None if the actor was already loaded.
+        
+        Design note: this is the preferred way to load an actor keys dictionary.
+        It is intended to be called by the Model for an actor, which then stores
+        the returned keyVarDict as the official set of keyVars for that actor.
+        
+        This is better than having a Model query the dispatcher for keyVars for an actor,
+        because the dispatcher might have duplicates (in which case, which to pick?) or
+        extras (such as synthetic keywords) added by miscellaneous bits of code.
+        Admittedly that is unlikely when the system is starting up and reading in
+        the official dictionaries, but still...the chosen design is safer.
+        """
+        if actor in self.loadedActors:
+            return None
+            
+        keyVarDict = dict()
+        keysDict = protoKeys.KeysDictionary.load(actor)
+        for key in keysDict.keys.itervalues():
+            keyVar = keyvar.KeyVar(actor, key)
+            keyVarDict[key.name.lower()] = keyVar
+        for keyVar in keyVarDict.itervalues():
+            self.addKeyVar(keyVar)
+        self.loadedActors.add(actor)
+        return keyVarDict
+
 
 if __name__ == "__main__":
     print "\nTesting RO.KeyVarDispatcher\n"
     import time
-    import opscore.protocols.keys as protoKeys
     import opscore.protocols.types as protoTypes
     import twisted.internet.tksupport
     import Tkinter
@@ -685,32 +733,17 @@ if __name__ == "__main__":
         print "keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent)
 
     # scalars
-    keyVarList = (
-        keyvar.KeyVar(
-            actor = "test",
-            key = protoKeys.Key("StringKey", protoTypes.String()),
-        ),
-        keyvar.KeyVar(
-            actor = "test",
-            key = protoKeys.Key("IntKey", protoTypes.Int()),
-        ),
-        keyvar.KeyVar(
-            actor = "test",
-            key = protoKeys.Key("FloatKey", protoTypes.Float()),
-        ),
-        keyvar.KeyVar(
-            actor = "test",
-            key = protoKeys.Key("BooleanKey", protoTypes.Bool("F", "T")),
-        ),
-        keyvar.KeyVar(
-            actor = "test",
-            key = protoKeys.Key("KeyList", protoTypes.String(), protoTypes.Int()),
-        ),
+    keyList = (
+        protoKeys.Key("StringKey", protoTypes.String()),
+        protoKeys.Key("IntKey", protoTypes.Int()),
+        protoKeys.Key("FloatKey", protoTypes.Float()),
+        protoKeys.Key("BooleanKey", protoTypes.Bool("F", "T")),
+        protoKeys.Key("KeyList", protoTypes.String(), protoTypes.Int()),
     )
-
+    keyVarList = [keyvar.KeyVar("test", key) for key in keyList]
     for keyVar in keyVarList:
         keyVar.addCallback(showVal)
-        kvd.add(keyVar)
+        kvd.addKeyVar(keyVar)
     
     # command callback
     def cmdCall(cmdVar):
@@ -762,7 +795,7 @@ if __name__ == "__main__":
         msgType = ":",
         dataStr = dataStr,
     )
-    print "\nDispatching message correctly; CndVar done so only KeyVar callbacks should be called:"
+    print "\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:"
     kvd.dispatch(reply)
     
     print "\nTesting keyVar refresh"
