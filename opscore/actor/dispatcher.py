@@ -74,7 +74,6 @@ History:
 TO DO:
 - Clean up use of "connection" once I know what I'll have available
 - Fix support for refresh commands, once it is implemented in KeyVar
-- Fix support for CmdVar once I know what needs to be changed (CmdVar doesn't exist yet)
 """
 import sys
 import time
@@ -89,7 +88,7 @@ import RO.StringUtil
 from opscore.utility.twisted import cancelTimer
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess
-import msgtypes
+import msgseverity
 import keyvar
 
 __all__ = ["KeyVarDispatcher"]
@@ -450,8 +449,8 @@ class KeyVarDispatcher(object):
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
         try:
-            typeChar = reply.header.code
-            severity = msgtypes.MsgCodeSeverityDict[typeChar][1]
+            msgCode = reply.header.code
+            severity = msgseverity.MsgCodeSeverityDict[msgCode]
             self.logMsg(
                 msgStr = reply.string,
                 severity = severity,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Define valid hub message types, groupings of message types, and a mapping to severity.
+"""Message code severity
 """
 import opscore.protocols.messages
 import RO.Constants
@@ -12,11 +12,13 @@ def _makeSeverityDict():
     for code in codeDict:
         if code in ReplyHeader.FailedCodes:
             retDict[code] = RO.Constants.sevError
-        elif code == "WARNING":
+        elif code in ReplyHeader.WarningCodes:
             retDict[code] = RO.Constants.sevWarning
         else:
             retDict[code] = RO.Constants.sevNormal
         return retDict
 
-# SeverityDict translates message type codes to message categories
+# Message code severity dictionary
+# key: message code (an opscore.protocols.messages.ReplyHeader.MsgCode)
+# value: severity (an RO.Constants.sevX constant)
 MsgCodeSeverityDict = _makeSeverityDict()
