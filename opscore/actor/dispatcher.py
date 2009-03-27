@@ -103,34 +103,36 @@ _CmdNumWrap = 1000 # value at which user command ID numbers wrap
 
 class KeyVarDispatcher(object):
     """Parse replies and sets keyword variables. Also manage commands and their replies.
-    
-    Inputs:
-    - name: used as the actor when the dispatcher reports errors
-    - connection: an RO.Comm.HubConnection object or similar;
-      if omitted, an RO.Comm.HubConnection.NullConnection is used,
-      which is useful for testing.
-    - logFunc: a function that logs a message. Argument list must be:
-        (msgStr, severity, actor, cmdr)
-        where the first argument is positional and the others are by name
-        and severity is an RO.Constants.sevX constant
     """
     def __init__(self,
         name = "KeyVarDispatcher",
         connection = None,
         logFunc = None,
     ):
+        """Create a new KeyVarDispatcher
+    
+        Inputs:
+        - name: used as the actor when the dispatcher reports errors
+        - connection: an RO.Comm.HubConnection object or similar;
+          if omitted, an RO.Comm.HubConnection.NullConnection is used, which is useful for testing.
+        - logFunc: a function that logs a message. Argument list must be:
+            (msgStr, severity, actor, cmdr)
+            where the first argument is positional and the others are by name
+            and severity is an RO.Constants.sevX constant
+        """
         self.name = name
 
         self.parser = protoParse.ReplyParser()
         self.reactor = twisted.internet.reactor
         self._isConnected = False
 
-        # dictionary of lists of KeyVars; keys are (actor, keyword) tuples; values are lists of KeyVars
+        # dictionary of lists of KeyVars; keys are (actor.lower(), keyName.lower()) tuples;
+        # values are lists of KeyVars
         # (having a list of KeyVars allows more than one KeyVar for the same actor keyword)
-        self.keyVarListDict = {}
+        self.keyVarListDict = dict()
         
         # cmdDict keys are command ID and values are KeyCommands
-        self.cmdDict = {}
+        self.cmdDict = dict()
         
         # refreshCmdDict contains info about pending refresh commands;
         # it is used to avoid issuing multiple identical commands
@@ -208,7 +210,7 @@ class KeyVarDispatcher(object):
         Inputs:
         - keyVar: the keyword variable (opscore.actor.keyvar.KeyVar)
         """
-        dictKey = (keyVar.actor, keyVar.name.lower())
+        dictKey = self._makeDictKey(keyVar.actor, keyVar.name)
         # get list of existing keyVars with the same actor and keyword name,
         # adding an empty list to self.keyVarListDict if none are already present
         keyList = self.keyVarListDict.setdefault(dictKey, [])
@@ -299,8 +301,7 @@ class KeyVarDispatcher(object):
         else:
             isGenuine = True
         for keyword in reply.keywords:
-            dictKey = (actor, keyword.name.lower())
-            keyVarList = self.keyVarListDict.get(dictKey, [])
+            keyVarList = self.getKeyVarList(actor, keyword.name)
             for keyVar in keyVarList:
                 try:
                     keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply)
@@ -315,6 +316,13 @@ class KeyVarDispatcher(object):
             if cmdVar != None:
                 # send reply but don't log (that's already been done)
                 self._replyCmdVar(cmdVar, reply, doLog=False)
+
+    def getKeyVarList(self, actor, name):
+        """Return the list of KeyVars by this name and actor; return [] if no match.
+        
+        Do not modify the returned list. It may not be a copy.
+        """
+        return self.keyVarListDict.get(self._makeDictKey(actor, name), [])
                     
     def handleReplyStr(self, replyStr):
         """Read, parse and dispatch a message from the hub.
@@ -592,13 +600,19 @@ class KeyVarDispatcher(object):
         Returns:
         - the removed keyVar, if present, None otherwise.
         """
-        dictKey = (keyVar.actor, keyVar.keywd.lower())
+        dictKey = self._makeDictKey(keyVar.actor, keyVar.name)
         keyVarList = self.keyVarListDict.get(dictKey, [])
         if keyVar in keyVarList:
             keyVarList.remove(keyVar)
             return keyVar
         else:
             return None
+
+    @staticmethod
+    def _makeDictKey(actor, keyName):
+        """Make a keyVarListDict key out of an actor and keyword name
+        """
+        return (actor.lower(), keyName.lower())
     
     def _replyCmdVar(self, cmdVar, reply, doLog=True):
         """Send a message to a command variable and optionally log it.
