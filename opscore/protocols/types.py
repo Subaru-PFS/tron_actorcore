@@ -251,6 +251,12 @@ class Enum(ValueType):
         dct['__str__'] = doStr
         if dct['strFmt']:
             print 'Enum: ignoring strFmt metadata'
+        def eqTest(self,other):
+            return str(other) == self.enumLabels[self] or cls.baseType(self) == other
+        def neTest(self,other):
+            return str(other) != self.enumLabels[self] and cls.baseType(self) != other
+        dct['__eq__'] = eqTest
+        dct['__ne__'] = neTest
 
     def new(cls,value):
         """
