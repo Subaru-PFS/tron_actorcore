@@ -315,7 +315,7 @@ class KeyVarDispatcher(object):
         # execute the command callback (if any)
         if cmdr == self.connection.cmdr:
             # get the command for this command id, if any
-            cmdVar = self.cmdDict.get(cmdID, None)
+            cmdVar = self.cmdDict.get(reply.header.commandId, None)
             if cmdVar != None:
                 # send reply but don't log (that's already been done)
                 self._replyCmdVar(cmdVar, reply, doLog=False)
@@ -343,6 +343,7 @@ class KeyVarDispatcher(object):
     def handleReplyStr(self, replyStr):
         """Read, parse and dispatch a message from the hub.
         """
+#        print "%s.handleReplyStr(%r)" % (self.__class__.__name__, replyStr)
         # parse message; if that fails, log it as an error
         try:
             reply = self.parser.parse(replyStr)
@@ -439,6 +440,7 @@ class KeyVarDispatcher(object):
         - cmdr: commander; defaults to self
         """
         if not self.logFunc:
+            sys.stderr.write(msgStr + "\n")
             return
 
         try:
@@ -684,38 +686,6 @@ class KeyVarDispatcher(object):
         where the first argument is positional and the others are by name
         """
         self.logFunc = logFunc
-
-
-    def loadActorDictionary(self, actor):
-        """Read and process the keys dictionary for an actor.
-        
-        Registers all the keyVars with this dispatcher
-        and returns a dictionary of keyName:keyVar
-        
-        Does nothing and returns None if the actor was already loaded.
-        
-        Design note: this is the preferred way to load an actor keys dictionary.
-        It is intended to be called by the Model for an actor, which then stores
-        the returned keyVarDict as the official set of keyVars for that actor.
-        
-        This is better than having a Model query the dispatcher for keyVars for an actor,
-        because the dispatcher might have duplicates (in which case, which to pick?) or
-        extras (such as synthetic keywords) added by miscellaneous bits of code.
-        Admittedly that is unlikely when the system is starting up and reading in
-        the official dictionaries, but still...the chosen design is safer.
-        """
-        if actor in self.loadedActors:
-            return None
-            
-        keyVarDict = dict()
-        keysDict = protoKeys.KeysDictionary.load(actor)
-        for key in keysDict.keys.itervalues():
-            keyVar = keyvar.KeyVar(actor, key)
-            keyVarDict[key.name.lower()] = keyVar
-        for keyVar in keyVarDict.itervalues():
-            self.addKeyVar(keyVar)
-        self.loadedActors.add(actor)
-        return keyVarDict
 
 
 if __name__ == "__main__":

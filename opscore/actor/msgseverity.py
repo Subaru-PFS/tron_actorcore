@@ -8,15 +8,15 @@ def _makeSeverityDict():
     ReplyHeader = opscore.protocols.messages.ReplyHeader
     
     retDict = dict()
-    codeDict = ReplyHeader.MsgCode.enumValues
-    for code in codeDict:
+    codeList = ReplyHeader.MsgCode.enumValues.values()
+    for code in codeList:
         if code in ReplyHeader.FailedCodes:
             retDict[code] = RO.Constants.sevError
         elif code in ReplyHeader.WarningCodes:
             retDict[code] = RO.Constants.sevWarning
         else:
             retDict[code] = RO.Constants.sevNormal
-        return retDict
+    return retDict
 
 # Message code severity dictionary
 # key: message code (an opscore.protocols.messages.ReplyHeader.MsgCode)

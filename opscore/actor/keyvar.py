@@ -39,7 +39,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self.key = key
         self._typedValues = key.typedValues
         self.doPrint = bool(doPrint)
-        self._valueList = ()
+        self._valueList = (None,)*self.minVals
         self._isCurrent = False
         self._isGenuine = False
         self._timeStamp = 0
@@ -48,14 +48,14 @@ class KeyVar(RO.AddCallback.BaseMixin):
     def __repr__(self):
         """Return a long str representation of a KeyVar
         """
-        return "%s(%r, %r, %s)" % \
-            (self.__class__.__name__, self.actor, self.name, self._typedValues)
+        return "%s(%r, %s[%s]=%s isCurrent=%s)" % \
+            (self.__class__.__name__, self.actor, self.name, self._typedValues, self._valueList, self._isCurrent)
 
     def __str__(self):
         """Return a short str representation of a KeyVar
         """
-        return "%s(%r, %r)" % \
-            (self.__class__.__name__, self.actor, self.name)
+        return "%s(%r, %s=%s)" % \
+            (self.__class__.__name__, self.actor, self.name, self._valueList)
 
     @property
     def valueList(self):
@@ -188,6 +188,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         
         @raise RuntimeError if the values cannot be set.
         """
+        valueList = list(valueList)
         if not self._typedValues.consume(valueList):
             raise RuntimeError("%s could not parse valueList=%s" % (self, valueList))
 
@@ -498,7 +499,7 @@ class _SetWdgSet(object):
     def __call__(self, keyVar):
         isCurrent = keyVar.isCurrent
         for wdg, val in zip(self.wdgSet, keyVar.valueList):
-            wdg.setDefault(val, isCurrent.isCurrent, keyVar=keyVar)
+            wdg.set(val, isCurrent=isCurrent, keyVar=keyVar)
 
 class _SetDefaultWdgSet(object):
     """KeyVar callback to set the default of a collection of RO.Wdg widgets.
@@ -509,4 +510,4 @@ class _SetDefaultWdgSet(object):
     def __call__(self, keyVar):
         isCurrent = keyVar.isCurrent
         for wdg, val in zip(self.wdgSet, keyVar.valueList):
-            wdg.set(val, isCurrent=isCurrent, keyVar=keyVar)
+            wdg.setDefault(val, isCurrent=isCurrent, keyVar=keyVar)
