@@ -18,7 +18,6 @@ from opscore.utility.twisted import cancelTimer
 import opscore.protocols.keys as protoKeys
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess
-import msgseverity
 import keyvar
 
 __all__ = ["Model"]
@@ -32,7 +31,7 @@ class Model(object):
     _registeredActors = set()
     dispatcher = None
     def __init__(self, actor):
-        print "%s.__init__(actor=%s)" % (self.__class__.__name__, actor)
+        #print "%s.__init__(actor=%s)" % (self.__class__.__name__, actor)
         if actor in self._registeredActors:
             raise RuntimeError("%s model already instantiated" % (actor,))
         
@@ -51,7 +50,7 @@ class Model(object):
 
     @classmethod
     def setDispatcher(cls, dispatcher):
-        print "%s.setDispatcher(dispatcher=%s)" % (cls.__name__, dispatcher)
+        #print "%s.setDispatcher(dispatcher=%s)" % (cls.__name__, dispatcher)
         if cls.dispatcher:
             raise RuntimeError("Dispatcher cannot be modified once set")
         cls.dispatcher = dispatcher

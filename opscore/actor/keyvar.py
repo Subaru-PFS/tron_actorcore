@@ -2,8 +2,9 @@
 """KeyVar and CmdVar
 
 TO DO:
-- Add CmdVar
 - Add support to KeyVar for refresh commands
+- Add support to CmdVar for timeLimKeyword (or similar)
+- Modify CmdVar to not track specific keywords, but instead to search replyList for values.
 """
 import sys
 import time
@@ -15,7 +16,25 @@ import RO.Constants
 import opscore.protocols.messages as protoMess
 import msgtypes
 
-__all__ = ["KeyVar"]
+__all__ = ["KeyVar", "AllCodes", "DoneCodes", "WarningCodes", "FailCodes", "MsgCodeDict"]
+
+AllCodes = protoMess.ReplyHeader.AllCodes
+DoneCodes = protoMess.ReplyHeader.DoneCodes
+FailedCodes = protoMess.ReplyHeader.FailedCodes
+
+# MsgCodeDict translates message type characters to message categories
+# entries are: (meaning, category), where:
+# meaning is used for messages displaying what's going on
+# category is coarser and is used for filtering by category
+MsgCodeDict = {
+    "!":("fatal error", RO.Constants.sevError), # a process dies
+    "f":("failed", RO.Constants.sevError), # command failed
+    "w":("warning", RO.Constants.sevWarning),
+    "i":("information", RO.Constants.sevNormal), # the initial state
+    "s":("status", RO.Constants.sevNormal),
+    ">":("queued", RO.Constants.sevNormal),
+    ":":("finished", RO.Constants.sevNormal),
+}
 
 class KeyVar(RO.AddCallback.BaseMixin):
     """Container for keyword data.
@@ -39,7 +58,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self.key = key
         self._typedValues = key.typedValues
         self.doPrint = bool(doPrint)
-        self._valueList = (None,)*self.minVals
+        self.valueList = (None,)*self.minVals
         self._isCurrent = False
         self._isGenuine = False
         self._timeStamp = 0
@@ -49,26 +68,20 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """Return a long str representation of a KeyVar
         """
         return "%s(%r, %s[%s]=%s isCurrent=%s)" % \
-            (self.__class__.__name__, self.actor, self.name, self._typedValues, self._valueList, self._isCurrent)
+            (self.__class__.__name__, self.actor, self.name, self._typedValues, self.valueList, self._isCurrent)
 
     def __str__(self):
         """Return a short str representation of a KeyVar
         """
         return "%s(%r, %s=%s)" % \
-            (self.__class__.__name__, self.actor, self.name, self._valueList)
+            (self.__class__.__name__, self.actor, self.name, self.valueList)
 
-    @property
-    def valueList(self):
-        """Return a copy of the list of values
-        """
-        return self._valueList[:]
-    
     def __getitem__(self, ind):
         """Implement keyVar[ind] to return the specified value from the valueList.
         
         @raise IndexError if ind is out of range
         """
-        return self._valueList[ind]
+        return self.valueList[ind]
 
     def addValueCallback(self, callFunc, ind=0, callNow=True):
         """Similar to addCallback, but the callback function receives 3 arguments including the specified value.
@@ -197,7 +210,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
             sys.stderr.write("%s = %r\n" % (self, valueList))
 
         # apply callbacks, if any
-        self._valueList = valueList
+        self.valueList = tuple(valueList)
         self._timeStamp = time.time()
         self._isCurrent = bool(isCurrent)
         self._isGenuine = bool(isGenuine)
@@ -289,8 +302,8 @@ class CmdVar(object):
             self.keyVarDataDict[keyVar] = []
 
         self.dispatcher = None # set by dispatcher when it executes the command
-        self.lastReply = None
-        self.lastType = "i"
+        self.replyList = []
+        self.lastCode = "Information"
         self.startTime = None
         self.maxEndTime = None
 
@@ -308,7 +321,7 @@ class CmdVar(object):
 
         Has no effect if the command was never dispatched or has already ended.
         """
-        if self.dispatcher and not self.isDone():
+        if self.dispatcher and not self.isDone:
             self.dispatcher.abortCmdByID(self.cmdID)
 
     def addCallback(self, callFunc, callCodes = protoMess.ReplyHeader.DoneCodes):
@@ -331,15 +344,15 @@ class CmdVar(object):
     def didFail(self):
         """Return True if the command failed, False otherwise.
         """
-        return self.lastType in protoMess.ReplyHeader.FailTypes
+        return self.lastCode in protoMess.ReplyHeader.FailTypes
     
     @property
     def severity(self):
         """Return severity of most recent message, or RO.Constants.sevNormal if no messages received.
         """
-        if not self.lastType:
+        if not self.lastCode:
             return RO.Constants.sevNormal
-        return TypeDict[self.lastType][1]
+        return TypeDict[self.lastCode][1]
     
     def getKeyVarData(self, keyVar):
         """Return a list of data seen for the specified keyword variable, or [] if no data seen.
@@ -382,7 +395,15 @@ class CmdVar(object):
     def isDone(self):
         """Return True if the command is finished, False otherwise.
         """
-        return self.lastType in protoMess.ReplyHeader.DoneCodes
+        return self.lastCode in protoMess.ReplyHeader.DoneCodes
+
+    @property
+    def lastReply(self):
+        """Return the last reply object, or None if no replies seen
+        """
+        if not self.replyList:
+            return None
+        return self.replyList[-1]
 
     def removeCallback(self, callFunc, doRaise=True):
         """Delete the callback function.
@@ -409,20 +430,20 @@ class CmdVar(object):
         """Call command callbacks.
         Warn and do nothing else if called after the command has finished.
         """
-        if self.lastType in protoMess.ReplyHeader.DoneCodes:
+        if self.lastCode in protoMess.ReplyHeader.DoneCodes:
             sys.stderr.write("Command %s already finished; no more replies allowed\n" % (self,))
             return
-        self.lastReply = reply
-        msgType = reply.header.code
-        self.lastType = msgType
+        self.replyList.append(reply)
+        msgCode = reply.header.code
+        self.lastCode = msgCode
         for callCodes, callFunc in self.callCodesFuncList[:]:
-            if msgType in callCodes:
+            if msgCode in callCodes:
                 try:
                     callFunc(self)
                 except Exception:
                     sys.stderr.write("%s callback %s failed\n" % (self, callFunc))
                     traceback.print_exc(file=sys.stderr)
-        if self.lastType in protoMess.ReplyHeader.DoneCodes:
+        if self.lastCode in protoMess.ReplyHeader.DoneCodes:
             self._cleanup()
     
     def _timeLimKeyVarCallback(self, keyVar):

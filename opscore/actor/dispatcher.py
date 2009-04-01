@@ -89,7 +89,6 @@ from opscore.utility.twisted import cancelTimer
 import opscore.protocols.keys as protoKeys
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess
-import msgseverity
 import keyvar
 
 __all__ = ["KeyVarDispatcher"]
@@ -469,7 +468,7 @@ class KeyVarDispatcher(object):
         """
         try:
             msgCode = reply.header.code
-            severity = msgseverity.MsgCodeSeverityDict[msgCode]
+            severity = keyvar.MsgCodeDict[msgCode][1]
             self.logMsg(
                 msgStr = reply.string,
                 severity = severity,
@@ -656,7 +655,7 @@ class KeyVarDispatcher(object):
             if cmdVar.isRefresh:
                 # refresh command finished; update refresh command dict
                 refreshKey = (cmdVar.actor, cmdVar.cmdStr)
-                if cmdVar.lastType == ":":
+                if cmdVar.lastCode == ":":
                     # command succeeded;
                     # remove command from refresh command dict
                     # if associated keyVar not updated, complain and delete its refresh command
@@ -725,7 +724,7 @@ if __name__ == "__main__":
         cmdStr = "THIS IS A SAMPLE COMMAND",
         actor="test",
         callFunc=cmdCall,
-        callCodes = protoMess.ReplyHeader.DoneCodes,
+        callCodes = keyvar.DoneCodes,
     )
     kvd.executeCmd(cmdVar)
     cmdID = cmdVar.cmdID

@@ -257,21 +257,18 @@ class ReplyHeader(Canonized):
     """
     Represents the headers of a reply
     """
-    codes = '>iw:f!'
+    AllCodes = '>iw:f!'
     MsgCode = types.Enum('QUEUED','INFORMATION','WARNING','FINISHED','ERROR','FATAL',name='code')
-    AllCodes = frozenset([MsgCode(c) for c in MsgCode.enumLabels])
-    FailedCodes = frozenset([MsgCode(c) for c in ('ERROR', 'FATAL')])
-    WarningCodes = frozenset([MsgCode('WARNING')])
-    DoneCodes = FailedCodes | frozenset([MsgCode('FINISHED')])
+    DoneCodes = ':f!'
+    FailedCodes = 'f!'
     
     def __init__(self,program,user,commandId,actor,code):
         self.program = program
         self.user = user
         self.commandId = int(commandId)
         self.actor = actor
-        try:
-            self.code = ReplyHeader.MsgCode(ReplyHeader.codes.index(str(code).lower()))
-        except ValueError:
+        self.code = str(code).lower()
+        if self.code not in ReplyHeader.AllCodes:
             raise MessageError("Invalid reply header code: %s" % code)
 
     @property
@@ -280,16 +277,13 @@ class ReplyHeader(Canonized):
         return ".".join((self.program, self.user))
 
     def canonical(self):
-        code = ReplyHeader.codes[self.code]
-        return "%s.%s %d %s %s" % (self.program,self.user,self.commandId,self.actor,code)
+        return "%s.%s %d %s %s" % (self.program,self.user,self.commandId,self.actor,self.code)
         
     def tokenized(self):
-        code = ReplyHeader.codes[self.code]
-        return 'prog.user 123 actor %s' % code
+        return 'prog.user 123 actor %s' % self.code
     
     def clone(self):
-        code = ReplyHeader.codes[self.code]
-        return ReplyHeader(self.program,self.user,self.commandId,self.actor,code)
+        return ReplyHeader(self.program,self.user,self.commandId,self.actor,self.code)
     
     def copy(self,other):
         self.program = other.program
