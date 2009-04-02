@@ -22,6 +22,9 @@ import keyvar
 
 __all__ = ["Model"]
 
+# number of keywork names to ask for in a given "keys getFor=actor" command
+NumKeysToGetAtOnce = 20
+
 class Model(object):
     """Subclass for your actor. Your subclass must use a singleton pattern
     because this class may only be instantiated once per actor.
@@ -43,26 +46,21 @@ class Model(object):
             raise RuntimeError("Dispatcher not set")
 
         cachedKeyVars = []
-        excludedKeyNames = []
-        keyVarDict = dict()
         keysDict = protoKeys.KeysDictionary.load(actor)
         for key in keysDict.keys.itervalues():
             keyVar = keyvar.KeyVar(actor, key)
-            if keyVar.hasRefreshCmd or not key.doCache:
-                excludedKeyNames.append(keyVar.name)
-            else:
+            if key.doCache and not keyVar.hasRefreshCmd:
                 cachedKeyVars.append(keyVar)
             setattr(self, keyVar.name, keyVar)
             self.dispatcher.addKeyVar(keyVar)
-        # exclude is not yet supported so do it the ugly way
-        if True:
-            cachedKeyNames = [keyVar.name for keyVar in cachedKeyVars]
-            refreshCmdStr = "getFor=%s %s" % (self.actor, " ".join(cachedKeyNames))
-        else:
-            refreshCmdStr = "getFor=%s exclude=%s" % (self.actor, ",".join(excludedKeyNames))
-        for keyVar in cachedKeyVars:
-            keyVar._refreshActor = "keys"
-            keyVar._refreshCmd = refreshCmdStr
+        
+        for ind in range(0, len(cachedKeyVars), NumKeysToGetAtOnce):
+            keyVars = cachedKeyVars[ind:ind+NumKeysToGetAtOnce]
+            keyNames = [(keyVar.name) for keyVar in keyVars]
+            refreshCmdStr = "getFor=%s %s" % (self.actor, " ".join(keyNames))
+            for keyVar in keyVars:
+                keyVar.refreshActor = "keys"
+                keyVar.refreshCmd = refreshCmdStr
 
         self._registeredActors.add(actor)
 

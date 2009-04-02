@@ -62,12 +62,12 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self._isGenuine = False
         self._timeStamp = 0
         if self.key.refreshCmd:
-            self._refreshActor = self.actor
-            self._refreshCmd = key.refreshCmd
+            self.refreshActor = self.actor
+            self.refreshCmd = key.refreshCmd
         else:
             # have the model set this to a keys command later if not keys.doCache
-            self._refreshActor = None
-            self._refreshCmd = None
+            self.refreshActor = None
+            self.refreshCmd = None
         RO.AddCallback.BaseMixin.__init__(self, defCallNow = True)
     
     def __repr__(self):
@@ -163,11 +163,11 @@ class KeyVar(RO.AddCallback.BaseMixin):
     def hasRefreshCmd(self):
         """Return True if has a refresh command.
         """
-        return bool(self._refreshCmd)
+        return bool(self.refreshCmd)
     
     def getRefreshInfo(self):
         """Return refreshActor, refreshCmd"""
-        return (self._refreshActor, self._refreshCmd)
+        return (self.refreshActor, self.refreshCmd)
 
     @property
     def isCurrent(self):
@@ -506,7 +506,7 @@ class CmdVar(object):
             return
         if keyVar.reply.header.commandID != self.cmdID:
             return
-        if keyVar.reply.header.commander != self.dispatcher.connection.cmdr:
+        if keyVar.reply.header.cmdrName != self.dispatcher.connection.cmdr:
             return
         self.keyVarDataDict[keyVar].append(keyVar.valueList)
     

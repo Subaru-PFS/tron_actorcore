@@ -272,8 +272,8 @@ class ReplyHeader(Canonized):
             raise MessageError("Invalid reply header code: %s" % code)
 
     @property
-    def commander(self):
-        """Return commander = program.user"""
+    def cmdrName(self):
+        """Return commander name = program.user"""
         return ".".join((self.program, self.user))
 
     def canonical(self):

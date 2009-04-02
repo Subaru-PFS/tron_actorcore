@@ -299,8 +299,8 @@ class KeyVarDispatcher(object):
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
         actor = reply.header.actor.lower()
-        cmdr = reply.header.commander
-        if actor.startswith("keys."):
+        cmdr = reply.header.cmdrName
+        if actor.startswith("keys_"):
             # data is from the hub's keyword cache
             actor = actor[5:]
             isGenuine = False
@@ -478,7 +478,7 @@ class KeyVarDispatcher(object):
                 msgStr = reply.string,
                 severity = severity,
                 actor = reply.header.actor,
-                cmdr = reply.header.commander,
+                cmdr = reply.header.cmdrName,
             )
         except Exception, e:
             sys.stderr.write("Could not log Reply:\n%r\n" % (reply,))
@@ -662,7 +662,7 @@ class KeyVarDispatcher(object):
                 refreshKey = (cmdVar.actor, cmdVar.cmdStr)
                 if cmdVar.lastCode == ":":
                     # command succeeded;
-                    # remove command from refresh command dict
+                    # set refrech command dict entry to None
                     # if associated keyVar not updated, complain and delete its refresh command
                     keyVar = self.refreshCmdDict.get(refreshKey)
                     if keyVar == None:
