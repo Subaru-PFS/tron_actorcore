@@ -676,7 +676,7 @@ class KeyVarDispatcher(object):
                             actor = None,
                             msgType = "w",
                             dataStr = "RefreshFailed; Actor=%r; Keyword=%r; Cmd=%r; Text=\"deleting refresh command\"" % \
-                                (keyVar.actor, keyVar.keyword, cmdVar.cmdStr),
+                                (keyVar.actor, keyVar.name, cmdVar.cmdStr),
                         )       
                         self.logReply(errReply)
                 else:
