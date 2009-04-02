@@ -39,7 +39,7 @@ class ReplyParser(TemporaryBase):
     above since PLY applies grammar rules in the order in which they are
     declared.
     """
-    _name = '(?:[A-Za-z][A-Za-z0-9_]*)'
+    _name = '(?:[A-Za-z][A-Za-z0-9_-]*)'
     _number = '0|[1-9][0-9]*'
     hdr_pattern = re.compile('(%s?)\.(%s)[ \t]+(%s)[ \t]+(%s)[ \t]+([>iIwW:fF!])[ \t]+'
         % (_name,_name,_number,_name))
