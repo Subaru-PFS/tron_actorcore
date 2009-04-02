@@ -100,6 +100,8 @@ _ShortInterval =   0.01 # short time interval; used to schedule a callback right
 
 _CmdNumWrap = 1000 # value at which user command ID numbers wrap
 
+_RefreshTimeLim = 20 # time limit for refresh commands (sec)
+
 class KeyVarDispatcher(object):
     """Parse replies and sets keyword variables. Also manage commands and their replies.
     """
@@ -155,8 +157,10 @@ class KeyVarDispatcher(object):
         self._refreshRemTimer = None
         
         if connection:
+            def readCallback(sock, data):
+                self.handleReplyStr(data)
             self.connection = connection
-            self.connection.addReadCallback(self.handleReplyStr)
+            self.connection.addReadCallback(readCallback)
             self.connection.addStateCallback(self.updConnState)
         else:
             self.connection = RO.Comm.HubConnection.NullConnection()
@@ -419,6 +423,7 @@ class KeyVarDispatcher(object):
         """
         wasConnected = self._isConnected
         self._isConnected = conn.isConnected()
+#        print "updConnState; wasConnected=%s, isConnected=%s" % (wasConnected, self._isConnected)
 
         if wasConnected != self._isConnected:
             self.reactor.callLater(_ShortInterval, self.refreshAllVar)
@@ -493,7 +498,7 @@ class KeyVarDispatcher(object):
 #        print "%s.makeReply(cmdr=%s, cmdID=%s, actor=%s, msgType=%s, dataStr=%r)" % \
 #            (self.__class__.__name__, cmdr, cmdID, actor, msgType, dataStr)
         if cmdr == None:
-            cmdr = self.connection.cmdr
+            cmdr = self.connection.cmdr or "me.me"
         if actor == None:
             actor = self.name
 
@@ -520,7 +525,7 @@ class KeyVarDispatcher(object):
         - ignoreFailed: refresh even if an earlier attempt failed
         - startOver: list all vars as bad and then reload
         """
-#       print "RO.KeyVarDispatcher.refreshAllVar(ignoreFailed=%s, startOver=%s)" % (ignoreFailed, startOver)
+#        print "RO.KeyVarDispatcher.refreshAllVar(ignoreFailed=%s, startOver=%s)" % (ignoreFailed, startOver)
 
         # cancel pending update, if any
         cancelTimer(self._refreshAllTimer)
@@ -534,7 +539,7 @@ class KeyVarDispatcher(object):
                 for keyVar in keyVarList:
                     keyVar.setNotCurrent()
 
-            # if starting over, schedule a new refreshAllVar ASAP (let pending events run first)
+            # if connected, schedule another call right away (just give pending events a chance)
             if self._isConnected:
                 self._refreshAllTimer = self.reactor.callLater(_ShortInterval, self.refreshAllVar)
 
@@ -558,7 +563,7 @@ class KeyVarDispatcher(object):
 
         Once the iterator is exhausted, schedule refreshAllVar to run at the usual interval later.
         """
-#       print "RO.KeyVarDispatcher._refreshRemVars(keyVarListIter=%s, ignoreFailed=%s)" % (keyVarListIter, ignoreFailed)
+#        print "RO.KeyVarDispatcher._refreshRemVars(keyVarListIter=%s, ignoreFailed=%s)" % (keyVarListIter, ignoreFailed)
         try:
             if not self._isConnected:
                 # schedule parent function asap and bail out
@@ -568,10 +573,10 @@ class KeyVarDispatcher(object):
             # refresh all variables
             for keyVarList in keyVarListIter:
                 for keyVar in keyVarList:
-                    if not keyVar.isCurrent and keyVar.hasRefreshCmd():
-                        # refreshInfo is (actor, cmdStr, timeLim)
-                        # and refreshCmdDict keys are (actor, cmdStr)
-                        cmdState = self.refreshCmdDict.get(keyVar.getRefreshInfo()[0:2], None)
+                    if not keyVar.isCurrent and keyVar.hasRefreshCmd:
+                        # refreshInfo is (actor, cmdStr)
+                        # and refreshCmdDict keys are the same
+                        cmdState = self.refreshCmdDict.get(keyVar.getRefreshInfo(), None)
                         if cmdState == None or (ignoreFailed and cmdState == False):
                             self.refreshOneVar(keyVar)
                             
@@ -593,14 +598,14 @@ class KeyVarDispatcher(object):
     def refreshOneVar(self, keyVar):
         """Refresh the specified keyVariable.
         """
-        if not keyVar.hasRefreshCmd():
+        if not keyVar.hasRefreshCmd:
             return
-#       print "refreshOneVar(%s) with %s" % (keyVar, keyVar.getRefreshInfo())
-        actor, cmdStr, timeLim = keyVar.getRefreshInfo()
+#        print "refreshOneVar(%s) with %s" % (keyVar, keyVar.getRefreshInfo())
+        actor, cmdStr = keyVar.getRefreshInfo()
         cmdVar = keyvar.CmdVar (
             actor = actor,
             cmdStr = cmdStr,
-            timeLim = timeLim,
+            timeLim = _RefreshTimeLim,
             isRefresh = True,
         )
         self.refreshCmdDict[(actor, cmdStr)] = keyVar

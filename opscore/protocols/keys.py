@@ -140,11 +140,22 @@ class TypedValues(Consumer):
 class Key(Consumer):
     """
     Base class for a command or reply keyword consumer
+    
+    Inputs:
+    - name: keyword name
+    - a list of one or more value types
+    - help: an optional help string
+    - doCache: is it reasonable to read this value from a cache?
+        defaults to True only if the keyword can have values and you do not specify refreshCmd
+    - refreshCmd: an optional command that can be sent to the actor to refresh this value
     """
     def __init__(self,name,*vtypes,**metadata):
         self.name = name
         self.typedValues = TypedValues(vtypes)
         self.help = metadata.get('help',None)
+        self.refreshCmd = metadata.get('refreshCmd', None)
+        defDoCache = (self.typedValues.maxVals > 0) and not self.refreshCmd
+        self.doCache = bool(metadata.get('doCache', defDoCache))
         if 'unique' in metadata:
             self.unique = metadata.get('unique')
 

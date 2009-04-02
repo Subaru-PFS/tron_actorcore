@@ -31,7 +31,6 @@ MsgCodeDict = {
     "f":("failed", RO.Constants.sevError), # command failed
     "w":("warning", RO.Constants.sevWarning),
     "i":("information", RO.Constants.sevNormal), # the initial state
-    "s":("status", RO.Constants.sevNormal),
     ">":("queued", RO.Constants.sevNormal),
     ":":("finished", RO.Constants.sevNormal),
 }
@@ -62,6 +61,13 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self._isCurrent = False
         self._isGenuine = False
         self._timeStamp = 0
+        if self.key.refreshCmd:
+            self._refreshActor = self.actor
+            self._refreshCmd = key.refreshCmd
+        else:
+            # have the model set this to a keys command later if not keys.doCache
+            self._refreshActor = None
+            self._refreshCmd = None
         RO.AddCallback.BaseMixin.__init__(self, defCallNow = True)
     
     def __repr__(self):
@@ -154,6 +160,16 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self.addCallback(callFunc)
 
     @property
+    def hasRefreshCmd(self):
+        """Return True if has a refresh command.
+        """
+        return bool(self._refreshCmd)
+    
+    def getRefreshInfo(self):
+        """Return refreshActor, refreshCmd"""
+        return (self._refreshActor, self._refreshCmd)
+
+    @property
     def isCurrent(self):
         """Return True if the client is connected to the hub and if
         the actor has output the data since it was last connected to the hub.
@@ -225,10 +241,6 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self._isCurrent = False
         self._basicDoCallbacks(self)
 
-    def hasRefreshCmd(self):
-        """Temporary hack"""
-        return False
-
 
 class CmdVar(object):
     """Issue a command via the dispatcher and receive callbacks
@@ -240,7 +252,7 @@ class CmdVar(object):
         timeLim = 0,
         description = "",
         callFunc = None,
-        callCodes = protoMess.ReplyHeader.DoneCodes,
+        callCodes = DoneCodes,
         isRefresh = False,
         timeLimKeyVar = None,
         timeLimKeyInd = 0,
@@ -278,7 +290,7 @@ class CmdVar(object):
         self.cmdID = None
         self.timeLim = timeLim
         self.description = description
-        self.isRefresh = isRefresh
+        self.isRefresh = bool(isRefresh)
         self._timeLimKeyVar = timeLimKeyVar
         self._timeLimKeyInd = int(timeLimKeyInd)
         if self._timeLimKeyVar:
@@ -324,7 +336,7 @@ class CmdVar(object):
         if self.dispatcher and not self.isDone:
             self.dispatcher.abortCmdByID(self.cmdID)
 
-    def addCallback(self, callFunc, callCodes = protoMess.ReplyHeader.DoneCodes):
+    def addCallback(self, callFunc, callCodes = DoneCodes):
         """Executes the given function whenever a reply is seen
         for this user with a matching command number
 
@@ -332,11 +344,10 @@ class CmdVar(object):
         - callFunc: a function to call when the command changes state;
             it receives one argument: this CmdVar
         - callCodes: the message codes for which to call the callback;
-            a collection of one or more opscore.protocols.messages.ReplyHeader.MsgCode values.
-            useful predefined sets include:
-                opscore.protocols.messages.ReplyHeader.DoneCodes (command finished or failed)
-                opscore.protocols.messages.ReplyHeader.FailedCodes (command failed)
-                opscore.protocols.messages.ReplyHeader.MsgCode (all message codes, thus any reply)
+            a string of one or more message codes; useful predefined sets include:
+                DoneCodes (command finished or failed)
+                FailedCodes (command failed)
+                AllCodes (all message codes, thus any reply)
         """
         self.callCodesFuncList.append((callCodes, callFunc))
     
@@ -344,7 +355,7 @@ class CmdVar(object):
     def didFail(self):
         """Return True if the command failed, False otherwise.
         """
-        return self.lastCode in protoMess.ReplyHeader.FailTypes
+        return self.lastCode in FailedCodes
     
     @property
     def severity(self):
@@ -395,7 +406,7 @@ class CmdVar(object):
     def isDone(self):
         """Return True if the command is finished, False otherwise.
         """
-        return self.lastCode in protoMess.ReplyHeader.DoneCodes
+        return self.lastCode in DoneCodes
 
     @property
     def lastReply(self):
@@ -430,7 +441,7 @@ class CmdVar(object):
         """Call command callbacks.
         Warn and do nothing else if called after the command has finished.
         """
-        if self.lastCode in protoMess.ReplyHeader.DoneCodes:
+        if self.lastCode in DoneCodes:
             sys.stderr.write("Command %s already finished; no more replies allowed\n" % (self,))
             return
         self.replyList.append(reply)
@@ -443,7 +454,7 @@ class CmdVar(object):
                 except Exception:
                     sys.stderr.write("%s callback %s failed\n" % (self, callFunc))
                     traceback.print_exc(file=sys.stderr)
-        if self.lastCode in protoMess.ReplyHeader.DoneCodes:
+        if self.lastCode in DoneCodes:
             self._cleanup()
     
     def _timeLimKeyVarCallback(self, keyVar):

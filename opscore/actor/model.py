@@ -26,7 +26,10 @@ class Model(object):
     """Subclass for your actor. Your subclass must use a singleton pattern
     because this class may only be instantiated once per actor.
     
-    Before instantiating the first model, call setDispatcher.
+    Before instantiating the first model, call setDispatcher (else you'll get a RuntimeError).
+    
+    Note: only keyVars defined in the actor's dictionary are refreshed automatically.
+    Any keyVars you add to the subclass are synthetic keyVars that you should set yourself.
     """
     _registeredActors = set()
     dispatcher = None
@@ -39,12 +42,27 @@ class Model(object):
         if self.dispatcher == None:
             raise RuntimeError("Dispatcher not set")
 
+        cachedKeyVars = []
+        excludedKeyNames = []
         keyVarDict = dict()
         keysDict = protoKeys.KeysDictionary.load(actor)
         for key in keysDict.keys.itervalues():
             keyVar = keyvar.KeyVar(actor, key)
+            if keyVar.hasRefreshCmd or not key.doCache:
+                excludedKeyNames.append(keyVar.name)
+            else:
+                cachedKeyVars.append(keyVar)
             setattr(self, keyVar.name, keyVar)
             self.dispatcher.addKeyVar(keyVar)
+        # exclude is not yet supported so do it the ugly way
+        if True:
+            cachedKeyNames = [keyVar.name for keyVar in cachedKeyVars]
+            refreshCmdStr = "getFor=%s %s" % (self.actor, " ".join(cachedKeyNames))
+        else:
+            refreshCmdStr = "getFor=%s exclude=%s" % (self.actor, ",".join(excludedKeyNames))
+        for keyVar in cachedKeyVars:
+            keyVar._refreshActor = "keys"
+            keyVar._refreshCmd = refreshCmdStr
 
         self._registeredActors.add(actor)
 
