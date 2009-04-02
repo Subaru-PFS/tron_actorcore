@@ -262,19 +262,18 @@ class ReplyHeader(Canonized):
     DoneCodes = ':f!'
     FailedCodes = 'f!'
     
-    def __init__(self,program,user,commandId,actor,code):
+    def __init__(self,program,user,actorStack,commandId,actor,code):
         self.program = program
         self.user = user
+        self.actorStack = actorStack
+        # The commander name is the concatenation of the first three fields and should
+        # exactly reproduce the initial word of the reply message string.
+        self.cmdrName = "%s.%s%s" % (self.program,self.user,self.actorStack)
         self.commandId = int(commandId)
         self.actor = actor
         self.code = str(code).lower()
         if self.code not in ReplyHeader.AllCodes:
             raise MessageError("Invalid reply header code: %s" % code)
-
-    @property
-    def cmdrName(self):
-        """Return commander name = program.user"""
-        return ".".join((self.program, self.user))
 
     def canonical(self):
         return "%s.%s %d %s %s" % (self.program,self.user,self.commandId,self.actor,self.code)

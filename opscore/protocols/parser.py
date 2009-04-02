@@ -39,10 +39,11 @@ class ReplyParser(TemporaryBase):
     above since PLY applies grammar rules in the order in which they are
     declared.
     """
-    _name = '(?:[A-Za-z][A-Za-z0-9_-]*)'
+    _name = '(?:[A-Za-z][A-Za-z0-9_]*)'
+    _extra = '(?:\.[A-Za-z][A-Za-z0-9_.]*)'
     _number = '0|[1-9][0-9]*'
-    hdr_pattern = re.compile('(%s?)\.(%s)[ \t]+(%s)[ \t]+(%s)[ \t]+([>iIwW:fF!])[ \t]+'
-        % (_name,_name,_number,_name))
+    hdr_pattern = re.compile('(%s?)\.(%s)(%s?)[ \t]+(%s)[ \t]+(%s)[ \t]+([>iIwW:fF!])[ \t]+'
+        % (_name,_name,_extra,_number,_name))
 
     # lexical tokens
     tokens = ['EQUALS','COMMA','VALUE','NAME_OR_VALUE','QUOTED','SEMICOLON']
@@ -282,37 +283,3 @@ class ParserBase(object):
 
 ReplyParser.__bases__ = (ParserBase,)
 CommandParser.__bases__ = (ParserBase,)
-
-
-if __name__ == "__main__":
-
-    rParser = ReplyParser()
-    try:
-        reply = rParser.parse("tui.operator 911 CoffeeMakerICC : type=decaf;blend = 20:80, Kenyan,Bolivian ; now")
-        print 'Parsing reply %r' % reply.string
-        for keyword in reply.keywords:
-            print keyword.name,keyword.values
-        print reply
-        print reply.canonical()
-        print reply.tokenized()
-        assert(reply.canonical() == rParser.parse(reply.canonical()).canonical())
-        assert(reply.tokenized() == rParser.parse(reply.canonical()).tokenized())
-        assert(reply.tokenized() == rParser.parse(reply.tokenized()).tokenized())
-    except ParseError,e:
-        print e 
-    
-    cParser = CommandParser()
-    try:
-        cmd = cParser.parse("drink 'coffee' type=decaf blend = 20:80, Kenyan,Bolivian now")
-        print 'Parsing command %r' % cmd.string
-        print cmd.name,cmd.values
-        for keyword in cmd.keywords:
-            print ' ',keyword.name,keyword.values
-        print cmd
-        print cmd.canonical()
-        print cmd.tokenized()
-        assert(cmd.canonical() == cParser.parse(cmd.canonical()).canonical())
-        assert(cmd.tokenized() == cParser.parse(cmd.canonical()).tokenized())
-        assert(cmd.tokenized() == cParser.parse(cmd.tokenized()).tokenized())
-    except ParseError,e:
-        print e
