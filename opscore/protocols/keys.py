@@ -365,8 +365,10 @@ class KeysDictionary(object):
             return kdict
         except ImportError:
             raise KeysDictionaryError('no keys dictionary found for %s' % dictname)
-        except SyntaxError:
-            raise KeysDictionaryError('badly formatted keys dictionary in %s'
-                % dictfile.name)
+        except Exception,e:
+            indent = '\n >> '
+            description = indent + indent.join(e.message.split('\n'))
+            raise KeysDictionaryError('badly formatted keys dictionary in %s:%s'
+                % (dictfile.name,description))
         finally:
             if dictfile: dictfile.close()
