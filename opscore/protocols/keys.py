@@ -367,7 +367,7 @@ class KeysDictionary(object):
             raise KeysDictionaryError('no keys dictionary found for %s' % dictname)
         except Exception,e:
             indent = '\n >> '
-            description = indent + indent.join(e.message.split('\n'))
+            description = indent + indent.join(str(e).split('\n'))
             raise KeysDictionaryError('badly formatted keys dictionary in %s:%s'
                 % (dictfile.name,description))
         finally:
