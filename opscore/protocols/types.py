@@ -177,9 +177,19 @@ class RepeatedValueType(Descriptive):
 
 
 class Invalid(object):
+    """
+    Represents an invalid value
+    """
     units = ''
     def __repr__(self):
         return '(invalid)'
+    def __eq__(self,other):
+        """
+        All Invalid instances are equal to each other and to None
+        """
+        return isinstance(other,Invalid) or other is None
+    def __ne__(self,other):
+        return not self.__eq__(other)
     
 # a constant object representing an invalid value
 InvalidValue = Invalid()
