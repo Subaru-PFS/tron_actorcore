@@ -14,25 +14,22 @@ import RO.AddCallback
 import RO.Constants
 
 import opscore.protocols.messages as protoMess
-import msgtypes
 
-__all__ = ["KeyVar", "AllCodes", "DoneCodes", "WarningCodes", "FailCodes", "MsgCodeDict"]
+__all__ = ["KeyVar", "AllCodes", "DoneCodes", "WarningCodes", "FailCodes", "MsgCodeSeverity"]
 
-AllCodes = protoMess.ReplyHeader.AllCodes
-DoneCodes = protoMess.ReplyHeader.DoneCodes
-FailedCodes = protoMess.ReplyHeader.FailedCodes
+AllCodes = "IW:F!>D"
+DoneCodes = ":F!"
+FaileCodes = "F!"
 
-# MsgCodeDict translates message type characters to message categories
-# entries are: (meaning, category), where:
-# meaning is used for messages displaying what's going on
-# category is coarser and is used for filtering by category
-MsgCodeDict = {
-    "!":("fatal error", RO.Constants.sevError), # a process dies
-    "f":("failed", RO.Constants.sevError), # command failed
-    "w":("warning", RO.Constants.sevWarning),
-    "i":("information", RO.Constants.sevNormal), # the initial state
-    ">":("queued", RO.Constants.sevNormal),
-    ":":("finished", RO.Constants.sevNormal),
+# MsgCodeSeverity a dictionary of: message code: associated severity
+MsgCodeSeverity = {
+    "D": RO.Constants.sevNormal, # debug
+    "I": RO.Constants.sevNormal, # information
+    ">": RO.Constants.sevNormal, # warning
+    ":": RO.Constants.sevNormal, # command finished
+    "W": RO.Constants.sevWarning, # warning
+    "F": RO.Constants.sevError), # command failed
+    "!": RO.Constants.sevError), # command failed and actor is in trouble
 }
 
 class KeyVar(RO.AddCallback.BaseMixin):

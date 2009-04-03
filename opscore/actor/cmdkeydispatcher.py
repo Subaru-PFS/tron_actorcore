@@ -421,7 +421,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
         try:
             msgCode = reply.header.code
-            severity = keyvar.MsgCodeDict[msgCode][1]
+            severity = keyvar.MsgCodeSeverity[msgCode][1]
             self.logMsg(
                 msgStr = reply.string,
                 severity = severity,
@@ -436,21 +436,21 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         cmdr = None,
         cmdID = 0,
         actor = None,
-        msgType = "f",
+        msgCode = "F",
         dataStr = "",
     ):
         """Generate a Reply object (opscore.protocols.messages.Reply) based on the supplied data.
         
         Useful for reporting internal errors.
         """
-#        print "%s.makeReply(cmdr=%s, cmdID=%s, actor=%s, msgType=%s, dataStr=%r)" % \
-#            (self.__class__.__name__, cmdr, cmdID, actor, msgType, dataStr)
+#        print "%s.makeReply(cmdr=%s, cmdID=%s, actor=%s, msgCode=%s, dataStr=%r)" % \
+#            (self.__class__.__name__, cmdr, cmdID, actor, msgCode, dataStr)
         if cmdr == None:
             cmdr = self.connection.cmdr or "me.me"
         if actor == None:
             actor = self.name
 
-        headerStr = "%s %d %s %s" % (cmdr, cmdID, actor, msgType)
+        headerStr = "%s %d %s %s" % (cmdr, cmdID, actor, msgCode)
         try:
             msgStr = " ".join((headerStr, dataStr))
             reply = self.parser.parse(msgStr)
@@ -622,7 +622,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                         errReply = self.makeReply(
                             cmdID = cmdVar.cmdID,
                             actor = None,
-                            msgType = "w",
+                            msgCode = "w",
                             dataStr = "RefreshFailed; Actor=%r; Keyword=%r; Cmd=%r; Text=\"deleting refresh command\"" % \
                                 (keyVar.actor, keyVar.name, cmdVar.cmdStr),
                         )       
@@ -696,7 +696,7 @@ if __name__ == "__main__":
         cmdr = "myprog.me",
         cmdID = cmdID - 1,
         actor = "test",
-        msgType = ":",
+        msgCode = ":",
         dataStr = dataStr,
     )
     print "\nDispatching message with wrong cmdID; only KeyVar callbacks should called:"
@@ -705,7 +705,7 @@ if __name__ == "__main__":
     reply = kvd.makeReply(
         cmdID = cmdID,
         actor = "wrongActor",
-        msgType = ":",
+        msgCode = ":",
         dataStr = dataStr,
     )
     print "\nDispatching message with wrong actor; only CmdVar callbacks should be called:"
@@ -714,7 +714,7 @@ if __name__ == "__main__":
     reply = kvd.makeReply(
         cmdID = cmdID,
         actor = "test",
-        msgType = ":",
+        msgCode = ":",
         dataStr = dataStr,
     )
     print "\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:"
