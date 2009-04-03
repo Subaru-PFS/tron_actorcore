@@ -258,7 +258,9 @@ class ReplyHeader(Canonized):
     Represents the headers of a reply
     """
     AllCodes = '>iw:f!'
-    MsgCode = types.Enum('QUEUED','INFORMATION','WARNING','FINISHED','ERROR','FATAL',name='code')
+    MsgCode = types.Enum('>','I','W',':','F','!',
+        labelHelp=['Queued','Information','Warning','Finished','Error','Fatal'],
+        name='code',help='Reply header status code')
     DoneCodes = ':f!'
     FailedCodes = 'f!'
     
@@ -271,12 +273,13 @@ class ReplyHeader(Canonized):
         self.cmdrName = "%s.%s%s" % (self.program,self.user,self.actorStack)
         self.commandId = int(commandId)
         self.actor = actor
-        self.code = str(code).lower()
-        if self.code not in ReplyHeader.AllCodes:
+        try:
+            self.code = ReplyHeader.MsgCode(code)
+        except ValueError:
             raise MessageError("Invalid reply header code: %s" % code)
 
     def canonical(self):
-        return "%s.%s %d %s %s" % (self.program,self.user,self.commandId,self.actor,self.code)
+        return "%s %d %s %s" % (self.cmdrName,self.commandId,self.actor,self.code)
         
     def tokenized(self):
         return 'prog.user 123 actor %s' % self.code

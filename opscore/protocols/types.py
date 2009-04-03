@@ -60,6 +60,8 @@ class ValueType(type,Descriptive):
     """
     A metaclass for types that represent an enumerated or numeric value
     """
+    _nameSpec = re.compile('[A-Za-z][A-Za-z0-9_]*')
+    
     def __new__(cls,*args,**kwargs):
         """
         Allocates memory for a new ValueType class
@@ -81,7 +83,17 @@ class ValueType(type,Descriptive):
                 return self.reprFmt % self
             else:
                 return cls.baseType.__str__(self)
-                
+
+        # force the invalid string, if present, to be lowercase
+        if 'invalid' in kwargs:
+            kwargs['invalid'] = kwargs['invalid'].lower()
+            
+        # check that the name string, if present, is a valid identifier
+        if 'name' in kwargs:
+            matched = ValueType._nameSpec.match(kwargs['name'])
+            if not matched or not matched.end() == len(kwargs['name']):
+                raise ValueTypeError('invalid type name: %s' % kwargs['name'])
+
         get = lambda name,default=None: kwargs.get(name,cls.__dict__.get(name,default))
 
         dct = {
@@ -138,7 +150,7 @@ class ValueType(type,Descriptive):
         return self.__name__
 
     def validate(self,value):
-        if self.invalid and value == self.invalid:
+        if self.invalid and value.lower() == self.invalid:
             raise InvalidValueError
         return value
 
@@ -198,7 +210,12 @@ class Float(ValueType):
     baseType = float
     storage = 'flt4'
     def new(cls,value):
-        return float.__new__(cls,cls.validate(value))
+        fvalue = float(cls.validate(value))
+        # the limit value is float(340282346638528859811704183484516925440)
+        # where 3402... is (2 - 2^(-23)) 2^127
+        if abs(fvalue) > 3.4028234663852886e+38:
+            raise ValueError('Invalid literal for Float: %r' % value)
+        return float.__new__(cls,fvalue)
     
 class Double(ValueType):
     baseType = float
@@ -224,9 +241,6 @@ class String(ValueType):
     def new(cls,value):
         return str.__new__(cls,cls.validate(value))
 
-class Filename(String):
-    pass
-
 class UInt(ValueType):
     baseType = long
     storage = 'int4'
@@ -247,7 +261,7 @@ class Hex(UInt):
 # Enumerated value type
 class Enum(ValueType):
 
-    baseType = int
+    baseType = str
     storage = 'int2'
     
     @classmethod
@@ -256,15 +270,21 @@ class Enum(ValueType):
             raise ValueTypeError('missing enum labels in ctor')
         dct['enumLabels'] = args
         dct['enumValues'] = dict(zip(args,range(len(args))))
-        def doStr(self):
-            return self.enumLabels[self]
-        dct['__str__'] = doStr
-        if dct['strFmt']:
-            print 'Enum: ignoring strFmt metadata'
+        # look for optional per-label help text
+        labelHelp = kwargs.get('labelHelp',None)
+        if labelHelp and not len(labelHelp) == len(args):
+            raise ValueTypeError('wrong number of enum label help strings provided')
+        dct['labelHelp'] = labelHelp
+        # provide a custom storage value helper since our storage type is int2
+        # but our basetype is str
+        def storageValue(self):
+            return str(self.enumValues[self])
+        dct['storageValue'] = storageValue
+        # enumerated value comparisons are case insensitive
         def eqTest(self,other):
-            return str(other) == self.enumLabels[self] or cls.baseType(self) == other
+            return str(other).lower() == self.lower()
         def neTest(self,other):
-            return str(other) != self.enumLabels[self] and cls.baseType(self) != other
+            return str(other).lower() != self.lower()
         dct['__eq__'] = eqTest
         dct['__ne__'] = neTest
 
@@ -277,16 +297,21 @@ class Enum(ValueType):
         cls.validate(value)
         if isinstance(value,int):
             if value >= 0 and value < len(cls.enumLabels):
-                return int.__new__(cls,value)
+                return str.__new__(cls,cls.enumLabels[value])
             else:
                 raise ValueError('Invalid index for Enum: %d' % value)
-        try:
-            return int.__new__(cls,cls.enumValues[value])
-        except KeyError:
-            raise ValueError('Invalid label for Enum: "%s"' % value)
-            
+        value = str(value).lower()
+        for label in cls.enumLabels:
+            if value == label.lower():
+                return str.__new__(cls,label)
+        raise ValueError('Invalid label for Enum: "%s"' % value)
+
     def addDescriptors(cls):
-        cls.descriptors.append(('Values',','.join(cls.enumLabels)))
+        for index,label in enumerate(cls.enumLabels):
+            description = label
+            if cls.labelHelp:
+                description += ' (%s)' % cls.labelHelp[index]
+            cls.descriptors.append(('Value-%d' % index,description))
 
 # Boolean value type
 class Bool(ValueType):
@@ -348,7 +373,7 @@ class Bits(ValueType):
         specs = [ ]
         for field in args:
             parsed = cls.fieldSpec.match(field)
-            if not parsed:
+            if not parsed or not parsed.end() == len(field):
                 raise ValueTypeError('invalid bitfield spec: %s' % field)
             (name,width) = parsed.groups()
             width = int(width or 1)
