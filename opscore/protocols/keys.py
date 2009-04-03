@@ -262,9 +262,11 @@ class KeysDictionaryError(KeysError):
     pass
 
 class KeysDictionary(object):
-    """A collection of Keys associated with a given name (typically the name of an actor).
+    """
+    A collection of Keys associated with a given name
     
-    Note: contains a registry of all known KeysDictionaries, for use by the load method.
+    The dictionary name is typically the name of an actor. Contains a
+    registry of all known KeysDictionaries, for use by the load method.
     """
     registry = { }
 
@@ -274,7 +276,7 @@ class KeysDictionary(object):
         
         Overwrites any existing dictionary with the same name. The
         version should be specified as a (major,minor) tuple of
-        integers.
+        integers. Dictionary names must be lower case.
         """
         self.name = name
         try:
@@ -283,6 +285,8 @@ class KeysDictionary(object):
             raise KeysDictionaryError(
             'Invalid version: expected (major,minor) tuple of integers, got %r' % version)
         self.version = version
+        if not name == name.lower():
+            raise KeysDictionaryError('Invalid name: must be lower case: %s' % name)
         KeysDictionary.registry[name] = self
         self.keys = { }
         for key in keys:
@@ -300,23 +304,29 @@ class KeysDictionary(object):
         if not isinstance(key,Key):
             raise KeysDictionaryError('KeysDictionary can only contain Keys')
         name = getattr(key,'unique',key.name)
-        if name in self.keys:
+        if name.lower() in self.keys:
             raise KeysDictionaryError('KeysDictionary name is not unique: %s' % name)
-        self.keys[name] = key
+        self.keys[name.lower()] = key
 
     def __getitem__(self,name):
-        return self.keys[name]
+        return self.keys[name.lower()]
 
     def __contains__(self,name):
-        return name in self.keys
+        return name.lower() in self.keys
         
     def describe(self):
+        """
+        Generates text describing all of our keys in alphabetical order
+        """
         text = 'Keys Dictionary for "%s" version %r\n' % (self.name,self.version)
         for name in sorted(self.keys):
             text += '\n' + self.keys[name].describe()
         return text
         
     def describeAsHTML(self):
+        """
+        Generates HTML describing all of our keys in alphabetical order
+        """
         content = utilHtml.Div(
             utilHtml.Div(
                 utilHtml.Span(self.name,className='actorName'),
@@ -361,6 +371,11 @@ class KeysDictionary(object):
             # evaluate the keys dictionary as a python expression
             filedata = dictfile.read()
             kdict = eval(filedata,symbols)
+            # check that the dictionary filename and name match
+            if not dictname == kdict.name:
+                raise KeysDictionaryError(
+                    'dictionary filename and name are different: %s, %s'
+                    % (dictname,kdict.name))
             # do a checksum so that we can detect changes independently of versioning
             kdict.checksum = hashlib.md5(filedata).hexdigest()
             return kdict
