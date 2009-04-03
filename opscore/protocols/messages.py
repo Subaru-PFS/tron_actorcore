@@ -1,7 +1,7 @@
 """
 Message classes for SDSS-3 command and reply protocols
 
-Refer to https://trac.sdss3.org/wiki/Ops/Parsing for details.
+Refer to https://trac.sdss3.org/wiki/Ops/Messages for details.
 """
 
 # Created 10-Oct-2008 by David Kirkby (dkirkby@uci.edu)
