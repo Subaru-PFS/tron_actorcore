@@ -70,10 +70,10 @@ History:
 2009-01-06 ROwen    Improved some doc strings.
 2009-03-24 ROwen    Moved to opscore and modified to use opscore.
 2009-03-25 ROwen    Fixed a bug that made KeyVar refresh inefficient (also fixed in RO.KeyDispatcher).
+2009-04-03 ROwen    Split out keyvar functionality into a very simple base class.
 
 TO DO:
 - Clean up use of "connection" once I know what I'll have available
-- Fix support for refresh commands, once it is implemented in KeyVar
 """
 import sys
 import time
@@ -89,6 +89,7 @@ from opscore.utility.twisted import cancelTimer
 import opscore.protocols.keys as protoKeys
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess
+import keydispatcher
 import keyvar
 
 __all__ = ["KeyVarDispatcher"]
@@ -102,8 +103,8 @@ _CmdNumWrap = 1000 # value at which user command ID numbers wrap
 
 _RefreshTimeLim = 20 # time limit for refresh commands (sec)
 
-class KeyVarDispatcher(object):
-    """Parse replies and sets keyword variables. Also manage commands and their replies.
+class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
+    """Parse replies and sets KeyVars. Also manage CmdVars and their replies.
     """
     def __init__(self,
         name = "KeyVarDispatcher",
@@ -121,20 +122,14 @@ class KeyVarDispatcher(object):
             where the first argument is positional and the others are by name
             and severity is an RO.Constants.sevX constant
         """
+        keydispatcher.KeyVarDispatcher.__init__(self)
+        
         self.name = name
 
         self.parser = protoParse.ReplyParser()
         self.reactor = twisted.internet.reactor
         self._isConnected = False
 
-        # dictionary of lists of KeyVars; keys are (actor.lower(), keyName.lower()) tuples;
-        # values are lists of KeyVars
-        # (having a list of KeyVars allows more than one KeyVar for the same actor keyword)
-        self.keyVarListDict = dict()
-
-        # set of actors for which loadActorDictionary has been called
-        self.loadedActors = set()
-        
         # cmdDict keys are command ID and values are KeyCommands
         self.cmdDict = dict()
         
@@ -158,7 +153,7 @@ class KeyVarDispatcher(object):
         
         if connection:
             def readCallback(sock, data):
-                self.handleReplyStr(data)
+                self.dispatchReplyStr(data)
             self.connection = connection
             self.connection.addReadCallback(readCallback)
             self.connection.addStateCallback(self.updConnState)
@@ -208,20 +203,6 @@ class KeyVarDispatcher(object):
             dataStr = "Aborted; Actor=%r; Cmd=%r" % (cmdVar.actor, cmdVar.cmdStr),
         )
         self._replyCmdVar(cmdVar, errReply)
-
-    def addKeyVar(self, keyVar):
-        """
-        Adds a keyword variable (opscore.actor.keyvar.KeyVar) to the collection.
-        
-        Inputs:
-        - keyVar: the keyword variable (opscore.actor.keyvar.KeyVar)
-        """
-        dictKey = self._makeDictKey(keyVar.actor, keyVar.name)
-        # get list of existing keyVars with the same actor and keyword name,
-        # adding an empty list to self.keyVarListDict if none are already present
-        keyList = self.keyVarListDict.setdefault(dictKey, [])
-        # append new keyVar to the list
-        keyList.append(keyVar)
 
     def checkCmdTimeouts(self):
         """Check all pending commands for timeouts"""
@@ -286,7 +267,7 @@ class KeyVarDispatcher(object):
         # schedule a new checkCmdTimeouts at the usual interval
         self._checkCmdTimer = self.reactor.callLater(_TimeoutInterval, self.checkCmdTimeouts)
     
-    def dispatch(self, reply):
+    def dispatchReply(self, reply):
         """Set KeyVars based on the supplied Reply
         
         reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
@@ -298,55 +279,22 @@ class KeyVarDispatcher(object):
          - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
-        actor = reply.header.actor.lower()
-        cmdr = reply.header.cmdrName
-        if actor.startswith("keys_"):
-            # data is from the hub's keyword cache
-            actor = actor[5:]
-            isGenuine = False
-        else:
-            isGenuine = True
-        for keyword in reply.keywords:
-            keyVarList = self.getKeyVarList(actor, keyword.name)
-            for keyVar in keyVarList:
-                try:
-                    keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply)
-                except:
-                    traceback.print_exc(file=sys.stderr)
+        # handle KeyVars
+        keydispatcher.KeyVarDispatcher.dispatchReply(self, reply)
 
         # if you are the commander for this message,
         # execute the command callback (if any)
-        if cmdr == self.connection.cmdr:
+        if reply.header.cmdrName == self.connection.cmdr:
             # get the command for this command id, if any
             cmdVar = self.cmdDict.get(reply.header.commandId, None)
             if cmdVar != None:
                 # send reply but don't log (that's already been done)
                 self._replyCmdVar(cmdVar, reply, doLog=False)
-
-    def getKeyVarList(self, actor, keyName):
-        """Return the list of KeyVars by this name and actor; return [] if no match.
-        
-        Do not modify the returned list. It may not be a copy.
-        """
-        return self.keyVarListDict.get(self._makeDictKey(actor, keyName), [])
-
-    def getKeyVar(self, actor, keyName):
-        """Return a keyVar by this name and actor.
-        
-        If there are multiple matching keyVars returns the first registered;
-        to get a different keyVar use getKeyVarList.
-        
-        Raise LookupError if no such keyword found.
-        """
-        keyVarList = self.getKeyVarList(actor, keyName)
-        if not keyVarList:
-            raise LookupError("Could not find a keyVar with actor=%s, keyName=%s" % (actor, keyName))
-        return keyVarList[0]
                     
-    def handleReplyStr(self, replyStr):
+    def dispatchReplyStr(self, replyStr):
         """Read, parse and dispatch a message from the hub.
         """
-#        print "%s.handleReplyStr(%r)" % (self.__class__.__name__, replyStr)
+#        print "%s.dispatchReplyStr(%r)" % (self.__class__.__name__, replyStr)
         # parse message; if that fails, log it as an error
         try:
             reply = self.parser.parse(replyStr)
@@ -362,7 +310,7 @@ class KeyVarDispatcher(object):
         
         # dispatch message
         try:
-            self.dispatch(reply)
+            self.dispatchReply(reply)
         except Exception, e:
             sys.stderr.write("Could not dispatch: %r\nwhich was parsed as reply=%r\n" % (replyStr, reply))
             traceback.print_exc(file=sys.stderr)
@@ -701,7 +649,7 @@ if __name__ == "__main__":
     root = Tkinter.Tk()
     twisted.internet.tksupport.install(root)
     
-    kvd = KeyVarDispatcher()
+    kvd = CmdKeyVarDispatcher()
 
     def showVal(keyVar):
         print "keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent)
@@ -752,7 +700,7 @@ if __name__ == "__main__":
         dataStr = dataStr,
     )
     print "\nDispatching message with wrong cmdID; only KeyVar callbacks should called:"
-    kvd.dispatch(reply)
+    kvd.dispatchReply(reply)
 
     reply = kvd.makeReply(
         cmdID = cmdID,
@@ -761,7 +709,7 @@ if __name__ == "__main__":
         dataStr = dataStr,
     )
     print "\nDispatching message with wrong actor; only CmdVar callbacks should be called:"
-    kvd.dispatch(reply)
+    kvd.dispatchReply(reply)
 
     reply = kvd.makeReply(
         cmdID = cmdID,
@@ -770,7 +718,7 @@ if __name__ == "__main__":
         dataStr = dataStr,
     )
     print "\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:"
-    kvd.dispatch(reply)
+    kvd.dispatchReply(reply)
     
     print "\nTesting keyVar refresh"
     kvd.refreshAllVar()
