@@ -274,10 +274,6 @@ class ReplyHeader(Canonized):
             self.code = ReplyHeader.MsgCode(code)
         except ValueError:
             raise MessageError("Invalid reply header code: %s" % code)
-        # does this code indicate we failed?
-        self.failed = (self.code == 'F' or self.code == '!')
-        # does this code indicate we are done?
-        self.done = (self.failed or self.code == ':')
 
     def canonical(self):
         return "%s %d %s %s" % (self.cmdrName,self.commandId,self.actor,self.code)
