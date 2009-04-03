@@ -86,7 +86,7 @@ class ValueType(type,Descriptive):
 
         # force the invalid string, if present, to be lowercase
         if 'invalid' in kwargs:
-            kwargs['invalid'] = kwargs['invalid'].lower()
+            kwargs['invalid'] = str(kwargs['invalid']).lower()
             
         # check that the name string, if present, is a valid identifier
         if 'name' in kwargs:
