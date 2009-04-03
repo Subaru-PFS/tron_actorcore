@@ -28,8 +28,8 @@ MsgCodeSeverity = {
     ">": RO.Constants.sevNormal, # warning
     ":": RO.Constants.sevNormal, # command finished
     "W": RO.Constants.sevWarning, # warning
-    "F": RO.Constants.sevError), # command failed
-    "!": RO.Constants.sevError), # command failed and actor is in trouble
+    "F": RO.Constants.sevError, # command failed
+    "!": RO.Constants.sevError, # command failed and actor is in trouble
 }
 
 class KeyVar(RO.AddCallback.BaseMixin):

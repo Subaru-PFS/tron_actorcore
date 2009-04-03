@@ -421,7 +421,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
         try:
             msgCode = reply.header.code
-            severity = keyvar.MsgCodeSeverity[msgCode][1]
+            severity = keyvar.MsgCodeSeverity[msgCode]
             self.logMsg(
                 msgStr = reply.string,
                 severity = severity,
