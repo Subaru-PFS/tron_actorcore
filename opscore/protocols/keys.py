@@ -164,7 +164,8 @@ class Key(Consumer):
         
     def consume(self,keyword):
         self.trace(keyword)
-        if keyword.name != self.name:
+        # perform a case-insensitive name matching
+        if keyword.name.lower() != self.name.lower():
             return self.failed('keyword has wrong name')
         if not self.typedValues.consume(keyword.values):
             return self.failed('no match for keyword values')
