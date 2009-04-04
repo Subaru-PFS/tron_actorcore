@@ -42,7 +42,7 @@ class ReplyParser(TemporaryBase):
     _name = '(?:[A-Za-z][A-Za-z0-9_]*)'
     _extra = '(?:\.[A-Za-z][A-Za-z0-9_.]*)'
     _number = '0|[1-9][0-9]*'
-    hdr_pattern = re.compile('(%s?)\.(%s)(%s?)[ \t]+(%s)[ \t]+(%s)[ \t]+([>iIwW:fF!])[ \t]+'
+    hdr_pattern = re.compile('(%s?)\.(%s)(%s?)[ \t]+(%s)[ \t]+(%s)[ \t]+(.)[ \t]+'
         % (_name,_name,_extra,_number,_name))
 
     # lexical tokens
