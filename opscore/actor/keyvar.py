@@ -19,11 +19,11 @@ __all__ = ["KeyVar", "AllCodes", "DoneCodes", "WarningCodes", "FailCodes", "MsgC
 
 AllCodes = "IW:F!>D"
 DoneCodes = ":F!"
-FaileCodes = "F!"
+FailedCodes = "F!"
 
 # MsgCodeSeverity a dictionary of: message code: associated severity
 MsgCodeSeverity = {
-    "D": RO.Constants.sevNormal, # debug
+    "D": RO.Constants.sevDebug, # debug
     "I": RO.Constants.sevNormal, # information
     ">": RO.Constants.sevNormal, # warning
     ":": RO.Constants.sevNormal, # command finished
