@@ -28,14 +28,16 @@ class ConfigOptionParser(optparse.OptionParser):
             del kwargs['config_file']
         if 'config_section' in kwargs:
             del kwargs['config_section']
-        # build a search path for the configfile
-        configFiles = [
-            os.path.join(sys.path[0],configFileName), # current program's path
-            os.path.join(os.getcwd(),configFileName)  # current working dir
-        ]
+        # build a search path for the configuration file: start with
+        # the current program's path
+        configFiles = [ os.path.join(sys.path[0],configFileName) ]
+        # also search the current working dir if it is different from the above
+        if os.path.abspath(os.getcwd()) != os.path.abspath(sys.path[0]):
+            configFiles.append(os.path.join(os.getcwd(),configFileName))
         # read all available INI config options
         self.configParser = ConfigParser.SafeConfigParser()
-        self.configParser.read(configFiles)
+        self.foundFiles = self.configParser.read(configFiles)
+        self.configDefaults = { }
         # initialize our list of secret option names
         self.secretOptions = [ ]
         # initialize our base class
@@ -59,8 +61,9 @@ class ConfigOptionParser(optparse.OptionParser):
             # lookup each long-form option name in turn, until we get a match
             optionName = alias[2:]
             try:
-                default = getter(self.configSectionName,optionName)
-                kwargs['default'] = default
+                defaultValue = getter(self.configSectionName,optionName)
+                kwargs['default'] = defaultValue
+                self.configDefaults[optionName] = defaultValue
                 break
             except (ConfigParser.NoOptionError,ConfigParser.NoSectionError):
                 pass
@@ -101,6 +104,18 @@ class ConfigOptionParser(optparse.OptionParser):
                 setattr(options,secret,data[0:-npad])
         # return the parse results
         return (options,args)
+    
+    def print_help(self,*args,**kwargs):
+        """
+        Appends config-specific help text
+        """
+        retval = optparse.OptionParser.print_help(self,*args,**kwargs)
+        print '\nRuntime configuration defaults provided by the following files:'
+        print '\n  '+'\n  '.join(self.foundFiles)
+        print '\nDefault values are:\n'
+        for (name,value) in self.configDefaults.iteritems():
+            print '  %17s: %s' % (name,value)
+        return retval
     
     @staticmethod    
     def bin2hex(data):
