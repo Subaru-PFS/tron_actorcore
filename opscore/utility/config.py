@@ -1,5 +1,7 @@
 """
 Performs runtime configration based on command-line options and INI files
+
+Refer to https://trac.sdss3.org/wiki/Ops/Config for details.
 """
 
 # Created 8-Apr-2009 by David Kirkby (dkirkby@uci.edu)
