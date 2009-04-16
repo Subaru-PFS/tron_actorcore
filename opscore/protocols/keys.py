@@ -22,7 +22,10 @@ class Consumer(object):
     """
     Consumes parsed messages
     """
+
+    # set debug True to generate detailed tracing of all the consume activity
     debug = False
+
     indent = 0
 
     def trace(self,what):
@@ -66,7 +69,7 @@ class TypedValues(Consumer):
             elif isinstance(vtype,protoTypes.ValueType):
                 self.minVals += 1
                 self.maxVals += 1
-                self.vtypes.append(protoTypes.RepeatedValueType(vtype,1,1))
+                self.vtypes.append(vtype)
             else:
                 raise KeysError('Invalid value type: %r' % vtype)
         if self.maxVals == 0:
@@ -77,7 +80,6 @@ class TypedValues(Consumer):
             self.descriptor = '%d or more' % self.minVals
         else:
             self.descriptor = '%d-%d' % (self.minVals,self.maxVals)
-        
 
     def __repr__(self):
         return 'Types%r' % self.vtypes
@@ -85,33 +87,41 @@ class TypedValues(Consumer):
     def consume(self,values):
         self.trace(values)
         # remember the original values in case we need to restore them later
-        self.checkpoint = protoMess.Values(values)
+        self.originalValues = protoMess.Values(values)
+        values[:] = [ ]
         # try to convert each keyword to its expected type
         self.index = 0
-        for repeat in self.vtypes:
-            vtype = repeat.vtype
-            offset = 0
-            while offset < repeat.minRepeat:
-                if not self.consumeNextValue(vtype,values):
-                    values[:] = self.checkpoint
-                    return self.failed("expected value type %r" % vtype)
-                offset += 1
-            while repeat.maxRepeat is None or offset < repeat.maxRepeat:
-                if not self.consumeNextValue(vtype,values):
-                    break
-                offset += 1
-        if self.index != len(values):
-            values[:] = self.checkpoint
+        for typeToConsume in self.vtypes:
+            if isinstance(typeToConsume,protoTypes.RepeatedValueType):
+                vtype = typeToConsume.vtype
+                offset = 0
+                while offset < typeToConsume.minRepeat:
+                    if not self.consumeNextValue(vtype,values):
+                        values[:] = self.originalValues
+                        return self.failed("expected repeated value type %r" % typeToConsume)
+                    offset += 1
+                while typeToConsume.maxRepeat is None or offset < typeToConsume.maxRepeat:
+                    if not self.consumeNextValue(vtype,values):
+                        break
+                    offset += 1
+            elif isinstance(typeToConsume,protoTypes.ValueType):
+                if not self.consumeNextValue(typeToConsume,values):
+                    values[:] = self.originalValues
+                    return self.failed("expected value type %r" % typeToConsume)
+            else:
+                raise KeysError('Unexpected typeToConsume: %r' % typeToConsume)
+        if self.index != len(self.originalValues):
+            values[:] = self.originalValues
             return self.failed("not all values consumed: %s" % values[self.index:])
         return self.passed(values)
 
     def consumeNextValue(self,valueType,values):
         try:
-            string = values[self.index]
+            string = self.originalValues[self.index]
             try:
-                values[self.index] = valueType(string)
+                values.append(valueType(string))
             except protoTypes.InvalidValueError:
-                values[self.index] = protoTypes.InvalidValue
+                values.append(protoTypes.InvalidValue)
             self.index += 1
             return True
         except (IndexError,ValueError,TypeError):
