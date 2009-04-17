@@ -70,6 +70,10 @@ class TypedValues(Consumer):
                 self.minVals += 1
                 self.maxVals += 1
                 self.vtypes.append(vtype)
+            elif isinstance(vtype,protoTypes.CompoundValueType):
+                self.minVals += len(vtype.vtypes)
+                self.maxVals += len(vtype.vtypes)
+                self.vtypes.append(vtype)
             else:
                 raise KeysError('Invalid value type: %r' % vtype)
         if self.maxVals == 0:
@@ -219,7 +223,8 @@ class Key(Consumer):
         text = '%12s: %s\n' % ('Keyword',self.name)
         if self.help:
             pad = '\n' + ' '*14
-            formatted = textwrap.fill(textwrap.dedent(self.help),width=66).replace('\n',pad)
+            formatted = textwrap.fill(textwrap.dedent(self.help).strip()
+                ,width=66).replace('\n',pad)
             text += '%12s: %s\n' % ('Description',formatted)
         text += self.typedValues.describe()
         return text
@@ -376,7 +381,8 @@ class KeysDictionary(object):
                 'KeysDictionary': KeysDictionary
             }
             for (name,value) in protoTypes.__dict__.iteritems():
-                if isinstance(value,type) and issubclass(value,protoTypes.ValueType):
+                if isinstance(value,type) and issubclass(value,
+                    (protoTypes.ValueType,protoTypes.CompoundValueType)):
                     symbols[name] = value
             # evaluate the keys dictionary as a python expression
             filedata = dictfile.read()

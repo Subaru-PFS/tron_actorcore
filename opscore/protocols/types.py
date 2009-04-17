@@ -37,8 +37,11 @@ class Descriptive(object):
         """
         text = ''
         for label,value in self.descriptors:
-            text += '%12s: %s\n' % (label,value)
-        return text[:-1]    
+            pad = '\n' + ' '*14
+            formatted = textwrap.fill(textwrap.dedent(value).strip()
+                ,width=66).replace('\n',pad)
+            text += '%12s: %s\n' % (label,formatted)
+        return text[:-1]
 
     def describeAsHTML(self):
         """
@@ -122,9 +125,9 @@ class ValueType(type,Descriptive):
         """
         super(ValueType,cls).__init__(cls.__name__,(cls.baseType,),{})
         cls.descriptors = [ ]
+        if cls.name:
+            cls.descriptors.append(('Name',cls.name))
         if cls.help:
-            pad = '\n' + ' '*14
-            formatted = textwrap.fill(textwrap.dedent(cls.help),width=62).replace('\n',pad)
             cls.descriptors.append(('Description',cls.help))
         cls.descriptors.append(('Type','%s (%s,%s)' %
             (cls.__name__,cls.baseType.__name__,cls.storage)))
@@ -187,6 +190,37 @@ class RepeatedValueType(Descriptive):
         else:
             return '%r*(%d,%d)' % (self.vtype,self.minRepeat,self.maxRepeat)
 
+class CompoundValueType(Descriptive):
+    """
+    Represents a compound type consisting of a sequence of simple types
+    """
+    def __init__(self,vtypes,name=None,help=None):
+        self.vtypes = vtypes
+        self.descriptors = [ ]
+        if name:
+            self.name = name
+            self.descriptors.append(('Name',name))
+        if help:
+            self.help = help
+            self.descriptors.append(('Description',help))
+        for index,vtype in enumerate(self.vtypes):
+            self.descriptors.append(('Subtype-%d'%index,'-'*40))
+            self.descriptors.extend(vtype.descriptors)
+    
+    def __repr__(self):
+        return '%s%r' % (self.__class__.__name__,self.vtypes)
+        
+class PVT(CompoundValueType):
+    """
+    Represents a position-velocity-time compound type
+    """
+    def __init__(self,name=None,help=None):
+        vtypes = [
+            Float(name='position',units='deg'),
+            Float(name='velocity',units='deg/s'),
+            Double(name='time',units='MJD-secs(TAI)')
+        ]
+        CompoundValueType.__init__(self,vtypes,name,help)
 
 class Invalid(object):
     """
