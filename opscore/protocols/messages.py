@@ -152,6 +152,10 @@ class RawKeyword(Keyword):
         self.name = 'raw'
         self.values = Values([line])
 
+    def __repr__(self):
+        result = 'RAWKEY(%s)=%r' % (self.name,self.values)
+        return result
+
     def canonical(self):
         """
         Returns the canonical string representation of a raw keyword
@@ -348,6 +352,37 @@ class Reply(Canonized):
         result = 'REPLY(%r,%r)' % (self.header,self.keywords)
         return result
         
+class CommandHeader(Canonized):
+    """
+    Represents the headers of a command
+    """
+    def __init__(self,cmdrName,mid,actor):
+        self.cmdrName = cmdrName
+        self.mid = mid
+        self.actor = actor
+
+    @property
+    def program(self):
+        """ Return program part of cmdrname. """
+        return self.cmdrName.split('.',1)[0]
+    
+    def canonical(self):
+        return "%s %d %s" % (self.cmdrName,self.mid,self.actor)
+        
+    def tokenized(self):
+        return 'prog.user 123 actor %s' % code
+    
+    def clone(self):
+        return CommandHeader(self.cmdrName,self.mid,self.actor)
+    
+    def copy(self,other):
+        self.cmdrName = other.cmdrName
+        self.mid = other.mid
+        self.actor = other.actor
+        
+    def __repr__(self):
+        return 'CommandHeader(%s,%d,%s)' % (self.cmdrName,self.mid,self.actor)
+
 class Command(Canonized):
     """
     Represents a command
