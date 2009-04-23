@@ -21,18 +21,27 @@ class ConfigOptionParser(optparse.OptionParser):
     def __init__(self,*args,**kwargs):
         # look for an optional 'configfile' keyword arg that specifies the
         # INI file containing our configuration defaults
+        productName = kwargs.get('product_name',None)
         configFileName = kwargs.get('config_file','config.ini')
         self.configSectionName = kwargs.get('config_section','DEFAULT')
         # strip out our special options
+        if 'product_name' in kwargs:
+            del kwargs['product_name']
         if 'config_file' in kwargs:
             del kwargs['config_file']
         if 'config_section' in kwargs:
             del kwargs['config_section']
-        # build a search path for the configuration file: start with
-        # the current program's path
-        configFiles = [ os.path.join(sys.path[0],configFileName) ]
+        # build a search path for INI files...
+        configFiles = [ ]
+        # look for INI files in $PRODUCTNAME_DIR/etc if a product_name is
+        # provided and a corresponding $PRODUCTNAME_DIR envvar is defined
+        if productName:
+            productPath = os.getenv(productName.upper()+'_DIR')
+            if productPath:
+                configFiles.append(os.path.join(productPath,'etc',configFileName))
         # also search the current working dir if it is different from the above
-        if os.path.abspath(os.getcwd()) != os.path.abspath(sys.path[0]):
+        if not configFiles or (os.path.abspath(os.getcwd()) !=
+            os.path.abspath(os.path.join(productPath,'etc'))):
             configFiles.append(os.path.join(os.getcwd(),configFileName))
         # read all available INI config options
         self.configParser = ConfigParser.SafeConfigParser()
@@ -74,7 +83,6 @@ class ConfigOptionParser(optparse.OptionParser):
                 raise optparse.OptionValueError('A secret option must specify a destination')
             self.secretOptions.append(kwargs['dest'])
             kwargs['type'] = 'string'
-            pass
         # do the normal option processing
         return optparse.OptionParser.add_option(self,*args,**kwargs)
         
@@ -105,16 +113,23 @@ class ConfigOptionParser(optparse.OptionParser):
         # return the parse results
         return (options,args)
     
+    def get_config_info(self):
+        """
+        Returns a multi-line string describing our config setup
+        """
+        text = 'Runtime configuration defaults provided by the following files:\n\n  '
+        text += '\n  '.join(self.foundFiles)
+        text += '\n\nDefault values are:\n'
+        for (name,value) in self.configDefaults.iteritems():
+            text += '  %17s: %s\n' % (name,value)
+        return text
+    
     def print_help(self,*args,**kwargs):
         """
-        Appends config-specific help text
+        Appends config info to the standard OptionParser help
         """
         retval = optparse.OptionParser.print_help(self,*args,**kwargs)
-        print '\nRuntime configuration defaults provided by the following files:'
-        print '\n  '+'\n  '.join(self.foundFiles)
-        print '\nDefault values are:\n'
-        for (name,value) in self.configDefaults.iteritems():
-            print '  %17s: %s' % (name,value)
+        print '\n' + self.get_config_info()
         return retval
     
     @staticmethod    
