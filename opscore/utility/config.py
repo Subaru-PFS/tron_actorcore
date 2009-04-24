@@ -93,6 +93,18 @@ class ConfigOptionParser(optparse.OptionParser):
         """
         # do the normal parsing
         (options,args) = optparse.OptionParser.parse_args(self,args,values)
+        # build a table summarizing all non-secret options
+        table = [ ]
+        for opt in self.option_list:
+            if opt.dest and opt.dest not in self.secretOptions:
+                value = getattr(options,opt.dest)
+                if opt.default == optparse.NO_DEFAULT:
+                    default_value = '(none)'
+                else:
+                    default_value = opt.default
+                table.append((str(opt),value,default_value,opt.help))
+        # add the summary table to the returned options
+        options._summary_table = table
         # is there is any secret data that needs decrypting?
         if self.secretOptions:
             import getpass
@@ -119,9 +131,14 @@ class ConfigOptionParser(optparse.OptionParser):
         """
         text = 'Runtime configuration defaults provided by the following files:\n\n  '
         text += '\n  '.join(self.foundFiles)
-        text += '\n\nDefault values are:\n'
-        for (name,value) in self.configDefaults.iteritems():
-            text += '  %17s: %s\n' % (name,value)
+        text += '\n\nDefault values are:\n\n'
+        for opt in self.option_list:
+            if opt.dest:
+                if opt.default == optparse.NO_DEFAULT:
+                    default_value = '(none)'
+                else:
+                    default_value = opt.default
+                text += '  %20s: %s\n' % (str(opt),default_value)
         return text
     
     def print_help(self,*args,**kwargs):
