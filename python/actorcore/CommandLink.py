@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import threading
+from twisted.internet import reactor
 
 from opscore.utility.qstr import qstr
 from opscore.protocols.parser import CommandParser
@@ -30,16 +31,18 @@ class CommandLink(LineReceiver):
     (?P<cmdString>.+)""",
                        re.IGNORECASE | re.VERBOSE)
 
-    def __init__(self, brains, connID):
+    def __init__(self, brains, connID, eol='\n'):
         """ Receives what should be atomic commands, parses them, and passes them on.
         """
         # LineReceiver.__init__(self) # How can they live without?
         
         self.brains = brains
         self.connID = connID
-        self.delimiter = '\n'
+        self.delimiter = eol
         self.parser = CommandParser()
         self.delimiterChecked = False
+        self.outputQueue = []
+        self.outputQueueLock = threading.Lock()
         
         self.mid = 1                    # In case we need to self-assign MIDs
         
@@ -47,18 +50,16 @@ class CommandLink(LineReceiver):
         """ Called when our connection has been established. """
 
         iccLogger.debug('new CommandNub')
-
-        # We need to construct a special Command with MID== and connID=self.connID
         self.brains.bcast.respond('yourUserNum=%d' % self.connID)
         
     def lineReceived(self, cmdString):
         """ Called when a complete line has been read from the hub. """
         
-        # Telnet connections send in '\r\n'. Or worse, I fear. Try to make
+        # Telnet connections send back '\r\n'. Or worse, I fear. Try to make
         # those connections work just like properly formatted ones.
         if not self.delimiterChecked:
-            if cmdString[-1] == '\r':
-                self.delimiter = '\r\n'
+            while len(cmdString) > 0 and cmdString[-1] < ' ':
+                self.delimiter = cmdString[-1]+self.delimiter
                 cmdString = cmdString[:-1]
             self.delimiterChecked = True
             
@@ -103,14 +104,22 @@ class CommandLink(LineReceiver):
 
         # And hand it upstairs.
         self.brains.newCmd(cmd)
+
+    def sendQueuedResponses(self):
+        """ method for the twisted reactor to call when we tell it there is output from this thread. """
         
+        with self.outputQueueLock:
+            while len(self.outputQueue) > 0:
+                e = self.outputQueue.pop(0)
+                self.transport.write(e)
+                
     def sendResponse(self, cmd, flag, response):
         """ Ship a command off to the hub. """
-        
+
         e = "%d %d %s %s\n" % (self.connID, cmd.mid, flag, response)
-        # Move this to a separate raw I/O log.
-        # cmdLogger.debug('sending command response: %s', e)
-        self.transport.write(e)
+        with self.outputQueueLock:
+            self.outputQueue.append(e)
+        reactor.callFromThread(self.sendQueuedResponses)
             
     def shutdown(self, why="cuz"):
         """ Called from above when we want to drop the connection. """
