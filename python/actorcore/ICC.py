@@ -129,9 +129,9 @@ class ICC(object):
         finally:
             file.close()
 
-   def attachCmdSet(self, cname, path=None):
-        """ (Re-)load and attach a named set of commands.                                                                                     
-                                                                                                                                              
+    def attachCmdSet(self, cname, path=None):
+        """ (Re-)load and attach a named set of commands. 
+ 
         """
 
         if path == None:
@@ -151,7 +151,7 @@ class ICC(object):
             if file:
                 file.close()
 
-        # Instantiate and save a new command handler.                                                                                         
+        # Instantiate and save a new command handler. 
         exec('cmdSet = mod.%s(self)' % (cname))
         self.commandSets[cname] = cmdSet
 
@@ -175,7 +175,7 @@ class ICC(object):
                 self.attachCmdSet(f[:-3], [path])
 
 
-   def attachController(self, name, path=None, cmd=None):
+    def attachController(self, name, path=None, cmd=None):
         """ (Re-)load and attach a named set of commands. """
 
         if path == None:
@@ -234,7 +234,7 @@ class ICC(object):
             controller = self.controllers[c]
             controller.stop()
 
-   def icc_loop(self):
+    def icc_loop(self):
 
         """ Check the command queue and dispatch commands."""
         while(1):
@@ -257,7 +257,7 @@ class ICC(object):
                     tback('newCmd', e)
                     cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
 
-   def newCmd(self, cmd):
+    def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 
         self.activeCmd = None
