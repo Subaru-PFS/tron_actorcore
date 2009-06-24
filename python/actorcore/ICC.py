@@ -238,7 +238,7 @@ class ICC(object):
         """ Check the command queue and dispatch commands."""
         while(1):
             try:
-                cmd = self.command_queue.get(block = True,timeout = 3)
+                cmd = self.commandQueue.get(block = True,timeout = 3)
             except Queue.Empty:
                 if self.shutdown:
                     return
@@ -266,7 +266,7 @@ class ICC(object):
         if len(cmd.cmd.name) == 0:
             cmd.finish('')
             return None
-        self.command_queue.put(cmd)
+        self.commandQueue.put(cmd)
         return self
 
     def run(self):
