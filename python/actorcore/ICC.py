@@ -24,7 +24,7 @@ class ICC(object):
     def __init__(self, name, configFile): 
         self.name = name
         self.configFile = os.path.expandvars(
-            os.path.expanduser(configFile)))
+            os.path.expanduser(configFile))
 
         # Missing config bits should make us blow up.
         self.configFile = os.path.expandvars(configFile)
