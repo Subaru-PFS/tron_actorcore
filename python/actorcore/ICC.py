@@ -14,7 +14,6 @@ from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
 import actorcore.CommandLinkManager as cmdLinkManager
 import actorcore.Command as actorCmd
-import actorcore.ICC as actorICC
 
 from ICCExceptions import ICCError
 from STimer import STimer
