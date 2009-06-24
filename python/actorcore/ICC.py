@@ -242,6 +242,8 @@ class ICC(object):
             except Queue.Empty:
                 if self.shutdown:
                     return
+                else:
+                    continue
             logging.info("Command received.")
             # Dispatch on the first word of the command.                                                                                  
             handler = self.topCommands.get(cmd.cmd.name, None)
