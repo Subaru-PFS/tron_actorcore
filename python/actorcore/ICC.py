@@ -54,7 +54,7 @@ class ICC(object):
         self.cmdlog.propagate = False
 
         console = logging.getLogger('')                                                                                                       
-        console.setLevel(int(self.config.get('logging','logging')))
+        console.setLevel(int(self.config.get('logging','baseLevel')))
         logging.info("reading config file %s", self.configFile) 
                                                                                                                                               
         # The list of all connected sources.                                                                                                  
