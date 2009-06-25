@@ -1,6 +1,6 @@
 import exceptions
 
-__all__ = ['ICCError', 'CmdError', 'CommError','PhaseMicroBusy','UndefinedCommand']
+__all__ = ['ICCError', 'CmdError', 'CommError']
 
 class ICCError(exceptions.Exception):
     """ A general exception for the ICC. Anything can throw one, passing a one line error message.
