@@ -9,6 +9,7 @@ from getpass import getuser
 from socket import gethostname
 from sys import argv
 from cgi import escape
+from os.path import splitext
 
 class HTMLDocumentError(Exception):
     """
@@ -20,25 +21,34 @@ class Head:
     """
     Declares the head element of an HTML document.
     """
-    def __init__(self,title=None,base=None,css=None,js=None):
+    iconTypes = {
+        '.ico': 'image/vnd.microsoft.icon',
+        '.gif': 'image/gif',
+        '.png': 'image/png'
+    }
+    def __init__(self,title=None,base=None,icon=None,css=None,js=None,raw=None):
         self.type = type
         self.title = title
         self.base = base
+        self.icon = icon
         self.css = []
-        if not css is None:
+        if css:
             self.css.append(css)
         self.js = []
-        if not js is None:
+        if js:
             self.js.append(js)
+        self.raw = []
+        if raw:
+            self.raw.append(raw)
     def __str__(self):
         s = '<head>\n'
         s += '  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">\n'
         s += ('  <meta name="description" ' +
             'content="Document created automatically on %s by %s@%s using %s">\n'
             % (ctime(),getuser(),gethostname(),argv[0]))
-        if not self.title is None:
+        if self.title:
             s += '  <title>%s</title>\n' % self.title
-        if not self.base is None and ('href' in self.base or 'target' in self.base):
+        if self.base and ('href' in self.base or 'target' in self.base):
             s += '  <base'
             if 'href' in self.base:
                 s += ' href="%s"' % self.base['href']
@@ -49,6 +59,12 @@ class Head:
             if 'target' in self.base:
                 s += ' target="%s"' % self.base['target']
             s += '>\n'
+        if self.icon:
+            iconExtension = splitext(self.icon)[1]
+            if iconExtension not in Head.iconTypes:
+                raise HTMLDocumentError('Unsupported icon extension: %s' % iconExtension)
+            s += '  <link rel="icon" type="%s" href="%s" />\n' % (
+                Head.iconTypes[iconExtension],self.icon)
         for style in self.css:
             # is this an external reference? look for a one-liner
             if style.count('\n') == 0:
@@ -61,6 +77,8 @@ class Head:
                 s += '  <script type="text/javascript" src="%s"></script>\n' % script
             else:
                 s += '  <script type="text/javascript">\n%s</script>\n' % script
+        for raw in self.raw:
+            s += '  %s\n' % raw
         s += '</head>\n'
         return s
 
