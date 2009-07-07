@@ -153,7 +153,7 @@ class ValueType(type,Descriptive):
         return self.__name__
 
     def validate(self,value):
-        if self.invalid and value.lower() == self.invalid:
+        if self.invalid and str(value).lower() == self.invalid:
             raise InvalidValueError
         return value
 
