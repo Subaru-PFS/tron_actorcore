@@ -375,9 +375,11 @@ class Bool(ValueType):
         Value must be one of the true/false labels or else a True/False literal
         """
         cls.validate(value)
-        if value is True or value == cls.trueValue:
+        # use (value == True) instead of (value is True) so that 0,1
+        # can be used for False,True
+        if value == True or value == cls.trueValue:
             return int.__new__(cls,True)
-        elif value is False or value == cls.falseValue:
+        elif value == False or value == cls.falseValue:
             return int.__new__(cls,False)
         else:
             raise ValueError('Invalid Bool value: %r' % value)

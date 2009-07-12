@@ -246,7 +246,9 @@ for tag in [
 for tag in [
     # defined as inline in HTML4
     'a','abbr','acronym','b','bdo','big','br','cite','code','dfn','em','i','img','input','kbd','label',
-    'q','samp','select','small','span','strong','sub','sup','textarea','tt','var'
+    'q','samp','select','small','span','strong','sub','sup','textarea','tt','var',
+    # not listed as either block-level or inline at htmlhelp.com
+    'option','optgroup'
 ]:
     globals()[tag.capitalize()] = type(tag.capitalize(),(Element,),{ 'blockLevel':False })
 
