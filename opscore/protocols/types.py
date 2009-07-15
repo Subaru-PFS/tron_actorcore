@@ -55,7 +55,7 @@ class Descriptive(object):
             content.append(html.Div(
                 html.Span(label,className='label'),
                 html.Span(value,className='value'),
-                className='descriptor'
+                className='type descriptor'
             ))
         return content
 

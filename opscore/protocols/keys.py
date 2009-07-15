@@ -136,11 +136,12 @@ class TypedValues(Consumer):
             utilHtml.Div(
                 utilHtml.Span('Values',className='label'),
                 utilHtml.Span(self.descriptor,className='value'),
-                className='descriptor'
+                className='key descriptor'
             ),
             className='vtypes'
         )
         for vtype in self.vtypes:
+            content.append(utilHtml.Div(utilHtml.Entity('nbsp'),className='separator'))
             content.extend(vtype.describeAsHTML().children)
         return content
     
@@ -204,8 +205,7 @@ class Key(Consumer):
     
     def describeAsHTML(self):
         content = utilHtml.Div(
-            utilHtml.Div(self.name,className='keyname'),
-            
+            utilHtml.Div(self.name,className='keyname'),            
             className='key'
         )
         desc = utilHtml.Div(className='keydesc')
@@ -214,7 +214,7 @@ class Key(Consumer):
             desc.append(utilHtml.Div(
                 utilHtml.Span('Description',className='label'),
                 utilHtml.Span(self.help,className='value'),
-                className='descriptor'
+                className='key descriptor'
             ))
         desc.extend(self.typedValues.describeAsHTML().children)
         return content      
