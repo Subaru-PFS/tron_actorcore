@@ -112,6 +112,11 @@ class TypedValues(Consumer):
                 if not self.consumeNextValue(typeToConsume,values):
                     values[:] = self.originalValues
                     return self.failed("expected value type %r" % typeToConsume)
+            elif isinstance(typeToConsume,protoTypes.CompoundValueType):
+                for vtype in typeToConsume.vtypes:
+                    if not self.consumeNextValue(vtype,values):
+                        values[:] = self.originalValues
+                        return self.failed("expected compound value type %r" % typeToConsume)
             else:
                 raise KeysError('Unexpected typeToConsume: %r' % typeToConsume)
         if self.index != len(self.originalValues):
