@@ -4,14 +4,12 @@ import opscore.utility.sdss3logging
 import logging
 import threading
 
-from opscore.utility.qstr import qstr
-from opscore.utility.tback import tback
-
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import LineReceiver
 
-from opscore.actor.cmdkeydispatcher import CmdKeyVarDispatcher as opsDispatcher
+import opscore.utility as opsUtils
+import opscore.actor.cmdkeydispatcher as opsDispatcher
 import opscore.actor.model as opsModel
 
 class CmdrConnection(LineReceiver):
@@ -118,7 +116,7 @@ class CmdrConnector(ReconnectingClientFactory):
 def setupCmdr(name, loggerName='cmdr'):
     logger = logging.getLogger(loggerName)
     logger.setLevel(logging.INFO)
-    conn = CmdrConnector(name, logger=logger)
+    connector = CmdrConnector(name, logger=logger)
 
     logger = logging.getLogger('dispatch')
     logger.setLevel(logging.INFO)
@@ -126,9 +124,9 @@ def setupCmdr(name, loggerName='cmdr'):
     def logFunc(msgStr, severity, actor, cmdr, logger=logger):
         logger.info("%s %s %s %s" % (cmdr, actor, severity, msgStr))
 
-    dispatcher = opsDispatcher(name, conn, logFunc)
+    dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, connector, logFunc)
     opsModel.Model.setDispatcher(dispatcher)
-    return conn, dispatcher
+    return connector, dispatcher
 
 def liveTest():
     """ Connect to a running hub and print out all tcc traffic. """
@@ -142,12 +140,10 @@ def liveTest():
         logger.info("keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent))
                 
     conn, dispatcher = setupCmdr('test.me')
-    reactor.connectTCP('localhost', 6093, conn)
-
-    opsModel.Model.setDispatcher(dispatcher)
-    tccModel = opsModel.Model('tcc')
+    reactor.connectTCP('hub25m', 6093, conn)
 
     # Register all tcc keywords to be printed.
+    tccModel = opsModel.Model('tcc')
     for o in tccModel.__dict__.values():
         if isinstance(o, keyvar.KeyVar):
             o.addCallback(showVal)
