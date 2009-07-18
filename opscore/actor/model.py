@@ -4,6 +4,7 @@
 History:
 2009-03-30 ROwen
 2009-07-18 ROwen    Modified to set the refreshCmd for each keyVar before adding it to the dispatcher.
+2009-07-18 ROwen    Added keyVarDict property.
 """
 import sys
 import time
@@ -39,6 +40,7 @@ class Model(object):
     dispatcher = None
     def __init__(self, actor):
         #print "%s.__init__(actor=%s)" % (self.__class__.__name__, actor)
+        self._keyNameVarDict = dict()
         if actor in self._registeredActors:
             raise RuntimeError("%s model already instantiated" % (actor,))
         
@@ -66,6 +68,16 @@ class Model(object):
                 self.dispatcher.addKeyVar(keyVar)
 
         self._registeredActors.add(actor)
+    
+    @property
+    def keyVarDict(self):
+        """Return a dictionary of keyVar name:keyVar
+        """
+        retDict = dict()
+        for name, item in self.__dict__.iteritems():
+            if isinstance(item, keyvar.KeyVar):
+                retDict[name] = item
+        return retDict
 
     @classmethod
     def setDispatcher(cls, dispatcher):
