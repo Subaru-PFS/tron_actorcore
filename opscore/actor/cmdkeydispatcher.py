@@ -481,7 +481,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     def refreshAllVar(self):
         """Issues all keyVar refresh commands.
         """
-        print "%s.refreshAllVar(); refeshCmdDict=%s" % (self.__class__.__name__, self.refreshCmdDict)
+#         print "%s.refreshAllVar(); refeshCmdDict=%s" % (self.__class__.__name__, self.refreshCmdDict)
 
         # cancel pending update, if any
         cancelTimer(self._refreshAllTimer)
@@ -507,7 +507,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         - refreshCmdItemIter: iterator over items in refreshCmdDict;
             if None then set to self.refreshCmdDict.iteritems()
         """
-        print "%s._sendNextRefreshCmd(%s)" % (self.__class__.__name__, refreshCmdItemIter)
+#         print "%s._sendNextRefreshCmd(%s)" % (self.__class__.__name__, refreshCmdItemIter)
         if not self._isConnected:
             # schedule parent function asap and bail out
             self._refreshAllTimer = self.reactor.callLater(_ShortInterval, self.refreshAllVar)
