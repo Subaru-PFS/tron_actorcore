@@ -3,12 +3,15 @@
 
 History:
 2009-04-03 ROwen    Split out basic functionality from full dispatcher.
+2009-07-18 ROwen    Added __all__.
 """
 import sys
 import traceback
 
 import opscore.protocols.parser
 import keyvar
+
+__all__ = ["KeyVarDispatcher"]
 
 class KeyVarDispatcher(object):
     """Parse replies and set KeyVars.

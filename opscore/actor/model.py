@@ -3,6 +3,7 @@
 
 History:
 2009-03-30 ROwen
+2009-07-18 ROwen    Modified to set the refreshCmd for each keyVar before adding it to the dispatcher.
 """
 import sys
 import time
@@ -51,8 +52,9 @@ class Model(object):
             keyVar = keyvar.KeyVar(actor, key)
             if key.doCache and not keyVar.hasRefreshCmd:
                 cachedKeyVars.append(keyVar)
+            else:
+                self.dispatcher.addKeyVar(keyVar)
             setattr(self, keyVar.name, keyVar)
-            self.dispatcher.addKeyVar(keyVar)
         
         for ind in range(0, len(cachedKeyVars), NumKeysToGetAtOnce):
             keyVars = cachedKeyVars[ind:ind+NumKeysToGetAtOnce]
@@ -61,6 +63,7 @@ class Model(object):
             for keyVar in keyVars:
                 keyVar.refreshActor = "keys"
                 keyVar.refreshCmd = refreshCmdStr
+                self.dispatcher.addKeyVar(keyVar)
 
         self._registeredActors.add(actor)
 

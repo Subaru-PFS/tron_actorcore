@@ -5,6 +5,9 @@ TO DO:
 - Add support to KeyVar for refresh commands
 - Add support to CmdVar for timeLimKeyword (or similar)
 - Modify CmdVar to not track specific keywords, but instead to search replyList for values.
+
+History:
+- 2009-07-18 ROwen  Changed getRefreshInfo() to a property refreshInfo.
 """
 import sys
 import time
@@ -162,7 +165,8 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """
         return bool(self.refreshCmd)
     
-    def getRefreshInfo(self):
+    @property
+    def refreshInfo(self):
         """Return refreshActor, refreshCmd"""
         return (self.refreshActor, self.refreshCmd)
 
