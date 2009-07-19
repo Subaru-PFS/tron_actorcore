@@ -468,3 +468,4 @@ class Bits(ValueType):
             offset,mask = cls.bitFields[name]
             shifted = Bits.binary(mask << offset,cls.width)
             cls.descriptors.append(('Field-%d' % index,'%s %s' % (shifted,name)))
+        cls.descriptors.append(('Input Base',cls.inputBase))
