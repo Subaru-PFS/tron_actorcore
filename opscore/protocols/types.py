@@ -193,19 +193,28 @@ class RepeatedValueType(Descriptive):
 class CompoundValueType(Descriptive):
     """
     Represents a compound type consisting of a sequence of simple types
+    
+    A compound value is normally represented by a single object. By default,
+    the wrapping object is a tuple containing the individual values but a
+    custom object can be used via the 'wrapper' keyword which should provide
+    a function (which might be a class constructor) that is called with the
+    individual values and returns the wrapping object.
     """
-    def __init__(self,vtypes,name=None,help=None):
+    # a global flag to enable/disable the wrapping of compound values
+    WrapEnable = True
+    def __init__(self,*vtypes,**kwargs):
         self.vtypes = vtypes
+        self.name = kwargs.get('name',None)
+        self.help = kwargs.get('help',None)
         self.descriptors = [ ]
-        if name:
-            self.name = name
-            self.descriptors.append(('Name',name))
-        if help:
-            self.help = help
-            self.descriptors.append(('Description',help))
+        if self.name:
+            self.descriptors.append(('Name',self.name))
+        if self.help:
+            self.descriptors.append(('Description',self.help))
         for index,vtype in enumerate(self.vtypes):
             self.descriptors.append(('Subtype-%d'%index,'-'*40))
             self.descriptors.extend(vtype.descriptors)
+        self.wrapper = kwargs.get('wrapper',None)
     
     def __repr__(self):
         return '%s%r' % (self.__class__.__name__,self.vtypes)
@@ -214,13 +223,17 @@ class PVT(CompoundValueType):
     """
     Represents a position-velocity-time compound type
     """
-    def __init__(self,name=None,help=None):
-        vtypes = [
+    def __init__(self,**kwargs):
+        vtypes = (
             Float(name='position',units='deg'),
             Float(name='velocity',units='deg/s'),
             Double(name='time',units='MJD-secs(TAI)')
-        ]
-        CompoundValueType.__init__(self,vtypes,name,help)
+        )
+        if 'wrapper' not in kwargs:
+            # by default, use RO.PVT to wrap values of type PVT
+            import RO.PVT
+            kwargs['wrapper'] = RO.PVT.PVT
+        CompoundValueType.__init__(self,*vtypes,**kwargs)
 
 class Invalid(object):
     """

@@ -117,6 +117,14 @@ class TypedValues(Consumer):
                     if not self.consumeNextValue(vtype,values):
                         values[:] = self.originalValues
                         return self.failed("expected compound value type %r" % typeToConsume)
+                # Optionally replace the values with a reference to a single object
+                # initialized with the values. The default object is a tuple.
+                if protoTypes.CompoundValueType.WrapEnable:
+                    size = len(typeToConsume.vtypes)
+                    wrapped = tuple(values[-size:])
+                    if typeToConsume.wrapper:
+                        wrapped = typeToConsume.wrapper(*wrapped)
+                    values[-size:] = [wrapped]
             else:
                 raise KeysError('Unexpected typeToConsume: %r' % typeToConsume)
         if self.index != len(self.originalValues):
