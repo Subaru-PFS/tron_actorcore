@@ -385,6 +385,9 @@ class KeysDictionary(object):
             # get the path corresponding to the actorkeys package
             import actorkeys
             keyspath = sys.modules['actorkeys'].__path__
+        except ImportError:
+            raise KeysDictionaryError('no actorkeys package found')
+        try:
             # open the file corresponding to the requested keys dictionary
             (dictfile,name,description) = imp.find_module(dictname,keyspath)
             # create a global symbol table for evaluating the keys dictionary expression
