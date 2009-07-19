@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 """KeyVar and CmdVar
 
-TO DO:
-- Modify CmdVar to not track specific keywords, but instead to search replyList for values.
-
 History:
 - 2009-07-18 ROwen  Changed getRefreshInfo() to a property refreshInfo.
 - 2009-07-19 ROwen  Removed addROWdg and addROWdgSet; added addValueListCallback.
+                    Fixed CmdVar timeLimKeyVar handling.
 """
 import sys
 import time
@@ -295,17 +293,7 @@ class CmdVar(object):
         self._timeLimKeyInd = int(timeLimKeyInd)
         if self._timeLimKeyVar:
             # check that value exists and can be cast to a float
-            key = timeLimKeyVar.key
-            nVals = len(key.typedValues)
-            if nVals < self._timeLimKeyInd:
-                raise IndexError("timeLimKeyInd = %s too large; timeLimKeyVar %s has %s values" %
-                    (self._timeLimKeyInd, self._timeLimKeyVar, nVals))
-            valType = key[self._timeLimKeyInd]
-            try:
-                float(valType(5))
-            except ValueError:
-                raise ValueError("timeLimKeyVar %s[%s] is of type %s, which cannot be used as a time limit" % 
-                    (self._timeLimKeyVar, self._timeLimKeyInd, valType))
+            RO.MathUtil.checkRange(self._timeLimKeyInd, 0, self._timeLimKeyVar.minVals, "timeLimKeyInd")
         self.abortCmdStr = abortCmdStr
         # a dictionary of keyVar values; keys is keyVar; value is a list of keyVar.valueList seen for that keyVar
         self.keyVars = keyVars or ()
@@ -464,6 +452,9 @@ class CmdVar(object):
 
         Raises ValueError if the keyword exists but the value is invalid.
         """
+        if not self._keyVarIsMine(keyVar):
+            return
+
         newTimeLim = keyVar[self._timeLimKeyInd]
         try:
             newTimeLim = float(valueTuple[0])
@@ -499,14 +490,20 @@ class CmdVar(object):
         if self._timeLimKeyVar:
             self._timeLimKeyVar.addCallback(self._timeLimKeyVarCallback, callNow=False)
 
+    def _keyVarIsMine(self, keyVar):
+        """Return True if keyVar is in response to this command; False otherwise.
+        """
+        if (not keyVar.isCurrent) or (not keyVar.reply):
+            return False
+        if keyVar.reply.header.commandID != self.cmdID:
+            return False
+        if keyVar.reply.header.cmdrName != self.dispatcher.connection.cmdr:
+            return False
+
     def _keyVarCallback(self, keyVar):
         """Keyword seen; archive the data.
         """
-        if not keyVar.isCurrent or keyVar.reply:
-            return
-        if keyVar.reply.header.commandID != self.cmdID:
-            return
-        if keyVar.reply.header.cmdrName != self.dispatcher.connection.cmdr:
+        if not _keyVarIsMine(keyVar):
             return
         self.keyVarDataDict[keyVar].append(keyVar.valueList)
     
