@@ -454,9 +454,14 @@ class Bits(ValueType):
         dct['__str__'] = doStr
         if dct['strFmt']:
             print 'Bits: ignoring strFmt metadata'
+        # look for an optional inputBase keyword
+        dct['inputBase'] = kwargs.get('inputBase',10)
         
     def new(cls,value):
-        return long.__new__(cls,cls.validate(value))
+        if isinstance(value,basestring):
+            return long.__new__(cls,cls.validate(value),cls.inputBase)
+        else:
+            return long.__new__(cls,cls.validate(value))
 
     def addDescriptors(cls):
         for index,(name,width) in enumerate(cls.fieldSpecs):
