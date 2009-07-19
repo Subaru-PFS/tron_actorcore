@@ -2,12 +2,11 @@
 """KeyVar and CmdVar
 
 TO DO:
-- Add support to KeyVar for refresh commands
-- Add support to CmdVar for timeLimKeyword (or similar)
 - Modify CmdVar to not track specific keywords, but instead to search replyList for values.
 
 History:
 - 2009-07-18 ROwen  Changed getRefreshInfo() to a property refreshInfo.
+- 2009-07-19 ROwen  Removed addROWdg and addROWdgSet; added addValueListCallback.
 """
 import sys
 import time
@@ -15,6 +14,7 @@ import traceback
 
 import RO.AddCallback
 import RO.Constants
+import RO.MathUtil
 
 import opscore.protocols.messages as protoMess
 
@@ -89,75 +89,74 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """
         return self.valueList[ind]
 
-    def addValueCallback(self, callFunc, ind=0, callNow=True):
+    def addValueCallback(self, callFunc, ind=0, cnvFunc=None, callNow=True):
         """Similar to addCallback, but the callback function receives 3 arguments including the specified value.
         
-        This can simply certain kinds of callbacks, especially for aggregate values (see PVTKeyVar).
-    
-        Note: if the keyvariable has a variable # of values and the one specified
-        by ind is not set, the callback is not called. In general, it is discouraged
-        to use indexed callbacks for variable-length keyvariables.
+        This is useful for tying objects such as widgets directly to KeyVars.
 
         Inputs:
         - callFunc: callback function with arguments:
           - value: value at the specified index
           - isCurrent (by name): False if keyVar is not current
           - keyVar (by name): this keyVar
+        - ind: index of KeyVar value
+        - cnvFunc: a conversion function applied to the value before issuing the callback
         - callNow: if true, execute callFunc immediately, else wait until the keyword is seen
+    
+        Note: if the KeyVar has a variable number of values and the one specified by ind is not supplied,
+        then the callback is not called.
         
-        Raise IndexError in ind is too large (>= maxVals).
+        Raise IndexError if not 0 <= ind < maxVals
         """
-        maxVals = self.maxVals
-        if maxVals != None and ind >= self.maxVals:
-            raise IndexError("index too large (%d >= maxVals=%d) for %s" % (ind, maxVals, self,))
+        RO.MathUtil.checkRange(ind, 0, self.maxVals, "%s ind" % (self,))
+        
+        if not cnvFunc:
+            cnvFunc = lambda x: x
                 
-        def fullCallFunc(keyVar, ind=ind):
+        def adapterFunc(keyVar, callFunc=callFunc, ind=ind, cnvFunc=cnvFunc):
             try:
                 val = keyVar.valueList[ind]
             except IndexError:
                 return
-            callFunc(val, isCurrent=keyVar.isCurrent, keyVar=keyVar)
-        self.addCallback(fullCallFunc, callNow)
+            callFunc(cnvFunc(val), isCurrent=keyVar.isCurrent, keyVar=keyVar)
+        self.addCallback(adapterFunc, callNow)
 
-# I hope not to need this.
-# If I need it a lot then consider making addCallback work this way again, instead.
-#     def addValueListCallback(self, callFunc, callNow=True):
-#         """Similar to addCallback, but the callback function receives 3 arguments including a list of values.
-# 
-#         Inputs:
-#         - callFunc: callback function with arguments:
-#           - valueList: list of values
-#           - isCurrent (by name): False if keyVar is not current
-#           - keyVar (by name): this keyVar
-#         - callNow: if true, execute callFunc immediately, else wait until the keyword is seen
-#         """
-#         def fullCallFunc(keyVar):
-#             callFunc(keyVar.valueList, isCurrent=keyVar.isCurrent, keyVar=keyVar)
-#         self.addCallback(fullCallFunc, callNow)
+    def addValueListCallback(self, callFuncList, startInd=0, cnvFunc=None, callNow=True):
+        """Similar to addCallback, but each callback function receives 3 arguments including the specified value.
 
-    def addROWdg(self, wdg, ind=0, setDefault=False):
-        """Adds an RO.Wdg; these format their own data via the set
-        or setDefault function (depending on setDefault).
-        Typically one uses set for a display widget
-        and setDefault for an Entry widget
-        """
-        if setDefault:
-            self.addValueCallback(wdg.setDefault, ind)
-        else:
-            self.addValueCallback(wdg.set, ind)
+        This is useful for tying a collection of objects such as widgets directly to KeyVars.
+        addValueListCallback is more efficient than calling addValueCallback
+        separately for a collection of functions because the KeyVar has only one callback.
+
+        Inputs:
+        - callFuncList: a list of callback functions, each of which has arguments:
+          - value: value at the specified index
+          - isCurrent (by name): False if keyVar is not current
+          - keyVar (by name): this keyVar
+        - startInd: index of first KeyVar value
+        - cnvFunc: a conversion function applied to each value before issuing the callback
+        - callNow: if true, execute callFunc immediately, else wait until the keyword is seen
     
-    def addROWdgSet(self, wdgSet, setDefault=False):
-        """Adds a set of RO.Wdg wigets;
-        should be more efficient than adding them one at a time with addROWdg
+        Note: if the KeyVar has a variable number of values and some are not supplied
+        then the associated functions are not called.
+        
+        Raise IndexError if not 0 <= ind < maxVals
         """
-        maxVals = self.maxVals
-        if maxVals != None and len(wdgSet) > maxVals:
-            raise IndexError("too many widgets (%d > maxVals=%d) for %s" % (len(wdgSet), maxVals, self,))
-        if setDefault:
-            callFunc = _SetDefaultWdgSet(wdgSet)
-        else:
-            callFunc = _SetWdgSet(wdgSet)
-        self.addCallback(callFunc)
+        endInd = startInd + len(callFuncList) - 1
+        RO.MathUtil.checkRange(startInd, 0, None, "%s startInd" % (self,))
+        RO.MathUtil.checkRange(endInd, None, self.maxVals, "%s end index" % (self,))
+        
+        if not cnvFunc:
+            cnvFunc = lambda x: x
+                
+        def adapterFunc(keyVar, callFuncList=callFuncList, startInd=startInd, cnvFunc=cnvFunc):
+            for ind, callFunc in enumerate(callFuncList):
+                try:
+                    val = keyVar.valueList[ind]
+                except IndexError:
+                    return
+                callFunc(cnvFunc(val), isCurrent=keyVar.isCurrent, keyVar=keyVar)
+        self.addCallback(adapterFunc, callNow)
 
     @property
     def hasRefreshCmd(self):
