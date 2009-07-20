@@ -274,13 +274,21 @@ class Int(ValueType):
     baseType = int
     storage = 'int4'
     def new(cls,value):
-        return int.__new__(cls,cls.validate(value))
+        if isinstance(value,basestring):
+            # base = 0 infers base from optional prefix (see PEP 3127)
+            return int.__new__(cls,cls.validate(value),0)
+        else:
+            return int.__new__(cls,cls.validate(value))
 
 class Long(ValueType):
     baseType = long
     storage = 'int8'
     def new(cls,value):
-        return long.__new__(cls,cls.validate(value))
+        if isinstance(value,basestring):
+            # base = 0 infers base from optional prefix (see PEP 3127)
+            return long.__new__(cls,cls.validate(value),0)
+        else:
+            return long.__new__(cls,cls.validate(value))
 
 class String(ValueType):
     baseType = str
@@ -292,12 +300,19 @@ class UInt(ValueType):
     baseType = long
     storage = 'int4'
     def new(cls,value):
-        lvalue = long(cls.validate(value))
+        if isinstance(value,basestring):
+            # base = 0 infers base from optional prefix (see PEP 3127)
+            lvalue = long(cls.validate(value),0)
+        else:
+            lvalue = long(cls.validate(value))
         if lvalue < 0 or lvalue > 0xffffffff:
             raise ValueError('Invalid literal for UInt: %r' % value)
-        return long.__new__(cls,value)
+        return long.__new__(cls,lvalue)
 
 class Hex(UInt):
+    """
+    The Hex class has been deprecated and is scheduled for deletion (20-Jul-2009)
+    """
     reprFmt = '0x%x'
     def new(cls,value):
         try:
