@@ -332,12 +332,13 @@ class CmdVar(object):
         - callFunc: a function to call when the command changes state;
             it receives one argument: this CmdVar
         - callCodes: the message codes for which to call the callback;
-            a string of one or more message codes; useful predefined sets include:
+            a string of one or more message codes (not case sensitive); useful predefined sets include:
                 DoneCodes (command finished or failed)
                 FailedCodes (command failed)
                 AllCodes (all message codes, thus any reply)
         """
-        self.callCodesFuncList.append((callCodes, callFunc))
+        upCallCodes = callCodes.upper()
+        self.callCodesFuncList.append((upCallCodes, callFunc))
     
     @property
     def didFail(self):
@@ -457,10 +458,9 @@ class CmdVar(object):
 
         newTimeLim = keyVar[self._timeLimKeyInd]
         try:
-            newTimeLim = float(valueTuple[0])
+            newTimeLim = float(newTimeLim)
         except Exception:
-            raise ValueError("Invalid value %r for timeout for command %d"
-                % (valueTuple, keywd, self.cmdID))
+            raise ValueError("Invalid timeout value %r in keyword %s for command %s" % (newTimeLim, keyVar, self))
         self.maxEndTime = time.time() + newTimeLim
         if self.timeLim:
             self.maxEndTime += self.timeLim
@@ -495,10 +495,11 @@ class CmdVar(object):
         """
         if (not keyVar.isCurrent) or (not keyVar.reply):
             return False
-        if keyVar.reply.header.commandID != self.cmdID:
+        if keyVar.reply.header.commandId != self.cmdID:
             return False
         if keyVar.reply.header.cmdrName != self.dispatcher.connection.cmdr:
             return False
+        return True
 
     def _keyVarCallback(self, keyVar):
         """Keyword seen; archive the data.
