@@ -251,7 +251,7 @@ class Keywords(list,Canonized):
         if isinstance(name,basestring):
             lower = name.lower()
             for k in self:
-                if k.name.lower() == name:
+                if k.name.lower() == lower:
                     return True
             return False
         raise TypeError('Keyword names must be strings')
