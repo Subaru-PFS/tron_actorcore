@@ -5,6 +5,7 @@ History:
 - 2009-07-18 ROwen  Changed getRefreshInfo() to a property refreshInfo.
 - 2009-07-19 ROwen  Removed addROWdg and addROWdgSet; added addValueListCallback.
                     Fixed CmdVar timeLimKeyVar handling.
+- 2009-07-20 ROwen  Added getValue property.
 """
 import sys
 import time
@@ -237,7 +238,21 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """
         self._isCurrent = False
         self._basicDoCallbacks(self)
-
+     
+    def getValue(self, doRaise=True):
+        """Return the "value" of the KeyVar, as follows:
+        - raise ValueError if keyVar is unknown (valueList contains None) and doRaise is True
+        - return True if keyVar always contains 0 elements
+        - return keyVar[0] if keyVar always contains 1 element
+        - return keyVar.valueList in all other cases
+        """
+        if doRaise and (None in self.valueList):
+            raise ValueError("%s is unknown" % (self,))
+        if self.maxVals == 0:
+            return True
+        if (self.maxVals == 1) and (self.minVals == 1):
+            return self.valueList[0]
+        return self.valueList
 
 class CmdVar(object):
     """Issue a command via the dispatcher and receive callbacks

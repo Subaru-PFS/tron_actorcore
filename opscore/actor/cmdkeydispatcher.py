@@ -280,7 +280,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 # continuing where I left off
                 self._checkRemCmdTimer = self.reactor.callLater(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
         except:
-            sys.stderr.write ("opscore.actor.CmdKeyVarDispatcher._checkRemCmdTimeouts failed\n")
+            sys.stderr.write ("%s._checkRemCmdTimeouts failed%\n" % (self.__class__.__name__, ))
             traceback.print_exc(file=sys.stderr)
 
         # finished checking all commands in the current cmdVarIter;
@@ -499,8 +499,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                     keyVar.setNotCurrent()
             return
     
-        # iterate over a copy of the values
-        # so we can modify the dictionary while checking command timeouts
         self._sendNextRefreshCmd()
 
     def _sendNextRefreshCmd(self, refreshCmdItemIter=None):
@@ -511,13 +509,14 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         
         Inputs:
         - refreshCmdItemIter: iterator over items in refreshCmdDict;
-            if None then set to self.refreshCmdDict.iteritems()
+          if None then set to self.refreshCmdDict.iteritems()
         """
 #         print "%s._sendNextRefreshCmd(%s)" % (self.__class__.__name__, refreshCmdItemIter)
         if not self._isConnected:
             # schedule parent function asap and bail out
             self._refreshAllTimer = self.reactor.callLater(_ShortInterval, self.refreshAllVar)
             return
+
         if refreshCmdItemIter == None:
             refreshCmdItemIter = self.refreshCmdDict.iteritems()
 
@@ -536,7 +535,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             )
             self.executeCmd(cmdVar)
         except:
-            sys.stderr.write("opscore.actor.CmdKeyVarDispatcher._sendNextRefreshCmd: refresh command %s failed:\n" % (cmdVar,))
+            sys.stderr.write("%s._sendNextRefreshCmd: refresh command %s failed:\n" % (self.__class__.__name__, cmdVar,))
             traceback.print_exc(file=sys.stderr)
         self._refreshNextTimer = self.reactor.callLater(_ShortInterval, self._sendNextRefreshCmd, refreshCmdItemIter)
 
