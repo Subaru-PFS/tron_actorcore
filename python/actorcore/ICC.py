@@ -24,14 +24,14 @@ class ICC(coreActor.Actor):
         if path == None:
             path = ['./Controllers']
 
-        self.logging.info("attaching controller %s from path %s", name, path)
+        self.logger.info("attaching controller %s from path %s", name, path)
         file = None
         try:
             file, filename, description = imp.find_module(name, path)
             self.icclog.debug("controller file=%s filename=%s from path %s",
                               file, filename, path)
             mod = imp.load_module(name, file, filename, description)
-            self.logging.debug('load_module(%s, %s, %s, %s) = %08x',
+            self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
                          name, file, filename, description, id(mod))
         except ImportError, e:
             raise ICCError('Import of %s failed: %s' % (name, e))
@@ -40,7 +40,7 @@ class ICC(coreActor.Actor):
                 file.close()
 
         # Instantiate and save a new controller. 
-        self.logging.info('creating new %s (%08x)', name, id(mod))
+        self.logger.info('creating new %s (%08x)', name, id(mod))
         exec('conn = mod.%s(self, "%s")' % (name, name))
 
         # If we loaded the module and the controller is already running, cleanly stop the old one. 
@@ -49,12 +49,12 @@ class ICC(coreActor.Actor):
             self.controllers[name].stop()
             del self.controllers[name]
 
-        self.logging.info('starting %s controller', name)
+        self.logger.info('starting %s controller', name)
         try:
             conn.start()
         except ICCError, e:
             print sys.exc_info()
-            self.logging.error('Could not connect to %s', name)
+            self.logger.error('Could not connect to %s', name)
             return False
         self.controllers[name] = conn
         return True
@@ -64,7 +64,7 @@ class ICC(coreActor.Actor):
         """
 
 	clist = eval(self.config.get(self.name, 'controllers'))
-        self.logging.info("All controllers = %s",clist)
+        self.logger.info("All controllers = %s",clist)
         for c in clist:
             if c not in self.allControllers:
                 self.bcast.warn('text=%s' % (qstr('cannot attach unknown controller %s' % (c))))
