@@ -8,7 +8,7 @@ import threading
 
 import actorcore.Actor as coreActor
 
-class ICC(coreActor.Actor)
+class ICC(coreActor.Actor):
     def __init__(self, name, configFile):
         coreActor.Actor.__init__(self, name, configFile)
         
