@@ -182,7 +182,7 @@ class Key(Consumer):
         self.typedValues = TypedValues(vtypes)
         self.help = metadata.get('help',None)
         self.refreshCmd = metadata.get('refreshCmd', None)
-        defDoCache = (self.typedValues.maxVals > 0) and not self.refreshCmd
+        defDoCache = (self.typedValues.maxVals != 0) and not self.refreshCmd
         self.doCache = bool(metadata.get('doCache', defDoCache))
         if 'unique' in metadata:
             self.unique = metadata.get('unique')

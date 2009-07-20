@@ -77,8 +77,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
     def __str__(self):
         """Return a short str representation of a KeyVar
         """
-        return "%s(%r, %s=%s)" % \
-            (self.__class__.__name__, self.actor, self.name, self.valueList)
+        return "%s(%r, %s=%s)" % (self.__class__.__name__, self.actor, self.name, self.valueList)
 
     def __getitem__(self, ind):
         """Implement keyVar[ind] to return the specified value from the valueList.
