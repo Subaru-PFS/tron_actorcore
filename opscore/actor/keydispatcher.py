@@ -7,7 +7,6 @@ History:
 """
 import sys
 import traceback
-
 import opscore.protocols.parser
 import keyvar
 

@@ -72,6 +72,7 @@ History:
 2009-03-25 ROwen    Fixed a bug that made KeyVar refresh inefficient (also fixed in opscore.actor.CmdKeyVarDispatcher).
 2009-04-03 ROwen    Split out keyvar functionality into a very simple base class.
 2009-07-18 ROwen    Overhauled keyVar refresh to be more efficient and to run each refresh command only once.
+2009-07-20 ROwen    Modified to not log if logFunc = None; added a convenience logging function.
 
 TO DO:
 - Clean up use of "connection" once I know what I'll have available
@@ -93,7 +94,7 @@ import opscore.protocols.messages as protoMess
 import keydispatcher
 import keyvar
 
-__all__ = ["CmdKeyVarDispatcher"]
+__all__ = ["logToStdOut", "CmdKeyVarDispatcher"]
 
 # intervals (in milliseconds) for various background tasks
 _RefreshInterval = 1.0 # time interval between variable refresh checks (sec)
@@ -103,6 +104,11 @@ _ShortInterval =   0.01 # short time interval; used to schedule a callback right
 _CmdNumWrap = 1000 # value at which user command ID numbers wrap
 
 _RefreshTimeLim = 20 # time limit for refresh commands (sec)
+
+
+def logToStdOut(msgStr, severity, actor, cmdr):
+    print msgStr
+
 
 class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     """Parse replies and sets KeyVars. Also manage CmdVars and their replies.
@@ -122,6 +128,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             (msgStr, severity, actor, cmdr)
             where the first argument is positional and the others are by name
             and severity is an RO.Constants.sevX constant
+            If None then nothing is logged.
         """
         keydispatcher.KeyVarDispatcher.__init__(self)
         
@@ -405,7 +412,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         - cmdr: commander; defaults to self
         """
         if not self.logFunc:
-            sys.stderr.write(msgStr + "\n")
             return
 
         try:

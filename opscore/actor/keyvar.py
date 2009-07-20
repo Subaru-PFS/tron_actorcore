@@ -16,7 +16,7 @@ import RO.MathUtil
 
 import opscore.protocols.messages as protoMess
 
-__all__ = ["KeyVar", "AllCodes", "DoneCodes", "WarningCodes", "FailCodes", "MsgCodeSeverity"]
+__all__ = ["KeyVar", "AllCodes", "DoneCodes", "FailedCodes", "MsgCodeSeverity"]
 
 AllCodes = "IW:F!>D"
 DoneCodes = ":F!"
