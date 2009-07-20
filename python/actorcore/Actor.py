@@ -12,8 +12,9 @@ from twisted.internet import reactor
 
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
-import actorcore.CommandLinkManager as cmdLinkManager
-import actorcore.Command as actorCmd
+
+import CommandLinkManager as cmdLinkManager
+import Command as actorCmd
 
 from ICCExceptions import ICCError
 
@@ -65,7 +66,7 @@ class ModLoader():
         finally:
             file.close()
 
-class Actor(object, CommandLoader):
+class Actor(object):
     def __init__(self, name, configFile): 
         self.name = name
         self.configFile = os.path.expandvars(
@@ -82,9 +83,9 @@ class Actor(object, CommandLoader):
 
         # All loggers can and should be picked up by other modules with "logging.getLogger(name)"
         # Make the root logger go to a rotating file.
-        opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "logs"), 'logs')
+        opsLogging.makeOpsFileLogger(self.logDir, 'logs')
         self.logger = logging.getLogger('logs')
-        self.logger.setLevel(int(self.config.get('logging','level')))
+        self.logger.setLevel(int(self.config.get('logging','baseLevel')))
         self.logger.propagate = False
         self.logger.info('%s starting up....' % (name))
 
@@ -113,24 +114,25 @@ class Actor(object, CommandLoader):
         # can find the others. 
         self.commandSets = {}
         self.topCommands = {}
-        logging.info("Attaching all command sets...")
+        self.logger.info("Attaching all command sets...")
         self.attachAllCommandSets()
-        logging.info("All command sets attached...")
+        self.logger.info("All command sets attached...")
 
         self.commandQueue = Queue.Queue()
-
+        self.shuttingDown = False
+        
     def attachCmdSet(self, cname, path=None):
         """ (Re-)load and attach a named set of commands. """
 
         if path == None:
             path = ['./Commands']
 
-        self.icclog.info("attaching command set %s from path %s", cname, path)
+        self.logger.info("attaching command set %s from path %s", cname, path)
 
         file = None
         try:
             file, filename, description = imp.find_module(cname, path)
-            self.icclog.debug("command set file=%s filename=%s from path %s",
+            self.logger.debug("command set file=%s filename=%s from path %s",
                               file, filename, path)
             mod = imp.load_module(cname, file, filename, description)
         except ImportError, e:
@@ -168,11 +170,11 @@ class Actor(object, CommandLoader):
             try:
                 cmd = self.commandQueue.get(block = True,timeout = 3)
             except Queue.Empty:
-                if self.shutdown:
+                if self.shuttingDown:
                     return
                 else:
                     continue
-            logging.info("Command received.")
+            self.logger.info("Command received.")
             # Dispatch on the first word of the command. 
             handler = self.topCommands.get(cmd.cmd.name, None)
             if handler == None:
@@ -186,95 +188,27 @@ class Actor(object, CommandLoader):
                     tback('newCmd', e)
                     cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
 
-class ICC(object, Actor)
-    def __init__(self, name, configFile):
-        Actor.__init__(self, name, configFile)
-        
-        # Create a separate logger for controller io
-        opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "io"), 'io')
-        self.iolog = logging.getLogger('io')
-        self.iolog.setLevel(int(self.config.get('logging','ioLevel')))
-        self.iolog.propagate = False
-
-    def attachController(self, name, path=None, cmd=None):
-        """ (Re-)load and attach a named set of commands. """
-
-        if path == None:
-            path = ['./Controllers']
-
-        logging.info("attaching controller %s from path %s", name, path)
-        file = None
-        try:
-            file, filename, description = imp.find_module(name, path)
-            self.icclog.debug("controller file=%s filename=%s from path %s",
-                              file, filename, path)
-            mod = imp.load_module(name, file, filename, description)
-            logging.debug('load_module(%s, %s, %s, %s) = %08x',
-                         name, file, filename, description, id(mod))
-        except ImportError, e:
-            raise ICCError('Import of %s failed: %s' % (name, e))
-        finally:
-            if file:
-                file.close()
-
-        # Instantiate and save a new controller. 
-        logging.info('creating new %s (%08x)', name, id(mod))
-        exec('conn = mod.%s(self, "%s")' % (name, name))
-
-        # If we loaded the module and the controller is already running, cleanly stop the old one. 
-        if name in self.controllers:
-            self.icclog.info('stopping %s controller', name)
-            self.controllers[name].stop()
-            del self.controllers[name]
-
-        logging.info('starting %s controller', name)
-        try:
-            conn.start()
-        except ICCError, e:
-            print sys.exc_info()
-            logging.error('Could not connect to %s', name)
-            return False
-        self.controllers[name] = conn
-        return True
-
-    def attachAllControllers(self, path=None):
-        """ (Re-)load and (re-)connect to the hardware controllers listed in config:tron.controllers. 
-        """
-
-	clist = eval(self.config.get(self.name, 'controllers'))
-        logging.info("All controllers = %s",clist)
-        for c in clist:
-            if c not in self.allControllers:
-                self.bcast.warn('text=%s' % (qstr('cannot attach unknown controller %s' % (c))))
-                continue
-            if not self.attachController(c, path):
-                self.bcast.warn('text="Could not connect to controller %s."' % (c))
-
-    def stopAllControllers(self):
-        for c in self.controllers.keys():
-            controller = self.controllers[c]
-            controller.stop()
-
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 
         self.activeCmd = None
 
+        self.logger.info('new cmd: %s' % (cmd))
+        
         # Empty cmds are OK; send an empty response... 
-         if len(cmd.cmd.name) == 0:
+        if len(cmd.cmd.name) == 0:
             cmd.finish('')
             return None
         self.commandQueue.put(cmd)
         return self
-
+    
     def shutdown(self):
-        self.shutdown = True
-        self.stopAllControllers()
-
+        self.shuttingDown = True
+        
     def run(self, doReactor=True):
         logging.info("starting reactor....")
         try:
-            threading.Thread(target=self.icc_loop).start()
+            threading.Thread(target=self.actor_loop).start()
             if doReactor:
                 reactor.run()
         except Exception, e:
