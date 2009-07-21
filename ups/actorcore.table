@@ -1,6 +1,5 @@
 setupRequired("opscore")
 setupOptional("RO")
 
-pathPrepend(PATH, ${UPS_PROD_DIR}/bin)
-pathPrepend(PYTHONPATH, ${UPS_PROD_DIR}/python)
-
+pathPrepend(PATH, ${PRODUCT_DIR}/bin)
+pathPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
