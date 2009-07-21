@@ -28,7 +28,7 @@ class ICC(coreActor.Actor):
         file = None
         try:
             file, filename, description = imp.find_module(name, path)
-            self.icclog.debug("controller file=%s filename=%s from path %s",
+            self.logger.debug("controller file=%s filename=%s from path %s",
                               file, filename, path)
             mod = imp.load_module(name, file, filename, description)
             self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
@@ -45,7 +45,7 @@ class ICC(coreActor.Actor):
 
         # If we loaded the module and the controller is already running, cleanly stop the old one. 
         if name in self.controllers:
-            self.icclog.info('stopping %s controller', name)
+            self.logger.info('stopping %s controller', name)
             self.controllers[name].stop()
             del self.controllers[name]
 
