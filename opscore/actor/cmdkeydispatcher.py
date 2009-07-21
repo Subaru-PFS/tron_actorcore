@@ -73,9 +73,7 @@ History:
 2009-04-03 ROwen    Split out keyvar functionality into a very simple base class.
 2009-07-18 ROwen    Overhauled keyVar refresh to be more efficient and to run each refresh command only once.
 2009-07-20 ROwen    Modified to not log if logFunc = None; added a convenience logging function.
-
-TO DO:
-- Clean up use of "connection" once I know what I'll have available
+2009-07-21 ROwen    Added support for including commander info in command strings.
 """
 import sys
 import time
@@ -117,6 +115,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         name = "CmdKeyVarDispatcher",
         connection = None,
         logFunc = None,
+        includeCmdr = True,
     ):
         """Create a new CmdKeyVarDispatcher
     
@@ -129,11 +128,13 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             where the first argument is positional and the others are by name
             and severity is an RO.Constants.sevX constant
             If None then nothing is logged.
+        - includeCmdr: if True then commander info is prepended to all commands sent to the hub:
+            <cmdVar.forCmdr>.<self.cmdr> if cmdVar has forUserCmd, else <self.cmdr>
         """
         keydispatcher.KeyVarDispatcher.__init__(self)
         
         self.name = name
-
+        self.includeCmdr = bool(includeCmdr)
         self.parser = protoParse.ReplyParser()
         self.reactor = twisted.internet.reactor
         self._isConnected = False
@@ -287,6 +288,14 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         # schedule a new checkCmdTimeouts at the usual interval
         self._checkCmdTimer = self.reactor.callLater(_TimeoutInterval, self.checkCmdTimeouts)
     
+    @property
+    def cmdr(self):
+        """Return the commander (programName.userName).
+        
+        Warning: the value is "me.me" until the first connection to the hub.
+        """
+        return self.connection.cmdr
+    
     def dispatchReply(self, reply):
         """Set KeyVars based on the supplied Reply
         
@@ -371,13 +380,20 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         cmdVar._setStartInfo(self, cmdID)
     
         try:
-            fullCmd = "%d %s %s" % (cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
-            self.connection.writeLine (fullCmd)
+            if self.includeCmdr:
+                if cmdVar.forUserCmd:
+                    cmdrPrefix = "%s.%s " % (cmdVar.forUserCmd.cmdr, self.cmdr)
+                else:
+                    cmdrPrefix = "%s " % (self.cmdr)
+            else:
+                cmdrPrefix = ""
+            fullCmdStr = "%s%d %s %s" % (cmdrPrefix, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
+            self.connection.writeLine (fullCmdStr)
             self.logMsg (
-                msgStr = fullCmd,
+                msgStr = fullCmdStr,
                 actor = cmdVar.actor,
             )
-#           print "executing:", fullCmd
+#             print "executing:", fullCmdStr
         except Exception, e:
             errReply = self.makeReply(
                 cmdID = cmdVar.cmdID,
@@ -391,7 +407,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
         wasConnected = self._isConnected
         self._isConnected = conn.isConnected()
-#        print "updConnState; wasConnected=%s, isConnected=%s" % (wasConnected, self._isConnected)
+#         print "updConnState; wasConnected=%s, isConnected=%s" % (wasConnected, self._isConnected)
 
         if wasConnected != self._isConnected:
             self.reactor.callLater(_ShortInterval, self.refreshAllVar)

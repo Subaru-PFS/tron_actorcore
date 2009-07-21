@@ -2,10 +2,11 @@
 """KeyVar and CmdVar
 
 History:
-- 2009-07-18 ROwen  Changed getRefreshInfo() to a property refreshInfo.
-- 2009-07-19 ROwen  Removed addROWdg and addROWdgSet; added addValueListCallback.
+2009-07-18 ROwen    Changed getRefreshInfo() to a property refreshInfo.
+2009-07-19 ROwen    Removed addROWdg and addROWdgSet; added addValueListCallback.
                     Fixed CmdVar timeLimKeyVar handling.
-- 2009-07-20 ROwen  Added getValue property.
+2009-07-20 ROwen    Added getValue property.
+2009-07-21 ROwen    Added forUserCmd support to CmdVar.
 """
 import sys
 import time
@@ -27,7 +28,7 @@ FailedCodes = "F!"
 MsgCodeSeverity = {
     "D": RO.Constants.sevDebug, # debug
     "I": RO.Constants.sevNormal, # information
-    ">": RO.Constants.sevNormal, # warning
+    ">": RO.Constants.sevNormal, # command queued
     ":": RO.Constants.sevNormal, # command finished
     "W": RO.Constants.sevWarning, # warning
     "F": RO.Constants.sevError, # command failed
@@ -270,6 +271,7 @@ class CmdVar(object):
         timeLimKeyInd = 0,
         abortCmdStr = None,
         keyVars = None,
+        forUserCmd = None,
     ):
         """
         Inputs:
@@ -289,6 +291,9 @@ class CmdVar(object):
         - keyVars: a sequence of 0 or more keyword variables to monitor for this command.
             Any data for those variables that arrives IN RESPONSE TO THIS COMMAND is saved
             and can be retrieved using cmdVar.getKeyVarData or cmdVar.getLastKeyVarData.
+        - forUserCmd: this command is being sent due to the specified command from a user.
+            forUserCmd must have one attribute: cmdr. The command string sent to the hub
+            will start with: <forUsreCmd.cmdr>.<cmdr> instead of <cmdr>.
         
         Note: timeLim and timeLimKeyInfo work together as follows:
         - The initial time limit for the command is timeLim
@@ -303,6 +308,7 @@ class CmdVar(object):
         self.timeLim = timeLim
         self.description = description
         self.isRefresh = bool(isRefresh)
+        self.forUserCmd = forUserCmd
         self._timeLimKeyVar = timeLimKeyVar
         self._timeLimKeyInd = int(timeLimKeyInd)
         if self._timeLimKeyVar:
