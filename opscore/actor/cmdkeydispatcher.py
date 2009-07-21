@@ -115,12 +115,13 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         name = "CmdKeyVarDispatcher",
         connection = None,
         logFunc = None,
-        includeCmdr = True,
+        includeName = True,
     ):
         """Create a new CmdKeyVarDispatcher
     
         Inputs:
-        - name: used as the actor when the dispatcher reports errors
+        - name: if includeName is True, then sent as a prefix to all commands sent to the hub.
+            Also used when the dispatcher reports errors
         - connection: an RO.Comm.HubConnection object or similar;
           if omitted, an RO.Comm.HubConnection.NullConnection is used, which is useful for testing.
         - logFunc: a function that logs a message. Argument list must be:
@@ -128,13 +129,13 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             where the first argument is positional and the others are by name
             and severity is an RO.Constants.sevX constant
             If None then nothing is logged.
-        - includeCmdr: if True then commander info is prepended to all commands sent to the hub:
-            <cmdVar.forCmdr>.<self.cmdr> if cmdVar has forUserCmd, else <self.cmdr>
+        - includeName: if True then self.name is prepended to all commands sent to the hub,
+            or if cmdVar.forUserCmd is present, then the prefix is <cmdVar.forUserCmd.cmdr>.<self.name>.
         """
         keydispatcher.KeyVarDispatcher.__init__(self)
         
         self.name = name
-        self.includeCmdr = bool(includeCmdr)
+        self.includeName = bool(includeName)
         self.parser = protoParse.ReplyParser()
         self.reactor = twisted.internet.reactor
         self._isConnected = False
@@ -288,14 +289,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         # schedule a new checkCmdTimeouts at the usual interval
         self._checkCmdTimer = self.reactor.callLater(_TimeoutInterval, self.checkCmdTimeouts)
     
-    @property
-    def cmdr(self):
-        """Return the commander (programName.userName).
-        
-        Warning: the value is "me.me" until the first connection to the hub.
-        """
-        return self.connection.cmdr
-    
     def dispatchReply(self, reply):
         """Set KeyVars based on the supplied Reply
         
@@ -380,14 +373,14 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         cmdVar._setStartInfo(self, cmdID)
     
         try:
-            if self.includeCmdr:
+            if self.includeName:
                 if cmdVar.forUserCmd:
-                    cmdrPrefix = "%s.%s " % (cmdVar.forUserCmd.cmdr, self.cmdr)
+                    namePrefix = "%s.%s " % (cmdVar.forUserCmd.cmdr, self.name)
                 else:
-                    cmdrPrefix = "%s " % (self.cmdr)
+                    namePrefix = "%s " % (self.name)
             else:
-                cmdrPrefix = ""
-            fullCmdStr = "%s%d %s %s" % (cmdrPrefix, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
+                namePrefix = ""
+            fullCmdStr = "%s%d %s %s" % (namePrefix, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
             self.connection.writeLine (fullCmdStr)
             self.logMsg (
                 msgStr = fullCmdStr,

@@ -293,7 +293,7 @@ class CmdVar(object):
             and can be retrieved using cmdVar.getKeyVarData or cmdVar.getLastKeyVarData.
         - forUserCmd: this command is being sent due to the specified command from a user.
             forUserCmd must have one attribute: cmdr. The command string sent to the hub
-            will start with: <forUsreCmd.cmdr>.<cmdr> instead of <cmdr>.
+            will start with: <forUsreCmd.cmdr>.<dispatcher.name> instead of <dispatcher.name>.
         
         Note: timeLim and timeLimKeyInfo work together as follows:
         - The initial time limit for the command is timeLim
