@@ -261,8 +261,8 @@ class ReplyHeader(Canonized):
     """
     Represents the headers of a reply
     """
-    MsgCode = types.Enum('>','D','I','W',':','F','!',
-        labelHelp=['Queued','Debug','Information','Warning','Finished','Error','Fatal'],
+    MsgCode = types.Enum('>','D','I','W','E',':','F','!',
+        labelHelp=['Queued','Debug','Information','Warning','Error','Finished','Error','Fatal'],
         name='code',help='Reply header status code')
     
     def __init__(self,program,user,actorStack,commandId,actor,code):

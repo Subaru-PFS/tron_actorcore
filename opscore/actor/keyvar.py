@@ -7,6 +7,7 @@ History:
                     Fixed CmdVar timeLimKeyVar handling.
 2009-07-20 ROwen    Added getValue property.
 2009-07-21 ROwen    Added forUserCmd support to CmdVar.
+                    Added "E" message code for error.
 """
 import sys
 import time
@@ -20,7 +21,7 @@ import opscore.protocols.messages as protoMess
 
 __all__ = ["KeyVar", "AllCodes", "DoneCodes", "FailedCodes", "MsgCodeSeverity"]
 
-AllCodes = "IW:F!>D"
+AllCodes = "IWE:F!>D"
 DoneCodes = ":F!"
 FailedCodes = "F!"
 
@@ -31,6 +32,7 @@ MsgCodeSeverity = {
     ">": RO.Constants.sevNormal, # command queued
     ":": RO.Constants.sevNormal, # command finished
     "W": RO.Constants.sevWarning, # warning
+    "E": RO.Constants.sevError, # error
     "F": RO.Constants.sevError, # command failed
     "!": RO.Constants.sevError, # command failed and actor is in trouble
 }
