@@ -81,7 +81,7 @@ class Actor(object):
         self.name = name
         self.productName = productName if productName else self.name
         product_dir_name = '$%s_DIR' % (self.productName.upper())
-        self.product_dir = os.expandvars(product_dir_name)
+        self.product_dir = os.path.expandvars(product_dir_name)
         
         if not self.product_dir:
             raise RuntimeError('environment variable %s must be defined' % (product_dir_name))
@@ -112,7 +112,10 @@ class Actor(object):
         self.cmdlog.propagate = False
 
         self.console = logging.getLogger('') 
-        self.console.setLevel(int(self.config.get('logging','consoleLevel')))
+        try:
+            self.console.setLevel(int(self.config.get('logging','consoleLevel')))
+        except:
+            self.console.setLevel(int(self.config.get('logging','baseLevel')))
  
         # The list of all connected sources. 
         tronInterface = self.config.get('tron', 'interface') 

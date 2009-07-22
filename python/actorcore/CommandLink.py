@@ -3,7 +3,7 @@ from __future__ import with_statement
 __all__ = ['CommandLink']
 
 import logging
-iccLogger = logging.getLogger('icc')
+actorLogger = logging.getLogger('actor')
 cmdLogger = logging.getLogger('cmds')
 
 import os
@@ -49,7 +49,7 @@ class CommandLink(LineReceiver):
     def connectionMade(self):
         """ Called when our connection has been established. """
 
-        iccLogger.debug('new CommandNub')
+        actorLogger.debug('new CommandNub')
         self.brains.bcast.respond('yourUserNum=%d' % self.connID)
         
     def lineReceived(self, cmdString):
@@ -96,7 +96,6 @@ class CommandLink(LineReceiver):
             parsedCmd = self.parser.parse(cmdDict['cmdString'])
         except:
             cmdLogger.critical('cannot parse command string: %s' % (cmdDict['cmdString']))
-            cmd = Command(self.factory, cmdrName, self.connID, mid, None)
             self.brains.bcast.fail('text=%s' % (qstr("cannot parse command: %s" % (cmdDict['cmdString']))))
             return
         
@@ -133,11 +132,11 @@ class CommandLink(LineReceiver):
         """ Called from above when we want to drop the connection. """
         
         self.brains.bcast.respond('text=%s' % (qstr("shutting connection %d down" % (self.connID))))
-        iccLogger.info("CommandLink.shutdown because %s", why)
+        actorLogger.info("CommandLink.shutdown because %s", why)
         self.transport.loseConnection()
         
     def connectionLost(self, reason="cuz"):
         """ Called from below when the connection is dropped. """
         
-        iccLogger.info("connectionLost of %s because %s", self, reason)
+        actorLogger.info("connectionLost of %s because %s", self, reason)
         self.factory.loseConnection(self)
