@@ -2,6 +2,7 @@ import opscore.utility.sdss3logging
 import logging
 import threading
 import Queue
+import ConfigParser
 
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
@@ -123,9 +124,10 @@ class CmdrConnector(ReconnectingClientFactory):
         self.activeConnection.write(cmdStr + '\n')
 
 class Cmdr(object):
-    def __init__(self, name, loggerName='cmdr'):
+    def __init__(self, name, actor, loggerName='cmdr'):
+        self.actor = actor
+
         logger = logging.getLogger(loggerName)
-        logger.setLevel(logging.WARN)
         self.logger = logger
         
         self.connector = CmdrConnector(name, self, logger=logger)
@@ -134,18 +136,21 @@ class Cmdr(object):
         # Start a dispatcher, connected to our logger. Wire the dispatcher
         # in to the Model "singleton"
         logger = logging.getLogger('dispatch')
-        logger.setLevel(logging.WARN)
         def logFunc(msgStr, severity, actor, cmdr, logger=logger):
             logger.info("%s %s %s %s" % (cmdr, actor, severity, msgStr))
 
-        self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, self.connector, logFunc)
+        self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, self.connector, 
+                                                            logFunc, includeName=True)
         opsModel.Model.setDispatcher(self.dispatcher)
 
     def connectionMade(self):
         pass
     
     def connect(self):
-        reactor.connectTCP('hub25m', 6093, self.connector)
+        tronHost = self.actor.config.get('tron', 'tronHost')
+        tronPort = int(self.actor.config.get('tron', 'tronCmdrPort'))
+        
+        reactor.connectTCP(tronHost, tronPort, self.connector)
 
     def call(self, **argv):
         self.logger.info("sending command %s" % (argv))
@@ -179,7 +184,6 @@ def liveTest():
     import opscore.actor.keyvar as keyvar
     
     logger = logging.getLogger('test')
-    logger.setLevel(logging.INFO)
 
     def showVal(keyVar, logger=logger):
         logger.info("keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent))

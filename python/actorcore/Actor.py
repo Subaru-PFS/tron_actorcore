@@ -1,4 +1,5 @@
 import imp
+import re
 import sys
 import opscore.utility.sdss3logging as opsLogging
 import logging
@@ -15,8 +16,6 @@ from opscore.utility.tback import tback
 
 import CommandLinkManager as cmdLinkManager
 import Command as actorCmd
-
-from ICCExceptions import ICCError
 
 class ModLoader():
     def load_module(self, fullpath, name):
@@ -67,11 +66,20 @@ class ModLoader():
             file.close()
 
 class Actor(object):
-    def __init__(self, name, configFile): 
+    def __init__(self, name, configFile, product_dir=None): 
+
         self.name = name
         self.configFile = os.path.expandvars(
             os.path.expanduser(configFile))
 
+        if product_dir:
+            self.product_dir = product_dir
+        else:
+            self.product_dir = os.environ.get('%s_DIR' % (name.upper()), None)
+
+        if not self.product_dir:
+            raise RuntimeError("either pass Actor(product_dir=XXX) or setup actorcore")
+        
         # Missing config bits should make us blow up.
         self.configFile = os.path.expandvars(configFile)
         logging.warn("reading config file %s", self.configFile)
@@ -95,7 +103,7 @@ class Actor(object):
         self.cmdlog.propagate = False
 
         self.console = logging.getLogger('') 
-        self.console.setLevel(int(self.config.get('logging','baseLevel')))
+        self.console.setLevel(int(self.config.get('logging','consoleLevel')))
  
         # The list of all connected sources. 
         tronInterface = self.config.get('tron', 'interface') 
@@ -125,7 +133,7 @@ class Actor(object):
         """ (Re-)load and attach a named set of commands. """
 
         if path == None:
-            path = ['./Commands']
+            path = ['%s/Commands' % (self.product_dir)]
 
         self.logger.info("attaching command set %s from path %s", cname, path)
 
@@ -136,7 +144,7 @@ class Actor(object):
                               file, filename, path)
             mod = imp.load_module(cname, file, filename, description)
         except ImportError, e:
-            raise ICCError('Import of %s failed: %s' % (cname, e))
+            raise RuntimeError('Import of %s failed: %s' % (cname, e))
         finally:
             if file:
                 file.close()
@@ -154,14 +162,14 @@ class Actor(object):
         """
 
         if path == None:
-            path = './Commands'
+            path = '%s/Commands' % (self.product_dir)
         dirlist = os.listdir(path)
         dirlist.sort()
 
         for f in dirlist:
             if os.path.isdir(f) and not f.startswith('.'):
                 self.attachAllCommandSets(path=f)
-            if f.endswith('Cmd.py'):
+            if re.match('^[a-zA-Z][a-zA-Z0-9_-]*Cmd\.py$', f):
                 self.attachCmdSet(f[:-3], [path])
 
     def actor_loop(self):
@@ -174,7 +182,7 @@ class Actor(object):
                     return
                 else:
                     continue
-            self.logger.info("Command received.")
+            self.logger.info("Command received: %s" % (cmd))
             # Dispatch on the first word of the command. 
             handler = self.topCommands.get(cmd.cmd.name, None)
             if handler == None:

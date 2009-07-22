@@ -96,14 +96,18 @@ class CommandLink(LineReceiver):
         except:
             cmdLogger.critical('cannot parse command string: %s' % (cmdDict['cmdString']))
             cmd = Command(self.factory, cmdrName, self.connID, mid, None)
-            cmd.fail('text=%s' % (qstr("cannot parse command: %s" % (cmdDict['cmdString']))))
+            self.brains.bcast.fail('text=%s' % (qstr("cannot parse command: %s" % (cmdDict['cmdString']))))
             return
         
         cmdLogger.debug('new command from %s:%d: %s' % (cmdrName, mid, parsedCmd))
         cmd = Command(self.factory, cmdrName, self.connID, mid, parsedCmd)
 
         # And hand it upstairs.
-        self.brains.newCmd(cmd)
+        try:
+            self.brains.newCmd(cmd)
+        except:
+            self.brains.bcast.fail('text=%s' % (qstr("cannot process parsed command: %s" % 
+                                                     (cmdDict['cmdString']))))
 
     def sendQueuedResponses(self):
         """ method for the twisted reactor to call when we tell it there is output from this thread. """

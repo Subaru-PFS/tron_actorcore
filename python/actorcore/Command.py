@@ -31,7 +31,7 @@ class Command(object):
         """
         
         self.source = source
-        self.cmdrName = cmdrName
+        self.cmdr = cmdrName
         self.cid = cid
         self.mid = mid
         self.cmd = cmd
@@ -43,29 +43,29 @@ class Command(object):
         cmdLogger.debug("New Command: %s" % (self))
         
     def __str__(self):
-        return "Command(source=%08x cmdrName=%s cid=%s mid=%s cmd=%r)" % \
-               (id(self.source), self.cmdrName, self.cid, self.mid, self.cmd)
+        return "Command(source=%08x cmdr=%s cid=%s mid=%s cmd=%r)" % \
+               (id(self.source), self.cmdr, self.cid, self.mid, self.cmd)
 
     @property
     def program(self):
-        """ Return the program name component of the cmdrName. """
+        """ Return the program name component of the cmdr name. """
 
         try:
-            parts = self.cmdrName.split('.')
+            parts = self.cmdr.split('.')
             return parts[0]
         except:
-            cmdLogger.critical("failed to get programName from cmdrName %s" % (self.cmdrName))
+            cmdLogger.critical("failed to get programName from cmdrName %s" % (self.cmdr))
             return ''
 
     @property
     def username(self):
-        """ Return the username component of the cmdrName. """
+        """ Return the username component of the cmdr name. """
 
         try:
-            parts = self.cmdrName.split('.')
+            parts = self.cmdr.split('.')
             return parts[1]
         except:
-            cmdLogger.critical("failed to get username from cmdrName %s" % (self.cmdrName))
+            cmdLogger.critical("failed to get username from cmdrName %s" % (self.cmdr))
             return ''
         
     def isAlive(self):
@@ -77,7 +77,7 @@ class Command(object):
         """ Return intermediate response. """
 
         self.__respond('i', response)
-        
+
     def diag(self, response):
         """ Return diagnostic output. """
 
@@ -87,6 +87,11 @@ class Command(object):
         """ Return warning. """
 
         self.__respond('w', response)
+        
+    def error(self, response):
+        """ Return intermediate error response. """
+
+        self.__respond('e', response)
         
     def finish(self, response=None):
         """ Return successful command finish. """
@@ -121,7 +126,7 @@ class Command(object):
 
         self.source.sendResponse(self, flag, response)
         if not self.alive:
-            g.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
+            self.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
         
     def coverArgs(self, requiredArgs, optionalArgs=None, ignoreFirst=None):
         """ getopt, sort of.
