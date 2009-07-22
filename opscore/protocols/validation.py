@@ -109,6 +109,32 @@ class Cmd(Consumer,DispatchMixin):
         self.invokeCallbacks(message)
         return self.passed(message)
         
+    def match(self,message):
+        self.trace(message)
+        if not isinstance(message,protoMess.Command):
+            return self.failed('message is not a command')
+        if not message.name == self.verb:
+            return self.failed('command has wrong verb')
+        # match any command values
+        if not self.typedValues.consume(message.values):
+            return self.failed('no match for command values')
+        # remember the current state of our parsed command in case we need to
+        # restore it after an incomplete keywords validation
+        self.checkpoint = message.clone()
+        # try to match all of this command's keywords against our format string
+        iterator = KeywordsIterator(message.keywords)
+        if self.consumer and not self.consumer.consume(iterator):
+            # restore the original message
+            message.copy(self.checkpoint)
+            return self.failed('keywords do not match format string')
+        if iterator.keyword():
+            # restore the original message
+            message.copy(self.checkpoint)
+            return self.failed('command has unmatched keywords: %r' % iterator)
+        # if we get here, the message has been fully validated
+
+        return message, self.callbacks
+        
     def create(self,*kspecs,**kwargs):
         values = kwargs.get('values',None)
         if len(kspecs) == 1 and isinstance(kspecs[0],list):
@@ -163,6 +189,14 @@ class HandlerBase(object):
             except parser.ParseError:
                 pass
 
+    def match(self,line):
+        # try to parse this line
+        try:
+            parsed = self.parser.parse(line)
+            return self.matchLine(parsed)
+        except parser.ParseError:
+            return None, []
+
 class CommandHandler(HandlerBase):
     """
     Validates command strings and invokes any registered callbacks
@@ -184,6 +218,15 @@ class CommandHandler(HandlerBase):
         for consumer in self.consumers[parsed.name]:
             if consumer.consume(parsed):
                 return
+        raise ValidationError("Invalid cmd: %s" % parsed.canonical())
+
+    def matchLine(self,parsed):
+        if not parsed.name in self.consumers:
+            raise ValidationError("No handler for cmd: %s" % parsed.name)
+        for consumer in self.consumers[parsed.name]:
+            retval = consumer.match(parsed)
+            if retval:
+                return retval
         raise ValidationError("Invalid cmd: %s" % parsed.canonical())
 
 class ReplyKey(Consumer,DispatchMixin,KeysManager):
