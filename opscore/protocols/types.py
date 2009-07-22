@@ -330,11 +330,14 @@ class Enum(ValueType):
     def init(cls,dct,*args,**kwargs):
         if not args:
             raise ValueTypeError('missing enum labels in ctor')
-        dct['enumLabels'] = args
-        dct['enumValues'] = dict(zip(args,range(len(args))))
+        # force each label to be interpreted as a string so, for example,
+        # False->'False', 1->'1', 0xff->'255'
+        strargs = [str(arg) for arg in args]
+        dct['enumLabels'] = strargs
+        dct['enumValues'] = dict(zip(args,range(len(strargs))))
         # look for optional per-label help text
         labelHelp = kwargs.get('labelHelp',None)
-        if labelHelp and not len(labelHelp) == len(args):
+        if labelHelp and not len(labelHelp) == len(strargs):
             raise ValueTypeError('wrong number of enum label help strings provided')
         dct['labelHelp'] = labelHelp
         # provide a custom storage value helper since our storage type is int2
@@ -385,8 +388,10 @@ class Bool(ValueType):
     def init(cls,dct,*args,**kwargs):
         if not args or not len(args) == 2:
             raise ValueTypeError('missing true/false labels in ctor')
-        dct['falseValue'] = args[0]
-        dct['trueValue'] = args[1]
+        # force the literal values to be interpreted as strings so, for example,
+        # False->'False', 0->'0'
+        dct['falseValue'] = str(args[0])
+        dct['trueValue'] = str(args[1])
         def doStr(self):
             if self:
                 return self.trueValue
