@@ -133,7 +133,7 @@ class Actor(object):
         """ (Re-)load and attach a named set of commands. """
 
         if path == None:
-            path = ['%s/Commands' % (self.product_dir)]
+            path = [os.path.join(self.product_dir, 'python', self.name, 'Commands')]
 
         self.logger.info("attaching command set %s from path %s", cname, path)
 
@@ -162,7 +162,8 @@ class Actor(object):
         """
 
         if path == None:
-            path = '%s/Commands' % (self.product_dir)
+            path = os.path.join(self.product_dir, 'python', self.name, 'Commands')
+
         dirlist = os.listdir(path)
         dirlist.sort()
 
