@@ -91,6 +91,7 @@ class CommandLink(LineReceiver):
             cmdrName = 'self.%d' % (self.connID) # Fabricate a connection ID.
 
         # Finally, use the standard opscore parser.
+        cmdLogger.debug('new input line from %s:%d: %s' % (cmdrName, mid, cmdDict['cmdString']))
         try:
             parsedCmd = self.parser.parse(cmdDict['cmdString'])
         except:
@@ -112,15 +113,18 @@ class CommandLink(LineReceiver):
     def sendQueuedResponses(self):
         """ method for the twisted reactor to call when we tell it there is output from this thread. """
         
+        cmdLogger.debug('flushing queue to all outputs...')
         with self.outputQueueLock:
             while len(self.outputQueue) > 0:
                 e = self.outputQueue.pop(0)
+                cmdLogger.debug('flushing queue line: %s' % (e[:-1]))
                 self.transport.write(e)
                 
     def sendResponse(self, cmd, flag, response):
         """ Ship a command off to the hub. """
 
         e = "%d %d %s %s\n" % (self.connID, cmd.mid, flag, response)
+        cmdLogger.debug('queuing to all outputs: %s' % (e[:-1]))
         with self.outputQueueLock:
             self.outputQueue.append(e)
         reactor.callFromThread(self.sendQueuedResponses)

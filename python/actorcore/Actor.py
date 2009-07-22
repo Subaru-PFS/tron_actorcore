@@ -66,22 +66,31 @@ class ModLoader():
             file.close()
 
 class Actor(object):
-    def __init__(self, name, configFile, product_dir=None): 
+    def __init__(self, name, productName=None, configFile=None): 
+        """ Build an Actor.
 
+        Args:
+            name         - the name of the actor: what name we are advertised as to tron.
+            productName  - the name of the product; defaults to .name
+            configFile   - the full path of the configuration file; defaults 
+                            to $PRODUCTNAME_DIR/etc/$name.cfg
+        """
+
+        # Define/save the actor name, the product name, the product_DIR, and the
+        # configuration file.
         self.name = name
-        self.configFile = os.path.expandvars(
-            os.path.expanduser(configFile))
-
-        if product_dir:
-            self.product_dir = product_dir
-        else:
-            self.product_dir = os.environ.get('%s_DIR' % (name.upper()), None)
-
-        if not self.product_dir:
-            raise RuntimeError("either pass Actor(product_dir=XXX) or setup actorcore")
+        self.productName = productName if productName else self.name
+        product_dir_name = '$%s_DIR' % (self.productName.upper())
+        self.product_dir = os.expandvars(product_dir_name)
         
+        if not self.product_dir:
+            raise RuntimeError('environment variable %s must be defined' % (product_dir_name))
+
+        self.configFile = configFile if configFile else \
+            os.path.expandvars(os.path.join(self.product_dir, 'etc', '%s.cfg' % (self.name)))
+
         # Missing config bits should make us blow up.
-        self.configFile = os.path.expandvars(configFile)
+        self.configFile = os.path.expandvars(self.configFile)
         logging.warn("reading config file %s", self.configFile)
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.configFile)
@@ -133,7 +142,7 @@ class Actor(object):
         """ (Re-)load and attach a named set of commands. """
 
         if path == None:
-            path = [os.path.join(self.product_dir, 'python', self.name, 'Commands')]
+            path = [os.path.join(self.product_dir, 'python', self.productName, 'Commands')]
 
         self.logger.info("attaching command set %s from path %s", cname, path)
 
@@ -162,7 +171,7 @@ class Actor(object):
         """
 
         if path == None:
-            path = os.path.join(self.product_dir, 'python', self.name, 'Commands')
+            path = os.path.join(self.product_dir, 'python', self.productName, 'Commands')
 
         dirlist = os.listdir(path)
         dirlist.sort()
