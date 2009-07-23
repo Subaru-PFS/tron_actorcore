@@ -12,12 +12,13 @@ def tback(system, e, info=None, logger=None):
 
         if logger == None:
             logger = logging
-            
+
+	exc_type, exc_value, exc_traceback = sys.exc_info()
         try:
             frames = inspect.trace()
             toptrace = inspect.trace()[-1]
         except:
-            one_liner = "%s: %s: %s" % (e, sys.exc_type, sys.exc_value)
+            one_liner = "%s: %s: %s" % (e, exc_type, exc_value)
             logger.critical("======== %s exception botch: %s" % (system, one_liner))
             return
         
@@ -34,7 +35,7 @@ def tback(system, e, info=None, logger=None):
             tr_list.append(pprint.pformat(f[0].f_locals))
             i += 1
 
-        ex_list = traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback)
+        ex_list = traceback.format_exception(exc_type, exc_value, exc_traceback)
         logger.warn("\n======== %s exception: %s\n" % (system, ''.join(ex_list)))
         logger.warn("\n======== %s exception details: %s\n" % (system, ''.join(tr_list)))
         
