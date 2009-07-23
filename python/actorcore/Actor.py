@@ -11,11 +11,16 @@ import threading
 from threading import Semaphore,Timer
 from twisted.internet import reactor
 
+from opscore.protocols.parser import CommandParser
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
 
+import opscore.protocols.validation as validation
+
 import CommandLinkManager as cmdLinkManager
 import Command as actorCmd
+
+import pdb
 
 class ModLoader():
     def load_module(self, fullpath, name):
@@ -101,7 +106,7 @@ class Actor(object):
         # All loggers can and should be picked up by other modules with "logging.getLogger(name)"
         # Make the root logger go to a rotating file.
         opsLogging.makeOpsFileLogger(self.logDir, 'logs')
-        self.logger = logging.getLogger('logs')
+        self.logger = logging.getLogger('')
         self.logger.setLevel(int(self.config.get('logging','baseLevel')))
         self.logger.propagate = False
         self.logger.info('%s starting up....' % (name))
@@ -117,6 +122,8 @@ class Actor(object):
         except:
             self.console.setLevel(int(self.config.get('logging','baseLevel')))
  
+        self.parser = CommandParser()
+
         # The list of all connected sources. 
         tronInterface = self.config.get('tron', 'interface') 
         tronPort = self.config.getint('tron', 'port') 
@@ -133,7 +140,10 @@ class Actor(object):
         # We gather them in one place mainly so that "meta-commands" (init, status) 
         # can find the others. 
         self.commandSets = {}
-        self.topCommands = {}
+
+        self.logger.info("Creating validation handler...")
+        self.handler = validation.CommandHandler()
+        
         self.logger.info("Attaching all command sets...")
         self.attachAllCommandSets()
         self.logger.info("All command sets attached...")
@@ -148,7 +158,7 @@ class Actor(object):
             path = [os.path.join(self.product_dir, 'python', self.productName, 'Commands')]
 
         self.logger.info("attaching command set %s from path %s", cname, path)
-
+               
         file = None
         try:
             file, filename, description = imp.find_module(cname, path)
@@ -163,11 +173,35 @@ class Actor(object):
 
         # Instantiate and save a new command handler. 
         exec('cmdSet = mod.%s(self)' % (cname))
-        self.commandSets[cname] = cmdSet
 
-        # Add the vocabulary. 
-        for cmdName, cmdFunc in cmdSet.vocab.items():
-            self.topCommands[cmdName] = cmdFunc
+        # Add the commands
+#        for c in cmdSet.handlers:
+#            self.logger.info("attaching handler %s" % c)
+#            self.handler.consumers[c.verb] = [c]
+
+        valCmds = []
+        for v in cmdSet.vocab:
+            try:
+                verb, args, func = v
+            except ValueError, e:
+                raise RuntimeError("vocabulary word needs three parts: %s" % (v))
+
+            # Check that the function exists and get its help.
+            #
+            
+            # Bug in .Cmd workaround
+            if args:
+                valCmd = validation.Cmd(verb, args) >> func
+            else:
+                valCmd = validation.Cmd(verb) >> func
+                
+            valCmds.append(valCmd)
+
+        # Got this far? Commit.
+        self.commandSets[cname] = cmdSet
+        for v in valCmds:
+            self.handler.consumers[v.verb] = [valCmd]
+            self.logger.info("attached handler %s" % (valCmd))
 
     def attachAllCommandSets(self, path=None):
         """ (Re-)load all command classes -- files in ./Command which end with Cmd.py.
@@ -187,7 +221,10 @@ class Actor(object):
 
     def actor_loop(self):
         """ Check the command queue and dispatch commands."""
-        while(1):
+
+        while True:
+            # Get the next command
+            self.logger.debug("Waiting for next command...")
             try:
                 cmd = self.commandQueue.get(block = True,timeout = 3)
             except Queue.Empty:
@@ -196,28 +233,40 @@ class Actor(object):
                 else:
                     continue
             self.logger.info("Command received: %s" % (cmd))
-            # Dispatch on the first word of the command. 
-            handler = self.topCommands.get(cmd.cmd.name, None)
-            if handler == None:
-                cmd.fail('text="Unrecognized command: %s"' % (qstr(cmd.cmd.name, tquote="'")))
-                return
-            else:
-                self.activeCmd = cmd
-                try:
-                    handler(cmd)
-                except Exception, e:
-                    tback('newCmd', e)
-                    cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
+
+            cmdStr = cmd.rawCmd['cmdString']
+            try:
+                validatedCmd, cmdFuncs = self.handler.match(cmdStr)
+            except Exception, e:
+                tback('actor_loop', e)
+                cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
+                                           (cmdStr, e))))
+                continue
+
+            self.logger.debug('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
+            self.activeCmd = cmd
+
+            # I just don't get the 
+            if len(cmdFuncs) > 1:
+                cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
+                                           (cmdFuncs, validatedCmd))))
+            try:
+                cmd.cmd = validatedCmd
+                for func in cmdFuncs:
+                    func(cmd)
+            except Exception, e:
+                tback('newCmd', e)
+                cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
 
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 
         self.activeCmd = None
 
-        self.logger.info('new cmd: %s' % (cmd))
+        self.logger.info('new unqueued cmd: %s' % (cmd))
         
         # Empty cmds are OK; send an empty response... 
-        if len(cmd.cmd.name) == 0:
+        if len(cmd.rawCmd) == 0:
             cmd.finish('')
             return None
         self.commandQueue.put(cmd)

@@ -16,25 +16,26 @@ from opscore.utility.qstr import qstr
 cmdLogger = logging.getLogger('cmds')
 
 class Command(object):
-    def __init__(self, source, cmdrName, cid, mid, cmd,
+    def __init__(self, source, cmdr, cid, mid, rawCmd,
                  debug=0, immortal=False):
         """ Create a fully defined command:
 
         source  - The input object which gets any responses.
-        cmdrName - the cmdrName of the commander.
+        cmdr    - the name of the commander.
         mid 	- Message ID: should uniquely identify the command.
         cid 	- Connection ID: identifies this connection.
-        cmd	- The command proper.
+        rawCmd	- The unparsed text of the command.
 
         immortal ? If set, the command cannot be finished or failed.
 
         """
         
         self.source = source
-        self.cmdr = cmdrName
+        self.cmdr = cmdr
         self.cid = cid
         self.mid = mid
-        self.cmd = cmd
+        self.rawCmd = rawCmd
+        self.cmd = None
         
         self.alive = 1
         self.immortal = immortal
@@ -43,8 +44,13 @@ class Command(object):
         cmdLogger.debug("New Command: %s" % (self))
         
     def __str__(self):
-        return "Command(source=%08x cmdr=%s cid=%s mid=%s cmd=%r)" % \
-               (id(self.source), self.cmdr, self.cid, self.mid, self.cmd)
+        if self.cmd:
+            cmdDescr = 'cmd=%s' % (self.cmd)
+        else:
+            cmdDescr = 'rawCmd=%s' % (self.rawCmd)
+            
+        return "Command(source=%08x cmdr=%s cid=%s mid=%s %s)" % \
+               (id(self.source), self.cmdr, self.cid, self.mid, cmdDescr)
 
     @property
     def program(self):

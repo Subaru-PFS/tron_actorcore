@@ -13,7 +13,7 @@ import threading
 from twisted.internet import reactor
 
 from opscore.utility.qstr import qstr
-from opscore.protocols.parser import CommandParser
+from opscore.utility.tback import tback
 from twisted.protocols.basic import LineReceiver
 
 from Command import Command
@@ -39,7 +39,6 @@ class CommandLink(LineReceiver):
         self.brains = brains
         self.connID = connID
         self.delimiter = eol
-        self.parser = CommandParser()
         self.delimiterChecked = False
         self.outputQueue = []
         self.outputQueueLock = threading.Lock()
@@ -90,24 +89,14 @@ class CommandLink(LineReceiver):
         if cmdrName == '' or cmdrName == None:
             cmdrName = 'self.%d' % (self.connID) # Fabricate a connection ID.
 
-        # Finally, use the standard opscore parser.
-        cmdLogger.debug('new input line from %s:%d: %s' % (cmdrName, mid, cmdDict['cmdString']))
-        try:
-            parsedCmd = self.parser.parse(cmdDict['cmdString'])
-        except:
-            cmdLogger.critical('cannot parse command string: %s' % (cmdDict['cmdString']))
-            self.brains.bcast.fail('text=%s' % (qstr("cannot parse command: %s" % (cmdDict['cmdString']))))
-            return
-        
-        cmdLogger.debug('new command from %s:%d: %s' % (cmdrName, mid, parsedCmd))
-        cmd = Command(self.factory, cmdrName, self.connID, mid, parsedCmd)
-
         # And hand it upstairs.
         try:
+            cmd = Command(self.factory, cmdrName, self.connID, mid, cmdDict)
             self.brains.newCmd(cmd)
-        except:
-            self.brains.bcast.fail('text=%s' % (qstr("cannot process parsed command: %s" % 
-                                                     (cmdDict['cmdString']))))
+        except Exception, e:
+            self.brains.bcast.fail('text=%s' % (qstr("cannot process command: %s (exception=%s)" % 
+                                                     (cmdDict['cmdString'], e))))
+            cmdLogger.warn(tback('lineReceived', e))
 
     def sendQueuedResponses(self):
         """ method for the twisted reactor to call when we tell it there is output from this thread. """
