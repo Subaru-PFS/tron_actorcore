@@ -108,7 +108,7 @@ class Actor(object):
         # All loggers can and should be picked up by other modules with "logging.getLogger(name)"
         # Make the root logger go to a rotating file.
         opsLogging.makeOpsFileLogger(self.logDir, 'logs')
-        self.logger = logging.getLogger('')
+        self.logger = logging.getLogger('logs')
         self.logger.setLevel(int(self.config.get('logging','baseLevel')))
         self.logger.propagate = False
         self.logger.info('%s starting up....' % (name))
@@ -147,7 +147,7 @@ class Actor(object):
         self.handler = validation.CommandHandler()
         
         self.logger.info("Attaching all command sets...")
-        self.attachAllCommandSets()
+        self.attachAllCmdSets()
         self.logger.info("All command sets attached...")
 
         self.commandQueue = Queue.Queue()
@@ -176,7 +176,7 @@ class Actor(object):
         # Instantiate and save a new command handler. 
         exec('cmdSet = mod.%s(self)' % (cname))
 
-        pdb.set_trace()
+        # pdb.set_trace()
         
         # Add the commands
         valCmds = []
@@ -220,7 +220,7 @@ class Actor(object):
 
         self.logger.warn("handler verbs: %s" % (self.handler.consumers.keys()))
         
-    def attachAllCommandSets(self, path=None):
+    def attachAllCmdSets(self, path=None):
         """ (Re-)load all command classes -- files in ./Command which end with Cmd.py.
         """
 
@@ -232,7 +232,7 @@ class Actor(object):
 
         for f in dirlist:
             if os.path.isdir(f) and not f.startswith('.'):
-                self.attachAllCommandSets(path=f)
+                self.attachAllCmdSets(path=f)
             if re.match('^[a-zA-Z][a-zA-Z0-9_-]*Cmd\.py$', f):
                 self.attachCmdSet(f[:-3], [path])
 
