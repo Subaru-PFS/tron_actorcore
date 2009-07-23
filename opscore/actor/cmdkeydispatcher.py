@@ -43,7 +43,7 @@ History:
                     that works through an iterator and reschedules itself
                     until the iterator is exhausted, then schedules the main task.
                     If a refresh command fails, the message is now printed to the log, not stderr.
-                    Added _replyCmdVar to centralize sending messages to cmdVars
+                    Added _replyToCmdVar to centralize sending messages to cmdVars
                     and handling completion of commands.
                     If a command ID is already in use, the next ID is assigned;
                     this allows a command to never finish without causing other problems later.
@@ -74,7 +74,7 @@ History:
 2009-07-18 ROwen    Overhauled keyVar refresh to be more efficient and to run each refresh command only once.
 2009-07-20 ROwen    Modified to not log if logFunc = None; added a convenience logging function.
 2009-07-21 ROwen    Added support for including commander info in command strings.
-2009-07-23 ROwen    Added delayCallbacks argument.
+2009-07-23 ROwen    Added delayCallbacks argument and sendAllKeyVarCallbacks method.
 """
 import sys
 import time
@@ -117,7 +117,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         connection = None,
         logFunc = None,
         includeName = True,
-        delayCallbacks = True,
+        delayCallbacks = False,
     ):
         """Create a new CmdKeyVarDispatcher
     
@@ -218,7 +218,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             cmdID = cmdVar.cmdID,
             dataStr = "Aborted; Actor=%r; Cmd=%r" % (cmdVar.actor, cmdVar.cmdStr),
         )
-        self._replyCmdVar(cmdVar, errReply)
+        self._replyToCmdVar(cmdVar, errReply)
 
     def addKeyVar(self, keyVar):
         """Add a keyword variable (opscore.actor.keyvar.KeyVar) to the collection.
@@ -251,56 +251,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         # so we can modify the dictionary while checking command timeouts
         cmdVarIter = iter(self.cmdDict.values())
         self._checkRemCmdTimeouts(cmdVarIter)
-
-    def _checkRemCmdTimeouts(self, cmdVarIter):
-        """Helper function for checkCmdTimeouts.
-        Check the remaining command variables in cmdVarIter.
-        If a timeout is found, time out that one command
-        and schedule myself to run again shortly
-        (thereby giving other events a chance to run).
-
-        Once the iterator is exhausted, schedule
-        my parent function checkCmdTimeouts to run
-        at the usual interval later.
-        """
-#       print "opscore.actor.CmdKeyVarDispatcher._checkRemCmdTimeouts(%s)" % cmdVarIter
-        try:
-            errReply = None
-            currTime = time.time()
-            for cmdVar in cmdVarIter:
-                # if cmd still exits (i.e. has not been deleted for other reasons)
-                # check if it has a time limit and has timed out
-                if not self.cmdDict.has_key(cmdVar.cmdID):
-                    continue
-                if not self._isConnected:
-                    errReply = self.makeReply (
-                        cmdID = cmdVar.cmdID,
-                        dataStr = "Aborted; Actor=%r; Cmd=%r; Text=\"disconnected\"" % (cmdVar.actor, cmdVar.cmdStr),
-                    )
-                    # no connection, so cannot send abort command
-                    cmdVar.abortCmdStr = ""
-                    break
-                elif cmdVar.maxEndTime and (cmdVar.maxEndTime < currTime):
-                    # time out this command
-                    errReply = self.makeReply (
-                        cmdID = cmdVar.cmdID,
-                        dataStr = "Timeout; Actor=%r; Cmd=%r" % (cmdVar.actor, cmdVar.cmdStr),
-                    )
-                    break
-            if errReply:
-                self._replyCmdVar(cmdVar, errReply)
-    
-                # schedule myself to run again shortly
-                # (thereby giving other time to other events)
-                # continuing where I left off
-                self._checkRemCmdTimer = self.reactor.callLater(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
-        except:
-            sys.stderr.write("%s._checkRemCmdTimeouts failed%s\n" % (self.__class__.__name__, ))
-            traceback.print_exc(file=sys.stderr)
-
-        # finished checking all commands in the current cmdVarIter;
-        # schedule a new checkCmdTimeouts at the usual interval
-        self._checkCmdTimer = self.reactor.callLater(_TimeoutInterval, self.checkCmdTimeouts)
     
     def dispatchReply(self, reply):
         """Set KeyVars based on the supplied Reply
@@ -324,7 +274,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             cmdVar = self.cmdDict.get(reply.header.commandId, None)
             if cmdVar != None:
                 # send reply but don't log (that's already been done)
-                self._replyCmdVar(cmdVar, reply, doLog=False)
+                self._replyToCmdVar(cmdVar, reply, doLog=False)
                     
     def dispatchReplyStr(self, replyStr):
         """Read, parse and dispatch a message from the hub.
@@ -372,7 +322,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             errReply = self.makeReply(
                 dataStr = "Failed; Actor=%r; Cmd=%r; Text=\"not connected\"" % (cmdVar.actor, cmdVar.cmdStr),
             )
-            self._replyCmdVar(cmdVar, errReply)
+            self._replyToCmdVar(cmdVar, errReply)
             return
         
         while True:
@@ -406,7 +356,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 dataStr = "WriteFailed; Actor=%r; Cmd=%r; Text=%r" % (
                     cmdVar.actor, cmdVar.cmdStr, RO.StringUtil.strFromException(e)),
             )
-            self._replyCmdVar(cmdVar, errReply)
+            self._replyToCmdVar(cmdVar, errReply)
         
     def updConnState(self, conn):
         """If connection state changes, update refresh variables.
@@ -505,9 +455,9 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             newMsgStr = " ".join((headerStr, newDataStr))
             reply = self.parser.parse(newMsgStr)            
         return reply
-    
+
     def refreshAllVar(self):
-        """Issues all keyVar refresh commands.
+        """Issue all keyVar refresh commands.
         """
 #         print "%s.refreshAllVar(); refeshCmdDict=%s" % (self.__class__.__name__, self.refreshCmdDict)
 
@@ -525,6 +475,171 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             return
     
         self._sendNextRefreshCmd()
+
+    def removeKeyVar(self, keyVar):
+        """Remove the specified keyword variable, returning the KeyVar if removed, else None
+
+        See also addKeyVar.
+
+        Inputs:
+        - keyVar: the keyword variable to remove
+
+        Returns:
+        - the removed keyVar, if present, None otherwise.
+        """
+        keyVar = keydispatcher.KeyVarDispatcher.removeKeyVar(self, keyVar)
+
+        keyVarSet = self.refreshCmdDict.get(keyVar.refreshInfo)
+        if keyVarSet and keyVar in keyVarSet:
+            keyVarSet.remove(keyVar)
+            if not keyVarSet:
+                # that was the only keyVar using this refresh command
+                del(self.refreshCmdDict[keyVar.refreshInfo])
+        return keyVar
+
+    def sendAllKeyVarCallbacks(self, includeNotCurrent=True):
+        """Send all keyVar callbacks.
+        
+        Inputs:
+        - includeNotCurrent: issue callbacks for keyVars that are not current?
+        """
+        keyVarListIter = self.keyVarListDict.itervalues()
+        self._nextKeyVarCallback(keyVarListIter, includeNotCurrent=False)
+
+    def setLogFunc(self, logFunc=None):
+        """Set the log output device, or clears it if None specified.
+        
+        The function must take the following arguments: (msgStr, severity, actor, cmdr)
+        where the first argument is positional and the others are by name
+        """
+        self.logFunc = logFunc
+
+    def _checkRemCmdTimeouts(self, cmdVarIter):
+        """Helper function for checkCmdTimeouts.
+        Check the remaining command variables in cmdVarIter.
+        If a timeout is found, time out that one command
+        and schedule myself to run again shortly
+        (thereby giving other events a chance to run).
+
+        Once the iterator is exhausted, schedule
+        my parent function checkCmdTimeouts to run
+        at the usual interval later.
+        """
+#       print "opscore.actor.CmdKeyVarDispatcher._checkRemCmdTimeouts(%s)" % cmdVarIter
+        try:
+            errReply = None
+            currTime = time.time()
+            for cmdVar in cmdVarIter:
+                # if cmd still exits (i.e. has not been deleted for other reasons)
+                # check if it has a time limit and has timed out
+                if not self.cmdDict.has_key(cmdVar.cmdID):
+                    continue
+                if not self._isConnected:
+                    errReply = self.makeReply (
+                        cmdID = cmdVar.cmdID,
+                        dataStr = "Aborted; Actor=%r; Cmd=%r; Text=\"disconnected\"" % (cmdVar.actor, cmdVar.cmdStr),
+                    )
+                    # no connection, so cannot send abort command
+                    cmdVar.abortCmdStr = ""
+                    break
+                elif cmdVar.maxEndTime and (cmdVar.maxEndTime < currTime):
+                    # time out this command
+                    errReply = self.makeReply (
+                        cmdID = cmdVar.cmdID,
+                        dataStr = "Timeout; Actor=%r; Cmd=%r" % (cmdVar.actor, cmdVar.cmdStr),
+                    )
+                    break
+            if errReply:
+                self._replyToCmdVar(cmdVar, errReply)
+    
+                # schedule myself to run again shortly
+                # (thereby giving other time to other events)
+                # continuing where I left off
+                self._checkRemCmdTimer = self.reactor.callLater(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
+        except:
+            sys.stderr.write("%s._checkRemCmdTimeouts failed%s\n" % (self.__class__.__name__, ))
+            traceback.print_exc(file=sys.stderr)
+
+        # finished checking all commands in the current cmdVarIter;
+        # schedule a new checkCmdTimeouts at the usual interval
+        self._checkCmdTimer = self.reactor.callLater(_TimeoutInterval, self.checkCmdTimeouts)
+
+    @staticmethod
+    def _makeDictKey(actor, keyName):
+        """Make a keyVarListDict key out of an actor and keyword name
+        """
+        return (actor.lower(), keyName.lower())
+
+    def _nextKeyVarCallback(self, keyVarListIter, includeNotCurrent=True):
+        """Issue next keyVar callback
+        
+        Input:
+        - keyVarListIter: iterator over values in self.keyVarListDict
+        """
+        try:
+            keyVarList = keyVarListIter.next()
+        except StopIteration:
+            return
+        for keyVar in keyVarList:
+            if includeNotCurrent or keyVar.isCurrent:
+                keyVar.doCallbacks()
+        self.reactor.callLater(0.001, self._nextKeyVarCallback, keyVarListIter, includeNotCurrent)
+
+    def _refreshCmdCallback(self, refreshCmd):
+        """Refresh command callback; complain if command failed or some keyVars not updated
+        """
+        if not refreshCmd.isDone:
+            return
+        try:
+            self._runningRefreshCmdSet.remove(refreshCmd)
+        except Exception:
+            sys.stderr.write("could not find refresh command %s to remove it\n" % (refreshCmd,))
+        refreshInfo = (refreshCmd.actor, refreshCmd.cmdStr)
+        keyVarSet = self.refreshCmdDict.get(refreshInfo, set())
+        if refreshCmd.didFail:
+            keyVarNamesStr = ", ".join(sorted([kv.name for kv in keyVarSet]))
+            errMsg = "Refresh command %s %s failed; keyVars not refreshed: %s" % \
+                (refreshCmd.actor, refreshCmd.cmdStr, keyVarNamesStr)
+            self.logMsg(errMsg, severity=RO.Constants.sevWarning)
+        elif keyVarSet:
+            aKeyVar = iter(keyVarSet).next()
+            actor = aKeyVar.actor
+            missingKeyVarNamesStr = ", ".join(sorted([kv.name for kv in keyVarSet if not kv.isCurrent]))
+            if missingKeyVarNamesStr:
+                errMsg = "No refresh data for %s keyVars: %s" % (actor, missingKeyVarNamesStr)
+                self.logMsg(errMsg, severity=RO.Constants.sevWarning)
+        else:
+            # all of the keyVars were removed or there is a bug
+            errMsg = "Warning: refresh command %s %s finished but no keyVars found\n" % refreshInfo
+            self.logMsg(errMsg, severity=RO.Constants.sevWarning)
+
+        # handle delayCallbacks:
+        if not self.delayCallbacks or not self._allRefreshCmdsSent or self._runningRefreshCmdSet:
+            return
+#         print "using delayCallbacks and the last refresh command has finished; refresh all variables"
+        self._enableCallbacks = True
+        self.sendAllKeyVarCallbacks(includeNotCurrent=False)
+    
+    def _replyToCmdVar(self, cmdVar, reply, doLog=True):
+        """Send a message to a command variable and optionally log it.
+
+        If the command is done, delete it from the command dict.
+        If the command is a refresh command and is done,
+        update the refresh command dict accordingly.
+        
+        Inputs:
+        - cmdVar    command variable (opscore.actor.keyvar.CmdVar)
+        - reply     Reply object (opscore.protocols.messages.Reply) to send
+        """
+        if doLog:
+            self.logReply(reply)
+        cmdVar.handleReply(reply)
+        if cmdVar.isDone and cmdVar.cmdID != None:
+            try:
+                del (self.cmdDict[cmdVar.cmdID])
+            except KeyError:
+                sys.stderr.write("CmdKeyVarDispatcher bug: tried to delete cmd %s=%s but it was missing\n" % \
+                    (cmdVar.cmdID, cmdVar))
 
     def _sendNextRefreshCmd(self, refreshCmdItemIter=None):
         """Helper function for refreshAllVar.
@@ -565,113 +680,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             sys.stderr.write("%s._sendNextRefreshCmd: refresh command %s failed:\n" % (self.__class__.__name__, cmdVar,))
             traceback.print_exc(file=sys.stderr)
         self._refreshNextTimer = self.reactor.callLater(_ShortInterval, self._sendNextRefreshCmd, refreshCmdItemIter)
-
-    def _refreshCmdCallback(self, refreshCmd):
-        """Refresh command callback; complain if command failed or some keyVars not updated
-        """
-        if not refreshCmd.isDone:
-            return
-        try:
-            self._runningRefreshCmdSet.remove(refreshCmd)
-        except Exception:
-            sys.stderr.write("could not find refresh command %s to remove it\n" % (refreshCmd,))
-        refreshInfo = (refreshCmd.actor, refreshCmd.cmdStr)
-        keyVarSet = self.refreshCmdDict.get(refreshInfo, set())
-        if refreshCmd.didFail:
-            keyVarNamesStr = ", ".join(sorted([kv.name for kv in keyVarSet]))
-            errMsg = "Refresh command %s %s failed; keyVars not refreshed: %s" % \
-                (refreshCmd.actor, refreshCmd.cmdStr, keyVarNamesStr)
-            self.logMsg(errMsg, severity=RO.Constants.sevWarning)
-        elif keyVarSet:
-            aKeyVar = iter(keyVarSet).next()
-            actor = aKeyVar.actor
-            missingKeyVarNamesStr = ", ".join(sorted([kv.name for kv in keyVarSet if not kv.isCurrent]))
-            if missingKeyVarNamesStr:
-                errMsg = "No refresh data for %s keyVars: %s" % (actor, missingKeyVarNamesStr)
-                self.logMsg(errMsg, severity=RO.Constants.sevWarning)
-        else:
-            # all of the keyVars were removed or there is a bug
-            errMsg = "Warning: refresh command %s %s finished but no keyVars found\n" % refreshInfo
-            self.logMsg(errMsg, severity=RO.Constants.sevWarning)
-
-        # handle delayCallbacks:
-        if not self.delayCallbacks or not self._allRefreshCmdsSent or self._runningRefreshCmdSet:
-            return
-#         print "using delayCallbacks and the last refresh command has finished; refresh all variables"
-        self._enableCallbacks = True
-        keyVarListIter = self.keyVarListDict.itervalues()
-        self._nextKeyVarCallback(keyVarListIter)
-
-    def _nextKeyVarCallback(self, keyVarListIter):
-        """Issue next keyVar callback
-        
-        Input:
-        - keyVarListIter: iterator over values in self.keyVarListDict
-        """
-        try:
-            keyVarList = keyVarListIter.next()
-        except StopIteration:
-            return
-        for keyVar in keyVarList:
-            if keyVar.isCurrent:
-                keyVar.doCallbacks()
-        self.reactor.callLater(0.001, self._nextKeyVarCallback, keyVarListIter)
-
-    def removeKeyVar(self, keyVar):
-        """Remove the specified keyword variable, returning the KeyVar if removed, else None
-
-        See also "addKeyVar".
-
-        Inputs:
-        - keyVar: the keyword variable to remove
-
-        Returns:
-        - the removed keyVar, if present, None otherwise.
-        """
-        keyVar = keydispatcher.KeyVarDispatcher.removeKeyVar(self, keyVar)
-
-        keyVarSet = self.refreshCmdDict.get(keyVar.refreshInfo)
-        if keyVarSet and keyVar in keyVarSet:
-            keyVarSet.remove(keyVar)
-            if not keyVarSet:
-                # that was the only keyVar using this refresh command
-                del(self.refreshCmdDict[keyVar.refreshInfo])
-        return keyVar
-
-    @staticmethod
-    def _makeDictKey(actor, keyName):
-        """Make a keyVarListDict key out of an actor and keyword name
-        """
-        return (actor.lower(), keyName.lower())
-    
-    def _replyCmdVar(self, cmdVar, reply, doLog=True):
-        """Send a message to a command variable and optionally log it.
-
-        If the command is done, delete it from the command dict.
-        If the command is a refresh command and is done,
-        update the refresh command dict accordingly.
-        
-        Inputs:
-        - cmdVar    command variable (opscore.actor.keyvar.CmdVar)
-        - reply     Reply object (opscore.protocols.messages.Reply) to send
-        """
-        if doLog:
-            self.logReply(reply)
-        cmdVar.handleReply(reply)
-        if cmdVar.isDone and cmdVar.cmdID != None:
-            try:
-                del (self.cmdDict[cmdVar.cmdID])
-            except KeyError:
-                sys.stderr.write("CmdKeyVarDispatcher bug: tried to delete cmd %s=%s but it was missing\n" % \
-                    (cmdVar.cmdID, cmdVar))
-
-    def setLogFunc(self, logFunc=None):
-        """Set the log output device, or clears it if None specified.
-        
-        The function must take the following arguments: (msgStr, severity, actor, cmdr)
-        where the first argument is positional and the others are by name
-        """
-        self.logFunc = logFunc
 
 
 if __name__ == "__main__":
