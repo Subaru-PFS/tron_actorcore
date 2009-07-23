@@ -4,6 +4,8 @@
 History:
 2009-04-03 ROwen    Split out basic functionality from full dispatcher.
 2009-07-18 ROwen    Added __all__.
+2009-07-23 ROwen    Added doCallbacks argument to dispatchReply and dispatchReplyStr
+                    to support delayCallbacks in CmdKeyVarDispatcher.
 """
 import sys
 import traceback
@@ -42,7 +44,7 @@ class KeyVarDispatcher(object):
         # append new keyVar to the list
         keyList.append(keyVar)
 
-    def dispatchReply(self, reply):
+    def dispatchReply(self, reply, doCallbacks=True):
         """Set KeyVars based on the supplied Reply
         
         reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
@@ -54,6 +56,7 @@ class KeyVarDispatcher(object):
          - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
+#         print "dispatchReply(reply=%s, doCallbacks=%s)" % (reply, doCallbacks)
         actor = reply.header.actor.lower()
         if actor.startswith("keys_"):
             # data is from the hub's keyword cache
@@ -65,16 +68,16 @@ class KeyVarDispatcher(object):
             keyVarList = self.getKeyVarList(actor, keyword.name)
             for keyVar in keyVarList:
                 try:
-                    keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply)
+                    keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply, doCallbacks=doCallbacks)
                 except:
                     traceback.print_exc(file=sys.stderr)
                     
-    def dispatchReplyStr(self, replyStr):
+    def dispatchReplyStr(self, replyStr, doCallbacks=True):
         """Read, parse and dispatch a message from the hub.
         """
 #        print "%s.dispatchReplyStr(%r)" % (self.__class__.__name__, replyStr)
         reply = self.parser.parse(replyStr)
-        self.dispatchReply(reply)
+        self.dispatchReply(reply, doCallbacks=doCallbacks)
 
     def getKeyVarList(self, actor, keyName):
         """Return the list of KeyVars by this name and actor; return [] if no match.

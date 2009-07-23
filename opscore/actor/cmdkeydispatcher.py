@@ -74,6 +74,7 @@ History:
 2009-07-18 ROwen    Overhauled keyVar refresh to be more efficient and to run each refresh command only once.
 2009-07-20 ROwen    Modified to not log if logFunc = None; added a convenience logging function.
 2009-07-21 ROwen    Added support for including commander info in command strings.
+2009-07-23 ROwen    Added delayCallbacks argument.
 """
 import sys
 import time
@@ -116,6 +117,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         connection = None,
         logFunc = None,
         includeName = True,
+        delayCallbacks = True,
     ):
         """Create a new CmdKeyVarDispatcher
     
@@ -131,11 +133,17 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             If None then nothing is logged.
         - includeName: if True then self.name is prepended to all commands sent to the hub,
             or if cmdVar.forUserCmd is present, then the prefix is <cmdVar.forUserCmd.cmdr>.<self.name>.
+        - delayCallbacks: if True then upon initial connection no KeyVar callbacks are made
+            until all refresh commands have completed (at which point callbacks are made
+            for each keyVar that has been set). Thus the set of keyVars will be maximally
+            self-consistent, but it may take awhile after connecting before callbacks begin.
         """
         keydispatcher.KeyVarDispatcher.__init__(self)
         
         self.name = name
         self.includeName = bool(includeName)
+        self.delayCallbacks = bool(delayCallbacks)
+        
         self.parser = protoParse.ReplyParser()
         self.reactor = twisted.internet.reactor
         self._isConnected = False
@@ -147,6 +155,11 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         # key is: actor, refresh command, e.g. as returned by keyVar.refreshInfo
         # refresh command: set of keyVars that use this command
         self.refreshCmdDict = {}
+
+        # list of refresh commands that have been executed; used to support delayCallbacks
+        self._runningRefreshCmdSet = set()
+        self._allRefreshCmdsSent = False
+        self._enableCallbacks = not self.delayCallbacks
         
         # timers for various scheduled callbacks
         self._checkCmdTimer = None
@@ -302,7 +315,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
         # handle KeyVars
-        keydispatcher.KeyVarDispatcher.dispatchReply(self, reply)
+        keydispatcher.KeyVarDispatcher.dispatchReply(self, reply, doCallbacks=self._enableCallbacks)
 
         # if you are the commander for this message,
         # execute the command callback (if any)
@@ -501,6 +514,9 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         # cancel pending update, if any
         cancelTimer(self._refreshAllTimer)
         cancelTimer(self._refreshNextTimer)
+        self._enableCallbacks = not self.delayCallbacks
+        self._runningRefreshCmdSet = set()
+        self._allRefreshCmdsSent = False
         
         if not self._isConnected:
             for keyVarList in self.keyVarListDict.values():
@@ -532,6 +548,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         try:
             refreshCmdInfo, keyVarSet = refreshCmdItemIter.next()
         except StopIteration:
+            self._allRefreshCmdsSent = True
             return
         actor, cmdStr = refreshCmdInfo
         try:
@@ -542,6 +559,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 callFunc = self._refreshCmdCallback,
                 isRefresh = True,
             )
+            self._runningRefreshCmdSet.add(cmdVar)
             self.executeCmd(cmdVar)
         except:
             sys.stderr.write("%s._sendNextRefreshCmd: refresh command %s failed:\n" % (self.__class__.__name__, cmdVar,))
@@ -553,6 +571,10 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
         if not refreshCmd.isDone:
             return
+        try:
+            self._runningRefreshCmdSet.remove(refreshCmd)
+        except Exception:
+            sys.stderr.write("could not find refresh command %s to remove it\n" % (refreshCmd,))
         refreshInfo = (refreshCmd.actor, refreshCmd.cmdStr)
         keyVarSet = self.refreshCmdDict.get(refreshInfo, set())
         if refreshCmd.didFail:
@@ -571,6 +593,29 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             # all of the keyVars were removed or there is a bug
             errMsg = "Warning: refresh command %s %s finished but no keyVars found\n" % refreshInfo
             self.logMsg(errMsg, severity=RO.Constants.sevWarning)
+
+        # handle delayCallbacks:
+        if not self.delayCallbacks or not self._allRefreshCmdsSent or self._runningRefreshCmdSet:
+            return
+#         print "using delayCallbacks and the last refresh command has finished; refresh all variables"
+        self._enableCallbacks = True
+        keyVarListIter = self.keyVarListDict.itervalues()
+        self._nextKeyVarCallback(keyVarListIter)
+
+    def _nextKeyVarCallback(self, keyVarListIter):
+        """Issue next keyVar callback
+        
+        Input:
+        - keyVarListIter: iterator over values in self.keyVarListDict
+        """
+        try:
+            keyVarList = keyVarListIter.next()
+        except StopIteration:
+            return
+        for keyVar in keyVarList:
+            if keyVar.isCurrent:
+                keyVar.doCallbacks()
+        self.reactor.callLater(0.001, self._nextKeyVarCallback, keyVarListIter)
 
     def removeKeyVar(self, keyVar):
         """Remove the specified keyword variable, returning the KeyVar if removed, else None

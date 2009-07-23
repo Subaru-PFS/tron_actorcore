@@ -8,6 +8,7 @@ History:
 2009-07-20 ROwen    Added getValue property.
 2009-07-21 ROwen    Added forUserCmd support to CmdVar.
                     Added "E" message code for error.
+2009-07-23 ROwen    Added doCallbacks method to support delayCallbacks in CmdKeyVarDispatcher.
 """
 import sys
 import time
@@ -158,6 +159,11 @@ class KeyVar(RO.AddCallback.BaseMixin):
                     return
                 callFunc(cnvFunc(val), isCurrent=keyVar.isCurrent, keyVar=keyVar)
         self.addCallback(adapterFunc, callNow)
+    
+    def doCallbacks(self):
+        """Execute callbacks
+        """
+        self._basicDoCallbacks(self)
 
     @property
     def hasRefreshCmd(self):
@@ -207,7 +213,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """
         return self._timeStamp
     
-    def set(self, valueList, isCurrent=True, isGenuine=True, reply=None):
+    def set(self, valueList, isCurrent=True, isGenuine=True, reply=None, doCallbacks=True):
         """Set the values, converting from strings as necessary.
 
         Inputs:
@@ -215,6 +221,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         - isCurrent: new value for isCurrent flag (generally leave this at its default of True)
         - isGenuine: set True if data came from the actor, False if it came from a data cache
         - reply: a parsed Reply object (opscore.protocols.messages.Reply)
+        - doCallbacks: if True then issue callbacks
         
         @raise RuntimeError if the values cannot be set.
         """
@@ -232,7 +239,8 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self._isCurrent = bool(isCurrent)
         self._isGenuine = bool(isGenuine)
         self.reply = reply
-        self._basicDoCallbacks(self)
+        if doCallbacks:
+            self._basicDoCallbacks(self)
 
     def setNotCurrent(self):
         """Clear the isCurrent flag
