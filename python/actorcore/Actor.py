@@ -8,6 +8,8 @@ import Queue
 import time
 import ConfigParser
 import threading
+import inspect
+
 from threading import Semaphore,Timer
 from twisted.internet import reactor
 
@@ -174,11 +176,9 @@ class Actor(object):
         # Instantiate and save a new command handler. 
         exec('cmdSet = mod.%s(self)' % (cname))
 
+        pdb.set_trace()
+        
         # Add the commands
-#        for c in cmdSet.handlers:
-#            self.logger.info("attaching handler %s" % c)
-#            self.handler.consumers[c.verb] = [c]
-
         valCmds = []
         for v in cmdSet.vocab:
             try:
@@ -188,21 +188,38 @@ class Actor(object):
 
             # Check that the function exists and get its help.
             #
-            
+
+            funcDoc = inspect.getdoc(func)
             # Bug in .Cmd workaround
             if args:
-                valCmd = validation.Cmd(verb, args) >> func
+                valCmd = validation.Cmd(verb, args, help=funcDoc) >> func
             else:
-                valCmd = validation.Cmd(verb) >> func
+                valCmd = validation.Cmd(verb, help=funcDoc) >> func
                 
             valCmds.append(valCmd)
 
         # Got this far? Commit.
+        oldCmdSet = self.commandSets.get(cname, None)
         self.commandSets[cname] = cmdSet
-        for v in valCmds:
-            self.handler.consumers[v.verb] = [valCmd]
-            self.logger.info("attached handler %s" % (valCmd))
 
+        # Delete previous set of consumers. These are already parsed, etc. so we don't need to check much.
+#        for v in oldCmdSet.vocab:
+#            verb, args, func = v
+
+#            verbHanders = self.handler.consumers.get(v.verb, None)
+#            if not verbHandler:
+#                self.logger.critical("missing handler %s" % (verb))
+#                continue
+                
+#        newConsumers = []
+#        for cset in self.commandSets:
+
+        for v in valCmds:
+            self.handler.consumers[v.verb] = [v]
+            self.logger.info("attached handler %s: %s" % (v.verb, v))
+
+        self.logger.warn("handler verbs: %s" % (self.handler.consumers.keys()))
+        
     def attachAllCommandSets(self, path=None):
         """ (Re-)load all command classes -- files in ./Command which end with Cmd.py.
         """
