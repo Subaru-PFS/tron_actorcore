@@ -557,7 +557,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 # continuing where I left off
                 self._checkRemCmdTimer = self.reactor.callLater(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
         except:
-            sys.stderr.write("%s._checkRemCmdTimeouts failed%s\n" % (self.__class__.__name__, ))
+            sys.stderr.write("%s._checkRemCmdTimeouts failed\n" % (self.__class__.__name__, ))
             traceback.print_exc(file=sys.stderr)
 
         # finished checking all commands in the current cmdVarIter;

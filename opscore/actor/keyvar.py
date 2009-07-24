@@ -534,7 +534,7 @@ class CmdVar(object):
     def _keyVarCallback(self, keyVar):
         """Keyword seen; archive the data.
         """
-        if not _keyVarIsMine(keyVar):
+        if not self._keyVarIsMine(keyVar):
             return
         self.keyVarDataDict[keyVar].append(keyVar.valueList)
     
