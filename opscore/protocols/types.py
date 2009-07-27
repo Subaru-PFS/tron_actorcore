@@ -261,7 +261,7 @@ class Float(ValueType):
         # the limit value is float(340282346638528859811704183484516925440)
         # where 3402... is (2 - 2^(-23)) 2^127
         if abs(fvalue) > 3.4028234663852886e+38:
-            raise ValueError('Invalid literal for Float: %r' % value)
+            raise OverflowError('Invalid literal for Float: %r' % value)
         return float.__new__(cls,fvalue)
     
 class Double(ValueType):
@@ -276,9 +276,12 @@ class Int(ValueType):
     def new(cls,value):
         if isinstance(value,basestring):
             # base = 0 infers base from optional prefix (see PEP 3127)
-            return int.__new__(cls,cls.validate(value),0)
+            lvalue = long(cls.validate(value),0)
         else:
-            return int.__new__(cls,cls.validate(value))
+            lvalue = long(cls.validate(value))
+        if lvalue < -0x7fffffff or lvalue > 0x7fffffff:
+            raise OverflowError('Invalid literal for Int: %r' % value)
+        return int.__new__(cls,lvalue)
 
 class Long(ValueType):
     baseType = long
