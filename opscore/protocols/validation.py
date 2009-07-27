@@ -72,12 +72,13 @@ class Cmd(Consumer,DispatchMixin):
             Cmd.parser = KeysFormatParser()
         self.verb = verb
         self.typedValues = TypedValues(args[:-1])
+        self.consumer = None
         if args:
             self.format = args[-1]
-            self.consumer = self.parser.parse(self.format)
         else:
             self.format = ''
-            self.consumer = None
+        if self.format:
+            self.consumer = self.parser.parse(self.format)
         self.help = metadata.get('help',None)
         
     def __repr__(self):

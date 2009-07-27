@@ -475,10 +475,11 @@ class Bits(ValueType):
         if dct['strFmt']:
             print 'Bits: ignoring strFmt metadata'
         # look for an optional inputBase keyword
-        dct['inputBase'] = kwargs.get('inputBase',10)
+        dct['inputBase'] = kwargs.get('inputBase',0)
         
     def new(cls,value):
         if isinstance(value,basestring):
+            # base = 0 infers base from optional prefix (see PEP 3127)
             return long.__new__(cls,cls.validate(value),cls.inputBase)
         else:
             return long.__new__(cls,cls.validate(value))
@@ -489,3 +490,10 @@ class Bits(ValueType):
             shifted = Bits.binary(mask << offset,cls.width)
             cls.descriptors.append(('Field-%d' % index,'%s %s' % (shifted,name)))
         cls.descriptors.append(('Input Base',str(cls.inputBase)))
+
+class ByName(object):
+    """
+    Placeholder for type referred to by name
+    """
+    def __init__(self,name):
+        self.name = name

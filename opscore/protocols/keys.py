@@ -74,6 +74,8 @@ class TypedValues(Consumer):
                 self.minVals += len(vtype.vtypes)
                 self.maxVals += len(vtype.vtypes)
                 self.vtypes.append(vtype)
+            elif isinstance(vtype,protoTypes.ByName):
+                self.vtypes.append(vtype)
             else:
                 raise KeysError('Invalid value type: %r' % vtype)
         if self.maxVals == 0:
@@ -317,6 +319,7 @@ class KeysDictionary(object):
             raise KeysDictionaryError('Invalid name: must be lower case: %s' % name)
         KeysDictionary.registry[name] = self
         self.keys = { }
+        self.namedTypes = { }
         for key in keys:
             self.add(key)
 
@@ -334,6 +337,21 @@ class KeysDictionary(object):
         name = getattr(key,'unique',key.name)
         if name.lower() in self.keys:
             raise KeysDictionaryError('KeysDictionary name is not unique: %s' % name)
+        # look for named types used by the key
+        localNames = { }
+        for index,vtype in enumerate(key.typedValues.vtypes):
+            vname = getattr(vtype,'name',None)
+            if isinstance(vtype,protoTypes.ByName):
+                try:
+                    key.typedValues.vtypes[index] = self.namedTypes[vname]
+                except KeyError:
+                    raise KeysDictionaryError('Unresolved type ByName("%s")' % vname)
+            elif vname:
+                localNames[vname] = vtype
+        # add this key's local names to our dictionary (ByName can only refer to
+        # types defined in a previously-defined type to ensure unique names)
+        self.namedTypes.update(localNames)
+        # add this key
         self.keys[name.lower()] = key
 
     def __getitem__(self,name):
@@ -394,7 +412,8 @@ class KeysDictionary(object):
             symbols = {
                 '__builtins__': __builtins__,
                 'Key': Key,
-                'KeysDictionary': KeysDictionary
+                'KeysDictionary': KeysDictionary,
+                'ByName': protoTypes.ByName,
             }
             for (name,value) in protoTypes.__dict__.iteritems():
                 if isinstance(value,type) and issubclass(value,
