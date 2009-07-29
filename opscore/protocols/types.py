@@ -308,8 +308,11 @@ class UInt(ValueType):
             lvalue = long(cls.validate(value),0)
         else:
             lvalue = long(cls.validate(value))
-        if lvalue < 0 or lvalue > 0xffffffff:
-            raise ValueError('Invalid literal for UInt: %r' % value)
+        if lvalue < -0x7fffffff or lvalue > 0xffffffff:
+            raise OverflowError('Invalid literal for UInt: %r' % value)
+        if lvalue < 0:
+            # re-interpret a negative 32-bit value as its bit-equivalent unsigned value
+            lvalue = 0x80000000 | (-lvalue)
         return long.__new__(cls,lvalue)
 
 class Hex(UInt):
@@ -425,10 +428,7 @@ class Bool(ValueType):
         cls.descriptors.append(('True',cls.trueValue))
 
 # Bitfield value type
-class Bits(ValueType):
-    
-    baseType = long
-    storage = 'int4'
+class Bits(UInt):
     
     fieldSpec = re.compile('([a-zA-Z0-9_]+)?(?::([0-9]+))?$')
     
@@ -470,23 +470,19 @@ class Bits(ValueType):
             (offset,mask) = self.bitFields[name]
             return self.__class__((self & ~(mask << offset)) | ((value & mask) << offset))
         dct['set'] = setAttr
-        def doStr(self):
+        def doRepr(self):
             return '(%s)' % ','.join(
                 ['%s=%s' % (n,Bits.binary(getAttr(self,n),w)) for (n,w) in self.fieldSpecs]
             )
+        dct['__repr__'] = doRepr
+        def doStr(self):
+            return Bits.binary(self,offset)
         dct['__str__'] = doStr
         if dct['strFmt']:
             print 'Bits: ignoring strFmt metadata'
         # look for an optional inputBase keyword
         dct['inputBase'] = kwargs.get('inputBase',0)
         
-    def new(cls,value):
-        if isinstance(value,basestring):
-            # base = 0 infers base from optional prefix (see PEP 3127)
-            return long.__new__(cls,cls.validate(value),cls.inputBase)
-        else:
-            return long.__new__(cls,cls.validate(value))
-
     def addDescriptors(cls):
         for index,(name,width) in enumerate(cls.fieldSpecs):
             offset,mask = cls.bitFields[name]
