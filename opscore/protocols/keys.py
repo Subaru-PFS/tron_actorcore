@@ -252,6 +252,7 @@ class KeysManager(object):
     # subclasses each access their own keys list.
     @classmethod
     def setKeys(cls,kdict):
+        cls.keys = {}
         cls.addKeys(kdict)
         
     @classmethod
