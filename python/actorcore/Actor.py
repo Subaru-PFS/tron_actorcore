@@ -17,6 +17,7 @@ from opscore.protocols.parser import CommandParser
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
 
+import opscore.protocols.keys as keys
 import opscore.protocols.validation as validation
 
 import CommandLinkManager as cmdLinkManager
@@ -178,7 +179,12 @@ class Actor(object):
 
         # pdb.set_trace()
         
-        # Add the commands
+        # Check any new commands before finishing with the load. This
+        # is a bit messy, as the commands might depend on a valid
+        # keyword dictionary, which also comes from the module
+        # file. So load the module's keys temporarily.
+        if cmdSet.keys:
+            keys.CmdKey.addKeys(cmdSet.keys)
         valCmds = []
         for v in cmdSet.vocab:
             try:
@@ -198,25 +204,15 @@ class Actor(object):
                 
             valCmds.append(valCmd)
 
-        # Got this far? Commit.
+        # Got this far? Commit. Save the Cmds so that we can delete them later.
         oldCmdSet = self.commandSets.get(cname, None)
+        cmdSet.validatedCmds = valCmds
         self.commandSets[cname] = cmdSet
 
-        # Delete previous set of consumers. These are already parsed, etc. so we don't need to check much.
-#        for v in oldCmdSet.vocab:
-#            verb, args, func = v
-
-#            verbHanders = self.handler.consumers.get(v.verb, None)
-#            if not verbHandler:
-#                self.logger.critical("missing handler %s" % (verb))
-#                continue
-                
-#        newConsumers = []
-#        for cset in self.commandSets:
-
-        for v in valCmds:
-            self.handler.consumers[v.verb] = [v]
-            self.logger.info("attached handler %s: %s" % (v.verb, v))
+        # Delete previous set of consumers for this named CmdSet, add new ones.
+        if oldCmdSet:
+            self.handler.removeConsumers(*oldCmdSet.validatedCmds)
+        self.handler.addConsumers(*cmdSet.validatedCmds)
 
         self.logger.warn("handler verbs: %s" % (self.handler.consumers.keys()))
         

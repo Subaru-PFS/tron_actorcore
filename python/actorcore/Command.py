@@ -16,7 +16,7 @@ from opscore.utility.qstr import qstr
 cmdLogger = logging.getLogger('cmds')
 
 class Command(object):
-    def __init__(self, source, cmdr, cid, mid, rawCmd,
+    def __init__(self, source, cmdr, cid, mid, rawCmd, 
                  debug=0, immortal=False):
         """ Create a fully defined command:
 
@@ -84,6 +84,11 @@ class Command(object):
 
         self.__respond('i', response)
 
+    def inform(self, response):
+        """ Return intermediate response. """
+
+        self.__respond('i', response)
+
     def diag(self, response):
         """ Return diagnostic output. """
 
@@ -130,9 +135,12 @@ class Command(object):
             been finished, try broadcasting a complaint. It is a bit unclear what to do about the
             original response; I'm just passing it along to bother others. """
 
-        self.source.sendResponse(self, flag, response)
         if not self.alive:
-            self.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
+            self.source.sendResponse(self, 'w', 
+                                     'text="this command has already been finished!!!! (%s %s): %s"' % \
+                                         (self.cmdr, self.mid, self.rawCmd['cmdString']))
+        self.source.sendResponse(self, flag, response)
+        # self.actor.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
         
     def coverArgs(self, requiredArgs, optionalArgs=None, ignoreFirst=None):
         """ getopt, sort of.
