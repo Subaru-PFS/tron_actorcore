@@ -249,7 +249,7 @@ class ICC(object):
             handler = self.topCommands.get(cmd.cmd.name, None)
             if handler == None:
                 cmd.fail('text="Unrecognized command: %s"' % (qstr(cmd.cmd.name, tquote="'")))
-                return
+                continue
             else:
                 self.activeCmd = cmd
                 try:
