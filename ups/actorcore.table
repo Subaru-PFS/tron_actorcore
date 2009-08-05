@@ -1,4 +1,4 @@
-setupRequired("opscore trunk")
+setupRequired("opscore")
 setupOptional("RO")
 
 pathPrepend(PATH, ${UPS_PROD_DIR}/bin)
