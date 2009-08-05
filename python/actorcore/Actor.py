@@ -194,8 +194,8 @@ class Actor(object):
 
             # Check that the function exists and get its help.
             #
-
             funcDoc = inspect.getdoc(func)
+
             # Bug in .Cmd workaround
             if args:
                 valCmd = validation.Cmd(verb, args, help=funcDoc) >> func
@@ -204,6 +204,7 @@ class Actor(object):
                 
             valCmds.append(valCmd)
 
+        #pdb.set_trace()
         # Got this far? Commit. Save the Cmds so that we can delete them later.
         oldCmdSet = self.commandSets.get(cname, None)
         cmdSet.validatedCmds = valCmds
@@ -236,41 +237,45 @@ class Actor(object):
         """ Check the command queue and dispatch commands."""
 
         while True:
-            # Get the next command
-            self.logger.debug("Waiting for next command...")
             try:
-                cmd = self.commandQueue.get(block = True,timeout = 3)
-            except Queue.Empty:
-                if self.shuttingDown:
-                    return
-                else:
+                # Get the next command
+                self.logger.debug("Waiting for next command...")
+                try:
+                    cmd = self.commandQueue.get(block = True,timeout = 3)
+                except Queue.Empty:
+                    if self.shuttingDown:
+                        return
+                    else:
+                        continue
+                self.logger.info("Command received: %s" % (cmd))
+
+                cmdStr = cmd.rawCmd
+
+                try:
+                    validatedCmd, cmdFuncs = self.handler.match(cmdStr)
+                except Exception, e:
+                    tback('actor_loop', e)
+                    cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
+                                               (cmdStr, e))))
                     continue
-            self.logger.info("Command received: %s" % (cmd))
 
-            cmdStr = cmd.rawCmd['cmdString']
-            try:
-                validatedCmd, cmdFuncs = self.handler.match(cmdStr)
+                self.logger.warn('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
+                self.activeCmd = cmd
+
+                if len(cmdFuncs) > 1:
+                    cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
+                                               (cmdFuncs, validatedCmd))))
+                try:
+                    cmd.cmd = validatedCmd
+                    for func in cmdFuncs:
+                        func(cmd)
+                except Exception, e:
+                    tback('newCmd', e)
+                    cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
             except Exception, e:
-                tback('actor_loop', e)
-                cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
-                                           (cmdStr, e))))
-                continue
-
-            self.logger.debug('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
-            self.activeCmd = cmd
-
-            # I just don't get the 
-            if len(cmdFuncs) > 1:
-                cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
-                                           (cmdFuncs, validatedCmd))))
-            try:
-                cmd.cmd = validatedCmd
-                for func in cmdFuncs:
-                    func(cmd)
-            except Exception, e:
-                tback('newCmd', e)
-                cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
-
+                cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
+                                           (e))))
+                
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 

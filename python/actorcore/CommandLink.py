@@ -91,7 +91,7 @@ class CommandLink(LineReceiver):
 
         # And hand it upstairs.
         try:
-            cmd = Command(self.factory, cmdrName, self.connID, mid, cmdDict)
+            cmd = Command(self.factory, cmdrName, self.connID, mid, cmdDict['cmdString'])
             self.brains.newCmd(cmd)
         except Exception, e:
             self.brains.bcast.fail('text=%s' % (qstr("cannot process command: %s (exception=%s)" % 

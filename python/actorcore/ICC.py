@@ -10,7 +10,7 @@ import actorcore.Actor as coreActor
 
 class ICC(coreActor.Actor):
     def __init__(self, name, configFile):
-        coreActor.Actor.__init__(self, name, configFile)
+        coreActor.Actor.__init__(self, name, configFile=configFile)
         
         # Create a separate logger for controller io
         opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "io"), 'io')
@@ -34,7 +34,7 @@ class ICC(coreActor.Actor):
             self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
                          name, file, filename, description, id(mod))
         except ImportError, e:
-            raise ICCError('Import of %s failed: %s' % (name, e))
+            raise RuntimeError('Import of %s failed: %s' % (name, e))
         finally:
             if file:
                 file.close()
@@ -52,7 +52,7 @@ class ICC(coreActor.Actor):
         self.logger.info('starting %s controller', name)
         try:
             conn.start()
-        except ICCError, e:
+        except Exception, e:
             print sys.exc_info()
             self.logger.error('Could not connect to %s', name)
             return False
