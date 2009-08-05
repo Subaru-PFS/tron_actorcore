@@ -254,12 +254,17 @@ class Actor(object):
                 try:
                     validatedCmd, cmdFuncs = self.handler.match(cmdStr)
                 except Exception, e:
-                    tback('actor_loop', e)
                     cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
                                                (cmdStr, e))))
+                    tback('actor_loop', e)
                     continue
 
-                self.logger.warn('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
+                if not validatedCmd:
+                    cmd.fail('text=%s' % (qstr("Unrecognized command: %s (exception: %s)" %
+                                               (cmdStr, e))))
+                    continue
+                
+                self.logger.info('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
                 self.activeCmd = cmd
 
                 if len(cmdFuncs) > 1:
@@ -270,11 +275,15 @@ class Actor(object):
                     for func in cmdFuncs:
                         func(cmd)
                 except Exception, e:
-                    tback('newCmd', e)
                     cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
+                    tback('newCmd', e)
             except Exception, e:
                 cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
                                            (e))))
+                try:
+                    tback('newCmdFail', e)
+                except:
+                    pass
                 
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
