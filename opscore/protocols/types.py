@@ -480,15 +480,12 @@ class Bits(UInt):
         dct['__str__'] = doStr
         if dct['strFmt']:
             print 'Bits: ignoring strFmt metadata'
-        # look for an optional inputBase keyword
-        dct['inputBase'] = kwargs.get('inputBase',0)
         
     def addDescriptors(cls):
         for index,(name,width) in enumerate(cls.fieldSpecs):
             offset,mask = cls.bitFields[name]
             shifted = Bits.binary(mask << offset,cls.width)
             cls.descriptors.append(('Field-%d' % index,'%s %s' % (shifted,name)))
-        cls.descriptors.append(('Input Base',str(cls.inputBase)))
 
 class ByName(object):
     """
