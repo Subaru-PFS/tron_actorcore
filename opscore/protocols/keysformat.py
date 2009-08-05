@@ -6,7 +6,7 @@ Refer to https://trac.sdss3.org/wiki/Ops/Validation for details.
 
 # Created 18-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
-from opscore.protocols.keys import Consumer,Key,CmdKey
+from opscore.protocols.keys import Consumer,Key,CmdKey,RawKey
 
 import external.ply.lex as lex
 import external.ply.yacc as yacc
@@ -180,7 +180,10 @@ class KeysFormatParser(object):
 
     def p_KeywordByName(self,t):
         "OneKeyword : NAME"
-        t[0] = CmdKey(Key(t[1]))
+        if t[1].lower() == 'raw':
+            t[0] = RawKey()
+        else:
+            t[0] = CmdKey(Key(t[1]))
     
     def p_error(self,tok):
         """

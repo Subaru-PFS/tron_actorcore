@@ -151,6 +151,7 @@ class RawKeyword(Keyword):
         """
         self.name = 'raw'
         self.values = Values([line])
+        self.matched = False
 
     def __repr__(self):
         result = 'RAWKEY(%s)=%r' % (self.name,self.values)
@@ -167,6 +168,21 @@ class RawKeyword(Keyword):
         Returns the parse token representation of a raw keyword
         """
         return 'RAW=LINE'
+        
+    def clone(self):
+        """
+        Returns a clone of this object
+        """
+        new = RawKeyword(self.values[0])
+        new.matched = self.matched
+        return new
+
+    def copy(self,other):
+        """
+        Copies the attributes of another Keyword instance
+        """
+        self.values = other.values
+        self.matched = other.matched
 
 
 class Keywords(list,Canonized):

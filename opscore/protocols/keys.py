@@ -287,6 +287,21 @@ class CmdKey(Consumer,KeysManager):
             return self.failed('no match for command keyword')
         where.advance()
         return self.passed(where)
+        
+class RawKey(Consumer):
+    """
+    Consumes the special 'raw' keyword in a command
+    """
+    def consume(self,where):
+        self.trace(where)
+        keyword = where.keyword()
+        if not keyword:
+            return self.failed('no keywords available to consume')
+        if not isinstance(keyword,protoMess.RawKeyword):
+            return self.failed('no match for raw keyword')
+        # no re-casting as a typed value needed here
+        where.advance()
+        return self.passed(where)
 
 class KeysDictionaryError(KeysError):
     pass
