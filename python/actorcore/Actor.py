@@ -195,13 +195,7 @@ class Actor(object):
             # Check that the function exists and get its help.
             #
             funcDoc = inspect.getdoc(func)
-
-            # Bug in .Cmd workaround
-            if args:
-                valCmd = validation.Cmd(verb, args, help=funcDoc) >> func
-            else:
-                valCmd = validation.Cmd(verb, help=funcDoc) >> func
-                
+            valCmd = validation.Cmd(verb, args, help=funcDoc) >> func
             valCmds.append(valCmd)
 
         #pdb.set_trace()
