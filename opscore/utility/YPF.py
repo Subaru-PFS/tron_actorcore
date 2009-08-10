@@ -621,18 +621,30 @@ class YPFStruct(object):
 
     def asArray(self):
         """ Return the structure as a numpy array. Generates and caches it if need be. """
-        
+
+        # Caching is evil, Loomis. Don't do that.
         if not hasattr(self, 'array'):
             self.sealArray()
         return self.array
 
-    def asStructs(self):
+    def asObjlist(self):
         """ Return the structure as a list of typed objects. Generates and caches it if need be. """
+
+        a = self.asArray()
         
-        raise NotImplementedError('we do not yet cenvert to typed arrays/objects')
-        if not hasattr(self, 'objlist'):
-            self.sealObjlist()
-        return self.objlist
+        # So what name do you give what you want to be an anonymous class?
+        if not hasattr(self, 'objClass'):
+            self.objClass = type('YPFStruct_%s_%d' % (self.name, id(self)),
+                                 (object,),
+                                 {'__slots__':tuple([d[0] for d in self.dtypes])})
+
+        def makeFromRow(objclass, row):
+            obj = objclass()
+            for i in range(len(row)):
+                setattr(obj, obj.__slots__[i], row[i])
+            return obj
+
+        return [makeFromRow(self.objClass, r) for r in a]
         
 class YPF(object):
     """ YPFs can contain three kinds of thing:
