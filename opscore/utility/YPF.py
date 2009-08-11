@@ -595,7 +595,7 @@ class YPFStruct(object):
         
         # Calculate the proper lengths for all string columns.
         self.fixupS0s(ta)
-        logging.log(30, self.dtypes)
+        logging.log(10, self.dtypes)
         t1 = time.time()
 
         # Create our output array, with the proper final numpy types. We then
