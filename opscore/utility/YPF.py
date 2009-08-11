@@ -7,9 +7,16 @@ y = YPF(filename)
   or
 y = YPF(filename, template=True)
 
+Get variables:
 mjd = y.vars['mjd'].value
+
+Get structures as numpy recarrays:
 weather = y.structs['weather'].asArray()
 wet = n.where(weather['humidity'] > 80.0)
+
+Get structures as lists of python objects:
+weather = y.structs['weather'].asObjlist()
+wet = [w for w in weather if w.humidity > 80.0]
 
 #y.structs['newstruct'] = numpy_structured_array
 #y.enums['newenum'] = list of strings
@@ -31,7 +38,7 @@ import time
 import pdb
 
 __version__ = '2.2'
-__all__ = ['YPF', 'YPFreadone']
+__all__ = ['YPF', 'readOneStruct']
 
 # Regexps for all the various data types.
 floatRe_s = r'''([+-]?
@@ -273,6 +280,10 @@ class YPFStruct(object):
         if fields:
             self.construct(name, fields, enums)
 
+    def __str__(self):
+        fnames = [t[0] for t in self.ctypes]
+        return "YPFStruct(name=%s, fields=%s)" % (self.name, fnames)
+
     @classmethod
     def parseDef(self, firstLine, lines):
         """ Parse a structure definition.
@@ -483,9 +494,6 @@ class YPFStruct(object):
 
         # The string lengths will be undefined until we have seen the data.
         self.strlens = np.zeros(rawfields, dtype='i4')
-        #if not self.strings:
-        #    self.array = np.zeros(0, dtype=self.dtypes)
-        #    self.data = self.array.view(np.recarray)
             
     def findParsingFailure(self, s):
         """ Figure out which field is not being parsed by consuming .reParts piece by piece. """
@@ -562,7 +570,7 @@ class YPFStruct(object):
             in_i += nelem
             
             self.dtypes[i] = (fname, 'S%d' % (maxlen), nelem)
-            logging.log(20, "assigned dtype: %s" % (self.dtypes[i],))
+            logging.log(10, "assigned dtype: %s" % (self.dtypes[i],))
             
     def sealArray(self):
         """ Take the parsed list of records and generate a typed and named numpy array.
@@ -580,10 +588,9 @@ class YPFStruct(object):
 
         # Convert to an ndarray of strings, where the widths of
         # the columns are set by the widest element in that column (from .strlens)
-
         nrec = len(self.records)
         dtype = ','.join(["S"+str(x) for x in self.strlens])
-        logging.log(30, "na.dtype: %s" % (dtype))
+        logging.log(10, "na.dtype: %s" % (dtype))
         ta = np.array(self.records, dtype=dtype)
         
         # Calculate the proper lengths for all string columns.
@@ -614,10 +621,10 @@ class YPFStruct(object):
                 in_i += 1
 
         self.array = a
-        self.data = a.view(np.recarray)
+        self.recarray = a.view(np.recarray)
 
         t2 = time.time()
-        print "step1=%0.2f step2=%0.2f" % (t1-t0,t2-t1)
+        logging.log(10, "step1=%0.2f step2=%0.2f" % (t1-t0,t2-t1))
 
     def asArray(self):
         """ Return the structure as a numpy array. Generates and caches it if need be. """
@@ -625,12 +632,13 @@ class YPFStruct(object):
         # Caching is evil, Loomis. Don't do that.
         if not hasattr(self, 'array'):
             self.sealArray()
-        return self.array
+        return self.recarray
 
-    def asObjlist(self):
+    def asObjlist(self, arrayRows=None):
         """ Return the structure as a list of typed objects. Generates and caches it if need be. """
 
-        a = self.asArray()
+        if not arrayRows:
+            arrayRows = self.asArray()
         
         # So what name do you give what you want to be an anonymous class?
         if not hasattr(self, 'objClass'):
@@ -639,12 +647,13 @@ class YPFStruct(object):
                                  {'__slots__':tuple([d[0] for d in self.dtypes])})
 
         def makeFromRow(objclass, row):
+            assert len(row) == len(objclass.__slots__)
             obj = objclass()
             for i in range(len(row)):
-                setattr(obj, obj.__slots__[i], row[i])
+                setattr(obj, obj.__slots__[i], row[i].tolist())
             return obj
 
-        return [makeFromRow(self.objClass, r) for r in a]
+        return [makeFromRow(self.objClass, r) for r in arrayRows]
         
 class YPF(object):
     """ YPFs can contain three kinds of thing:
@@ -780,18 +789,9 @@ class YPF(object):
                         if v.name in self.vars:
                             print "Variable %s is already defined, overwriting it." % (v.name)
                         self.vars[v.name] = v
-        #t1 = time.time()
-
-        # The structure data are all in a temporary format. Put them into
-        # numpy arrays.
-        #for s in self.structs.values():
-        #    s.seal()
-        #t2 = time.time()
-
-        #logging.log(20, "read: %0.2f seal: %0.2f" % (t1-t0, t2-t1))
     
     def parseFile(self, filename):
-        """ Pares an entire parameter file.
+        """ Parse an entire parameter file.
 
         Simply reads the whole file and parses that string.
         """
@@ -800,7 +800,7 @@ class YPF(object):
         s = f.read()
         f.close()
 
-        logging.log(20, 'parsing filename %s: %d lines' % (filename, len(s)))
+        logging.log(10, 'parsing filename %s: %d lines' % (filename, len(s)))
 
         self.parseString(s)
 
@@ -866,10 +866,8 @@ class YPF(object):
         else:
             l[name] = YPFVal(name, val)
 
-def YPFreadone(filename, structName):
-    """ Convenience function: returns a single named structure from a YPF. """
+def readOneStruct(filename, structName):
+    """ Convenience function: returns a single named structure from a YPF. You would then need to call .asArray() or asObjlist() """
     ypf = YPF(filename)
-    return ypf.structs[structName.upper()].asArray()
+    return ypf.structs[structName.upper()]
 
-l = logging.getLogger('')
-l.setLevel(20)
