@@ -204,6 +204,11 @@ class CommandHandler(HandlerBase):
     """
     def __init__(self,*consumers):
         self.consumers = { }
+        self.addConsumers(*consumers)
+        self.parser = parser.CommandParser()
+
+    def addConsumers(self,*consumers):
+        """ Register a list of consumer Cmds. """
         for consumer in consumers:
             if not isinstance(consumer,Cmd):
                 raise ValidationError('CommandHandler only accepts Cmds')
@@ -211,8 +216,22 @@ class CommandHandler(HandlerBase):
             if name not in self.consumers:
                 self.consumers[name] = [ ]
             self.consumers[name].append(consumer)
-        self.parser = parser.CommandParser()
-    
+                
+    def removeConsumers(self,*consumers):
+        """ Remove a list of consumer Cmds. """
+        for consumer in consumers:
+            if not isinstance(consumer,Cmd):
+                raise ValidationError('CommandHandler.removeConsumers only accepts Cmds')
+            name = consumer.verb
+            if name not in self.consumers:
+                raise KeyError('no consumers found for %s' % (name))
+            try:
+                self.consumers[name].remove(consumer)
+            except ValueError, e:
+                raise ValueError('no %s consumer found for %s' % (name, consumer))
+            if self.consumers[name] == []:
+                del self.consumers[name]
+        
     def consumeLine(self,parsed):
         if not parsed.name in self.consumers:
             raise ValidationError("No handler for cmd: %s" % parsed.name)

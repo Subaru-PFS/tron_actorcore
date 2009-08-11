@@ -246,24 +246,24 @@ class Key(Consumer):
 
 class KeysManager(object):
 
-    keys = [ ]
+    keys = {}
 
     # These need to be classmethods, not static methods, so that
     # subclasses each access their own keys list.
     @classmethod
     def setKeys(cls,kdict):
-        cls.keys = [ ]
+        cls.keys = {}
         cls.addKeys(kdict)
         
     @classmethod
     def addKeys(cls,kdict):
         if not isinstance(kdict,KeysDictionary):
             raise KeysError('Cmd keys must be provided as a KeysDictionary')
-        cls.keys.append(kdict)
+        cls.keys[kdict.name] = kdict
         
     @classmethod
     def getKey(cls,name):
-        for kdict in cls.keys:
+        for kdict in cls.keys.values():
             if name in kdict:
                 return kdict[name]
         raise KeysError('No such registered keyword <%s>' % name)
