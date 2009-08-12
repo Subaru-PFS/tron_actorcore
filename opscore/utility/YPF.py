@@ -43,7 +43,7 @@ __all__ = ['YPF', 'readOneStruct']
 # Regexps for all the various data types.
 floatRe_s = r'''([+-]?
                  (?:(?: \d+\.\d*) | (?: \d*\.\d+) | (?:\d+))
-                 (?:[eE]-?\d+)?) # float
+                 (?:[eE][-+]?\d+)?) # float
                  '''
 intRe_s = r'''([+-]?\d+) # int
 '''
