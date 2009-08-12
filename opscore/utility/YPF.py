@@ -787,7 +787,11 @@ class YPF(object):
                     else:
                         v = YPFVar(l, debug=0)
                         if v.name in self.vars:
-                            print "Variable %s is already defined, overwriting it." % (v.name)
+                            newValue = v.value
+                            oldValue = self.vars[v.name].value
+                            if newValue != oldValue:
+                                print("Variable %s is being defined with a new value, overwriting it. old=%s, new=%s" 
+                                      % (v.name, oldValue, newValue))
                         self.vars[v.name] = v
     
     def parseFile(self, filename):
