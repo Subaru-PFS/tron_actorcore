@@ -3,7 +3,7 @@ from __future__ import with_statement
 __all__ = ['CommandLink']
 
 import logging
-iccLogger = logging.getLogger('icc')
+actorLogger = logging.getLogger('actor')
 cmdLogger = logging.getLogger('cmds')
 
 import os
@@ -13,7 +13,7 @@ import threading
 from twisted.internet import reactor
 
 from opscore.utility.qstr import qstr
-from opscore.protocols.parser import CommandParser
+from opscore.utility.tback import tback
 from twisted.protocols.basic import LineReceiver
 
 from Command import Command
@@ -39,7 +39,6 @@ class CommandLink(LineReceiver):
         self.brains = brains
         self.connID = connID
         self.delimiter = eol
-        self.parser = CommandParser()
         self.delimiterChecked = False
         self.outputQueue = []
         self.outputQueueLock = threading.Lock()
@@ -49,7 +48,7 @@ class CommandLink(LineReceiver):
     def connectionMade(self):
         """ Called when our connection has been established. """
 
-        iccLogger.debug('new CommandNub')
+        actorLogger.debug('new CommandNub')
         self.brains.bcast.respond('yourUserNum=%d' % self.connID)
         
     def lineReceived(self, cmdString):
@@ -90,33 +89,30 @@ class CommandLink(LineReceiver):
         if cmdrName == '' or cmdrName == None:
             cmdrName = 'self.%d' % (self.connID) # Fabricate a connection ID.
 
-        # Finally, use the standard opscore parser.
-        try:
-            parsedCmd = self.parser.parse(cmdDict['cmdString'])
-        except:
-            cmdLogger.critical('cannot parse command string: %s' % (cmdDict['cmdString']))
-            cmd = Command(self.factory, cmdrName, self.connID, mid, None)
-            cmd.fail('text=%s' % (qstr("cannot parse command: %s" % (cmdDict['cmdString']))))
-            return
-        
-        cmdLogger.debug('new command from %s:%d: %s' % (cmdrName, mid, parsedCmd))
-        cmd = Command(self.factory, cmdrName, self.connID, mid, parsedCmd)
-
         # And hand it upstairs.
-        self.brains.newCmd(cmd)
+        try:
+            cmd = Command(self.factory, cmdrName, self.connID, mid, cmdDict['cmdString'])
+            self.brains.newCmd(cmd)
+        except Exception, e:
+            self.brains.bcast.fail('text=%s' % (qstr("cannot process command: %s (exception=%s)" % 
+                                                     (cmdDict['cmdString'], e))))
+            cmdLogger.warn(tback('lineReceived', e))
 
     def sendQueuedResponses(self):
         """ method for the twisted reactor to call when we tell it there is output from this thread. """
         
+        cmdLogger.debug('flushing queue to all outputs...')
         with self.outputQueueLock:
             while len(self.outputQueue) > 0:
                 e = self.outputQueue.pop(0)
+                cmdLogger.debug('flushing queue line: %s' % (e[:-1]))
                 self.transport.write(e)
                 
     def sendResponse(self, cmd, flag, response):
         """ Ship a command off to the hub. """
 
         e = "%d %d %s %s\n" % (self.connID, cmd.mid, flag, response)
+        cmdLogger.debug('queuing to all outputs: %s' % (e[:-1]))
         with self.outputQueueLock:
             self.outputQueue.append(e)
         reactor.callFromThread(self.sendQueuedResponses)
@@ -125,11 +121,11 @@ class CommandLink(LineReceiver):
         """ Called from above when we want to drop the connection. """
         
         self.brains.bcast.respond('text=%s' % (qstr("shutting connection %d down" % (self.connID))))
-        iccLogger.info("CommandLink.shutdown because %s", why)
+        actorLogger.info("CommandLink.shutdown because %s", why)
         self.transport.loseConnection()
         
     def connectionLost(self, reason="cuz"):
         """ Called from below when the connection is dropped. """
         
-        iccLogger.info("connectionLost of %s because %s", self, reason)
+        actorLogger.info("connectionLost of %s because %s", self, reason)
         self.factory.loseConnection(self)

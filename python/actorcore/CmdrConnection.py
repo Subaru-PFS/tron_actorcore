@@ -1,30 +1,33 @@
-from __future__ import with_statement
-
 import opscore.utility.sdss3logging
 import logging
 import threading
-
-from opscore.utility.qstr import qstr
-from opscore.utility.tback import tback
+import Queue
+import ConfigParser
 
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import LineReceiver
 
-from opscore.actor.cmdkeydispatcher import CmdKeyVarDispatcher as opsDispatcher
+import opscore.utility as opsUtils
+import opscore.actor.cmdkeydispatcher as opsDispatcher
 import opscore.actor.model as opsModel
+import opscore.actor.keyvar as opsKeyvar
 
 class CmdrConnection(LineReceiver):
-    def __init__(self, readCallback, logger=None, **argv):
+    def __init__(self, readCallback, brains, logger=None, **argv):
         """ The Commander twisted Protocol: sends command lines and passes on replies. 
         """
 
         self.delimiter = '\n'
         self.readCallback = readCallback
+        self.brains = brains
         self.lock = threading.Lock()
         self.logger = logger if logger else logging.getLogger('cmdr') 
 
         self.logger.info('starting new CmdrConnection')
+        
+    def connectionMade(self):
+        self.brains.connectionMade()
         
     def write(self, cmdStr):
         """ Main entry point for sending a command.
@@ -50,9 +53,10 @@ class CmdrConnection(LineReceiver):
         self.readCallback(self.transport, replyStr)
 
 class CmdrConnector(ReconnectingClientFactory):
-    def __init__(self, name, logger=None):
+    def __init__(self, name, brains, logger=None):
         self.name = name
         self.cmdr = name
+        self.brains = brains
         self.readCallback = None
         self.stateCallback = None
 
@@ -64,6 +68,9 @@ class CmdrConnector(ReconnectingClientFactory):
         self.activeConnection = None
 
         self.logger = logger if logger else logging.getlogger('cmdr')
+
+    def doStart(self):
+        self.logger.warn("in doStart")
         
     def buildProtocol(self, addr):
         """ A new connection has been established. Create a new Protocol. """
@@ -74,7 +81,7 @@ class CmdrConnector(ReconnectingClientFactory):
         assert (self.readCallback != None), "readCallback has not yet been set!"
         
         self.resetDelay()
-        proto = CmdrConnection(self.readCallback, logger=self.logger)
+        proto = CmdrConnection(self.readCallback, brains=self.brains, logger=self.logger)
         proto.factory = self
         self.activeConnection = proto
         self.stateCallback(self)
@@ -110,44 +117,82 @@ class CmdrConnector(ReconnectingClientFactory):
         
     def writeLine(self, cmdStr):
         """ Called by the dispatcher to send a command. """
-        
+
+        self.logger.warn('writing %s' % (cmdStr))
         if not self.activeConnection:
             raise RuntimeError("not connected.")
         self.activeConnection.write(cmdStr + '\n')
 
-def setupCmdr(name, loggerName='cmdr'):
-    logger = logging.getLogger(loggerName)
-    logger.setLevel(logging.INFO)
-    conn = CmdrConnector(name, logger=logger)
+class Cmdr(object):
+    def __init__(self, name, actor, loggerName='cmdr'):
+        self.actor = actor
 
-    logger = logging.getLogger('dispatch')
-    logger.setLevel(logging.INFO)
+        logger = logging.getLogger(loggerName)
+        self.logger = logger
+        
+        self.connector = CmdrConnector(name, self, logger=logger)
+        self.factory = self.connector
 
-    def logFunc(msgStr, severity, actor, cmdr, logger=logger):
-        logger.info("%s %s %s %s" % (cmdr, actor, severity, msgStr))
+        # Start a dispatcher, connected to our logger. Wire the dispatcher
+        # in to the Model "singleton"
+        logger = logging.getLogger('dispatch')
+        def logFunc(msgStr, severity, actor, cmdr, logger=logger):
+            logger.info("%s %s %s %s" % (cmdr, actor, severity, msgStr))
 
-    dispatcher = opsDispatcher(name, conn, logFunc)
-    opsModel.Model.setDispatcher(dispatcher)
-    return conn, dispatcher
+        self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, self.connector, 
+                                                            logFunc, includeName=True)
+        opsModel.Model.setDispatcher(self.dispatcher)
 
+    def connectionMade(self):
+        pass
+    
+    def connect(self):
+        tronHost = self.actor.config.get('tron', 'tronHost')
+        tronPort = int(self.actor.config.get('tron', 'tronCmdrPort'))
+        
+        reactor.connectTCP(tronHost, tronPort, self.connector)
+
+    def call(self, **argv):
+        self.logger.info("sending command %s" % (argv))
+
+        q = Queue.Queue()
+        argv['callFunc'] = q.put
+        cmdvar = opsKeyvar.CmdVar(**argv)
+        self.dispatcher.executeCmd(cmdvar)
+        ret = q.get()
+
+        self.logger.info("command %s returned " % (cmdvar))
+        
+        return ret
+        
+    def waitForKey(self, **argv):
+        logging.info("sending command %s" % (argv))
+
+        q = Queue.Queue()
+        argv['callFunc'] = q.put
+        cmdvar = opsKeyvar.KeyVar(**argv)
+        self.dispatcher.executeCmd(cmdvar)
+        ret = q.get()
+
+        logging.info("command %s returned " % (cmdvar))
+        
+        return ret
+        
 def liveTest():
     """ Connect to a running hub and print out all tcc traffic. """
     import opscore.utility.sdss3logging
     import opscore.actor.keyvar as keyvar
     
     logger = logging.getLogger('test')
-    logger.setLevel(logging.INFO)
 
     def showVal(keyVar, logger=logger):
         logger.info("keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent))
                 
-    conn, dispatcher = setupCmdr('test.me')
-    reactor.connectTCP('localhost', 6093, conn)
-
-    opsModel.Model.setDispatcher(dispatcher)
-    tccModel = opsModel.Model('tcc')
+    cmdr = Cmdr('test.me')
+    cmdr.connect()
 
     # Register all tcc keywords to be printed.
+    tccModel = opsModel.Model('tcc')
     for o in tccModel.__dict__.values():
         if isinstance(o, keyvar.KeyVar):
             o.addCallback(showVal)

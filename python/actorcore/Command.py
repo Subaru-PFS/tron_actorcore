@@ -16,25 +16,26 @@ from opscore.utility.qstr import qstr
 cmdLogger = logging.getLogger('cmds')
 
 class Command(object):
-    def __init__(self, source, cmdrName, cid, mid, cmd,
+    def __init__(self, source, cmdr, cid, mid, rawCmd, 
                  debug=0, immortal=False):
         """ Create a fully defined command:
 
         source  - The input object which gets any responses.
-        cmdrName - the cmdrName of the commander.
+        cmdr    - the name of the commander.
         mid 	- Message ID: should uniquely identify the command.
         cid 	- Connection ID: identifies this connection.
-        cmd	- The command proper.
+        rawCmd	- The unparsed text of the command.
 
         immortal ? If set, the command cannot be finished or failed.
 
         """
         
         self.source = source
-        self.cmdrName = cmdrName
+        self.cmdr = cmdr
         self.cid = cid
         self.mid = mid
-        self.cmd = cmd
+        self.rawCmd = rawCmd
+        self.cmd = None
         
         self.alive = 1
         self.immortal = immortal
@@ -43,29 +44,34 @@ class Command(object):
         cmdLogger.debug("New Command: %s" % (self))
         
     def __str__(self):
-        return "Command(source=%08x cmdrName=%s cid=%s mid=%s cmd=%r)" % \
-               (id(self.source), self.cmdrName, self.cid, self.mid, self.cmd)
+        if self.cmd:
+            cmdDescr = 'cmd=%s' % (self.cmd)
+        else:
+            cmdDescr = 'rawCmd=%s' % (self.rawCmd)
+            
+        return "Command(source=%08x cmdr=%s cid=%s mid=%s %s)" % \
+               (id(self.source), self.cmdr, self.cid, self.mid, cmdDescr)
 
     @property
     def program(self):
-        """ Return the program name component of the cmdrName. """
+        """ Return the program name component of the cmdr name. """
 
         try:
-            parts = self.cmdrName.split('.')
+            parts = self.cmdr.split('.')
             return parts[0]
         except:
-            cmdLogger.critical("failed to get programName from cmdrName %s" % (self.cmdrName))
+            cmdLogger.critical("failed to get programName from cmdrName %s" % (self.cmdr))
             return ''
 
     @property
     def username(self):
-        """ Return the username component of the cmdrName. """
+        """ Return the username component of the cmdr name. """
 
         try:
-            parts = self.cmdrName.split('.')
+            parts = self.cmdr.split('.')
             return parts[1]
         except:
-            cmdLogger.critical("failed to get username from cmdrName %s" % (self.cmdrName))
+            cmdLogger.critical("failed to get username from cmdrName %s" % (self.cmdr))
             return ''
         
     def isAlive(self):
@@ -77,7 +83,12 @@ class Command(object):
         """ Return intermediate response. """
 
         self.__respond('i', response)
-        
+
+    def inform(self, response):
+        """ Return intermediate response. """
+
+        self.__respond('i', response)
+
     def diag(self, response):
         """ Return diagnostic output. """
 
@@ -87,6 +98,11 @@ class Command(object):
         """ Return warning. """
 
         self.__respond('w', response)
+        
+    def error(self, response):
+        """ Return intermediate error response. """
+
+        self.__respond('e', response)
         
     def finish(self, response=None):
         """ Return successful command finish. """
@@ -119,9 +135,12 @@ class Command(object):
             been finished, try broadcasting a complaint. It is a bit unclear what to do about the
             original response; I'm just passing it along to bother others. """
 
-        self.source.sendResponse(self, flag, response)
         if not self.alive:
-            g.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
+            self.source.sendResponse(self, 'w', 
+                                     'text="this command has already been finished!!!! (%s %s): %s"' % \
+                                         (self.cmdr, self.mid, self.rawCmd))
+        self.source.sendResponse(self, flag, response)
+        # self.actor.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
         
     def coverArgs(self, requiredArgs, optionalArgs=None, ignoreFirst=None):
         """ getopt, sort of.
