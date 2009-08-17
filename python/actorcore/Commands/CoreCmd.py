@@ -43,6 +43,7 @@ class CoreCmd(Commands.CmdSet.CmdSet):
         cmdKeys = cmd.cmd.keywords
         
         handler = self.icc.handler
+        helpList = []
         for verb in handler.consumers.keys():
             clist = handler.consumers[verb]
             for c in clist:
@@ -55,13 +56,15 @@ class CoreCmd(Commands.CmdSet.CmdSet):
                 callbackDoc = callback.__doc__
                 if not callbackDoc:
                     callbackDoc = "no help"
-                oneLiner = callbackDoc.split('\n').strip()
+                oneLiner = callbackDoc.split('\n',1)[0].strip()
                 helpList.append("%s %s -- %s" %
                                 (verb, c.format, oneLiner))
                 
                 # Sometimes add the rest of the doc string....
-                for h in helpList:
-                    cmd.inform('text=%s' % (qstr(h)))
+
+        helpList.sort()
+        for h in helpList:
+            cmd.inform('text=%s' % (qstr(h)))
         cmd.finish()
                                                                     
     def reloadCommands(self,cmd):

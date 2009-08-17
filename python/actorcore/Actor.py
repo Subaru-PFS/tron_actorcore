@@ -148,7 +148,7 @@ class Actor(object):
         self.handler = validation.CommandHandler()
         
         self.logger.info("Attaching actorcore command sets...")
-        self.attachAllCmdSets(path=os.path.join(os.expandvars('$ACTORCORE_DIR'),
+        self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ACTORCORE_DIR'),
                                                 'python','actorcore','Commands'))
         self.logger.info("Attaching actor command sets...")
         self.attachAllCmdSets()
@@ -296,7 +296,7 @@ class Actor(object):
         self.commandQueue.put(cmd)
         return self
     
-    def shutdown(self):
+    def _shutdown(self):
         self.shuttingDown = True
         
     def run(self, doReactor=True):
@@ -310,4 +310,4 @@ class Actor(object):
 
         if doReactor:
             logging.info("reactor dead, cleaning up...")
-            self.shutdown()
+            self._shutdown()
