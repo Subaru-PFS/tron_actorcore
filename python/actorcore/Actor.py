@@ -147,7 +147,10 @@ class Actor(object):
         self.logger.info("Creating validation handler...")
         self.handler = validation.CommandHandler()
         
-        self.logger.info("Attaching all command sets...")
+        self.logger.info("Attaching actorcore command sets...")
+        self.attachAllCmdSets(path=os.path.join(os.expandvars('$ACTORCORE_DIR'),
+                                                'python','actorcore','Commands'))
+        self.logger.info("Attaching actor command sets...")
         self.attachAllCmdSets()
         self.logger.info("All command sets attached...")
 
