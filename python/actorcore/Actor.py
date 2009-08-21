@@ -257,8 +257,7 @@ class Actor(object):
                     continue
 
                 if not validatedCmd:
-                    cmd.fail('text=%s' % (qstr("Unrecognized command: %s (exception: %s)" %
-                                               (cmdStr, e))))
+                    cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
                     continue
                 
                 self.logger.info('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))

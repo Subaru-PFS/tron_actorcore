@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" Wrap top-level ICC functions. """
+""" Wrap top-level ACTOR functions. """
 
 import pdb
 import logging
@@ -12,15 +12,14 @@ import opscore.protocols.validation as validation
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 
-import Commands.CmdSet
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
 
-class CoreCmd(Commands.CmdSet.CmdSet):
+class CoreCmd(object):
     """ Wrap common Actor commands """
     
-    def __init__(self, icc):
-        Commands.CmdSet.CmdSet.__init__(self, icc)
+    def __init__(self, actor):
+        self.actor = actor
 
         #
         # Set the keyword dictionary
@@ -42,7 +41,7 @@ class CoreCmd(Commands.CmdSet.CmdSet):
 
         cmdKeys = cmd.cmd.keywords
         
-        handler = self.icc.handler
+        handler = self.actor.handler
         helpList = []
         for verb in handler.consumers.keys():
             clist = handler.consumers[verb]
@@ -75,27 +74,27 @@ class CoreCmd(Commands.CmdSet.CmdSet):
             commands = cmd.cmd.keywords['cmds'].values
             for command in commands:
                 cmd.respond('text="Attaching %s."' % (command))
-                self.icc.attachCmdSet(command)
+                self.actor.attachCmdSet(command)
         else:
             # Load all modules
             cmd.respond('text="Attaching all command sets."')
-            self.icc.attachAllCmdSets()
+            self.actor.attachAllCmdSets()
 
         cmd.finish('')
     
     def reloadConfiguration(self,cmd):
         """ Reload the configuration. """
-        cmd.respond('text="Reparsing the configuration file: %s."' % (self.icc.configFile))
-        logging.warn("reading config file %s", self.icc.configFile)
+        cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
+        logging.warn("reading config file %s", self.actor.configFile)
 
         try:
             newConfig = ConfigParser.ConfigParser()
-            newConfig.read(self.icc.configFile)
+            newConfig.read(self.actor.configFile)
         except Exception, e:
             cmd.fail('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
             return
         
-        self.icc.config = newConfig
+        self.actor.config = newConfig
         cmd.finish('text="reloaded configuration file')
     
     def exitCmd(self, cmd):
