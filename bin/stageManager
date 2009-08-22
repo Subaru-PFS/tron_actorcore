@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+
+LOG_DIR=$HOME/logs
+verbose=0
+
+usage() {
+    cat <<EOF >&2
+usage:
+stageManager [options] actorName command [command ...]
+where command is one of "start", "stop", "stopdead", "restart", and "status"
+
+Control actors.
+
+Options:
+   -h, --help		Provide this paltry help
+   -l, --log DIR	Directory to write log files
+   -v, --verbose	Be chatty
+EOF
+    exit 1
+}
+
+while [ ! -z $1 ]; do
+    case $1 in
+      -h|--help)
+	    usage
+	    exit 0;;
+      -l|--logs)
+	    LOG_DIR=$HOME/logs
+
+	    if [ -z $LOG_DIR ]; then
+		echo "Please specify a logging directory with the $1 flag" >&2
+		exit 1
+	    fi
+	    shift;;
+      -v|--verbose)
+	    verbose=1;;
+      -*)
+	    echo "Unknown option: $1" >&2
+	    exit 1;;
+      *)
+	    break;;
+    esac
+    shift
+done
+
+#-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+PRODUCT=$1; shift
+
+if [ -z $PRODUCT ]; then
+    echo "Please specify a product to control" >&2
+    usage
+fi
+
+PRODUCT_DIR=$(eups list -s -d $PRODUCT)
+
+if test -z "$PRODUCT_DIR"; then
+    if [ $verbose = 1 ]; then
+	echo "Product $PRODUCT is not setup" >&2
+    fi
+
+    setup $PRODUCT # > /dev/null 2>&1
+
+    PRODUCT_DIR=$(eups list -s -d $PRODUCT)
+    if test -z "$PRODUCT_DIR"; then
+	echo "Product $PRODUCT wasn't not setup, and I failed to set it up for you" >&2
+	exit 1
+    fi
+fi
+
+if [ $verbose = 1 ]; then
+    echo
+    echo ====================== Using $PRODUCT from $PRODUCT_DIR
+    echo
+fi
+
+if [ ! -d $LOG_DIR ]; then
+    mkdir -p $LOG_DIR
+fi
+
+if test $# = 0; then
+    usage
+fi
+cmds="$@"
+
+cd $PRODUCT_DIR
+
+now() {
+    NOW=$(TZ=GMT date +"%Y-%m-%dT%H:%M:%S")
+
+    echo $NOW
+}
+
+# Return the program's pid, or the empty string.
+#
+get_pid() {
+    print=$1
+
+    PID=""
+    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python ${PRODUCT}_main.py/ {print \$1}")
+    PID=$pid
+
+    if [ "$print" = 1 -o $verbose != 0 ]; then
+	if test "$pid"; then
+            echo "$PRODUCT is running as process $pid"
+	else
+            echo "$PRODUCT is not running"
+	fi
+    fi
+}
+
+# Start a new ICC. Complains if the ICC is already running,
+# and does not start a new one.
+#
+do_start() {
+    get_pid
+
+    if test "$PID"; then
+        echo "NOT starting new $PRODUCT. Use restart if you want a new one."
+        return
+    fi
+
+    printf "Starting new $PRODUCT..."
+
+    # reset WWW access.
+    # sudoers: tron hub35m = NOPASSWD: /usr/local/bin/www-access, /bin/kill
+    #sudo /usr/local/bin/www-access reset
+
+
+    now=`now`.log
+    (cd $LOG_DIR; rm -f current.log; ln -s $now current.log)
+    cd $PRODUCT_DIR/python/$PRODUCT
+    python ${PRODUCT}_main.py >$LOG_DIR/$now 2>&1 &
+
+    # Check that it really started...
+    #
+    sleep 1
+    get_pid
+
+    if test "$PID"; then
+        echo " done."
+    else
+        echo " FAILED!" >&2
+    fi
+}
+
+# Stop any running ICC.
+#
+do_stop() {
+    get_pid
+
+    if test ! "$PID"; then
+        return
+    fi
+
+    echo "Stopping $PRODUCT."
+    kill -TERM $PID
+}
+
+# Stop any running ICC fairly violently.
+#
+do_stopdead() {
+    get_pid
+
+    if test ! "$PID"; then
+        return
+    fi
+
+    echo "Stopping $PRODUCT gently."
+    kill -TERM $PID
+    sleep 2
+
+    echo "Stopping $PRODUCT meanly."
+    kill -KILL $PID
+}
+
+# Query a running ICC for simple status.
+#
+do_status() {
+    get_pid 1
+    # Query it for essential liveness
+}
+
+while true; do
+    case $1 in
+	start)
+            do_start
+            ;;
+	stop)
+            do_stop
+            ;;
+	stopdead)
+            do_stopdead
+            ;;
+	status)
+            do_status
+            ;;
+	restart)
+            do_stop
+            sleep 2
+            do_start
+            ;;
+	*)
+            usage
+            ;;
+    esac
+
+    shift
+    if [ -z $1 ]; then
+	break
+    fi
+
+    sleep 1
+done
+
+exit 0
+
