@@ -29,8 +29,6 @@ def tback(system, e, info=None, logger=None):
         i = 0
         frames.reverse()
         for f in frames:
-            #tr_list.append("\n\n====== frame %d arg+local names:\n" % (i))
-            #tr_list.append(pprint.pformat(f[0].f_code.co_varnames))
             tr_list.append("\n\n====== frame %d locals:\n" % (i))
             tr_list.append(pprint.pformat(f[0].f_locals))
             i += 1
