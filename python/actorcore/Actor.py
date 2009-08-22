@@ -185,8 +185,12 @@ class Actor(object):
         # Check any new commands before finishing with the load. This
         # is a bit messy, as the commands might depend on a valid
         # keyword dictionary, which also comes from the module
-        # file. So load the module's keys temporarily.
-        if cmdSet.keys:
+        # file.
+        #
+        # BAD problem here: the Keys define a single namespace. We need
+        # to check for conflicts and allow unloading. Right now we unilaterally 
+        # load the Keys and do not unload them if the validation fails.
+        if hasattr(cmdSet, 'keys') and cmdSet.keys:
             keys.CmdKey.addKeys(cmdSet.keys)
         valCmds = []
         for v in cmdSet.vocab:
@@ -201,7 +205,6 @@ class Actor(object):
             valCmd = validation.Cmd(verb, args, help=funcDoc) >> func
             valCmds.append(valCmd)
 
-        #pdb.set_trace()
         # Got this far? Commit. Save the Cmds so that we can delete them later.
         oldCmdSet = self.commandSets.get(cname, None)
         cmdSet.validatedCmds = valCmds
