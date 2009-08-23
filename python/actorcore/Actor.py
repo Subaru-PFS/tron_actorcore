@@ -1,5 +1,6 @@
 import imp
 import re
+import inspect
 import sys
 import opscore.utility.sdss3logging as opsLogging
 import logging
@@ -233,6 +234,13 @@ class Actor(object):
             if re.match('^[a-zA-Z][a-zA-Z0-9_-]*Cmd\.py$', f):
                 self.attachCmdSet(f[:-3], [path])
 
+    def cmdTraceback(self, e):
+        eType, eValue, eTraceback = sys.exc_info()
+        where = inspect.getframeinfo(eTraceback)
+
+        return "%r at %s:%d" % (eValue, where.filename, where.lineno)
+                
+        
     def actor_loop(self):
         """ Check the command queue and dispatch commands."""
 
@@ -274,7 +282,8 @@ class Actor(object):
                     for func in cmdFuncs:
                         func(cmd)
                 except Exception, e:
-                    cmd.fail('text=%s' % (qstr("command failed: %s" % (e))))
+                    oneLiner = self.cmdTraceback(e)
+                    cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
                     tback('newCmd', e)
             except Exception, e:
                 cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
