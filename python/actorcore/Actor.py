@@ -284,7 +284,9 @@ class Actor(object):
                 except Exception, e:
                     oneLiner = self.cmdTraceback(e)
                     cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
-                    tback('newCmd', e)
+                    #tback('newCmd', e)
+                    continue
+                
             except Exception, e:
                 cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
                                            (e))))
