@@ -74,8 +74,11 @@ if [ $verbose = 1 ]; then
     echo
 fi
 
-if [ ! -d $LOG_DIR ]; then
-    mkdir -p $LOG_DIR
+# Put logs in a per-product directory.
+# The product itself might then stuff logs into subdirectories.
+PRODLOG_DIR=$LOG_DIR/$PRODUCT
+if [ ! -d $PRODLOG_DIR ]; then
+    mkdir -p $PRODLOG_DIR
 fi
 
 if test $# = 0; then
@@ -128,9 +131,9 @@ do_start() {
 
 
     now=`now`.log
-    (cd $LOG_DIR; rm -f current.log; ln -s $now current.log)
+    (cd $PRODLOG_DIR; rm -f current.log; ln -s $now current.log)
     cd $PRODUCT_DIR/python/$PRODUCT
-    python ${PRODUCT}_main.py >$LOG_DIR/$now 2>&1 &
+    python ${PRODUCT}_main.py >$PRODLOG_DIR/$now 2>&1 &
 
     # Check that it really started...
     #
