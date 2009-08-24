@@ -75,6 +75,9 @@ History:
 2009-07-20 ROwen    Modified to not log if logFunc = None; added a convenience logging function.
 2009-07-21 ROwen    Added support for including commander info in command strings.
 2009-07-23 ROwen    Added delayCallbacks argument and sendAllKeyVarCallbacks method.
+2009-08-24 ROwen    Test for valid name at creation time.
+                    Improved error reporting in makeReply.
+                    If timing out a command fails, don't try to time it out again.
 """
 import sys
 import time
@@ -122,8 +125,9 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """Create a new CmdKeyVarDispatcher
     
         Inputs:
-        - name: if includeName is True, then sent as a prefix to all commands sent to the hub.
-            Also used when the dispatcher reports errors
+        - name: dispatcher name; must be a valid actor name (_ is OK; avoid other punctuation and whitespace).
+            Used when the dispatcher reports errors.
+            If includeName is True, then sent as a prefix to all commands sent to the hub.
         - connection: an RO.Comm.HubConnection object or similar;
           if omitted, an RO.Comm.HubConnection.NullConnection is used, which is useful for testing.
         - logFunc: a function that logs a message. Argument list must be:
@@ -137,6 +141,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             until all refresh commands have completed (at which point callbacks are made
             for each keyVar that has been set). Thus the set of keyVars will be maximally
             self-consistent, but it may take awhile after connecting before callbacks begin.
+
+        Raises ValueError if name cannot be used as an actor name
         """
         keydispatcher.KeyVarDispatcher.__init__(self)
         
@@ -180,6 +186,12 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self.refreshCmdIDGen = RO.Alg.IDGen(_CmdNumWrap + 1, 2 * _CmdNumWrap)
         
         self.setLogFunc(logFunc)        
+        
+        try:
+            self.makeReply(dataStr="TestName")
+        except Exception, e:
+            raise ValueError("Invalid name=%s cannot be parsed as an actor name; error: %s" % \
+                (name, RO.StringUtil.strFromException(e)))
         
         # start background tasks (refresh variables and check command timeout)
         self.refreshAllVar()
@@ -285,7 +297,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             reply = self.parser.parse(replyStr)
         except Exception, e:
             self.logMsg(
-                msgStr = "CouldNotParse; Msg=%r; Text=%r" % (replyStr, RO.StringUtil.strFromException(e)),
+                msgStr = "CouldNotParse; Reply=%r; Text=%r" % (replyStr, RO.StringUtil.strFromException(e)),
                 severity = RO.Constants.sevError,
             )
             return
@@ -297,7 +309,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         try:
             self.dispatchReply(reply)
         except Exception, e:
-            sys.stderr.write("Could not dispatch: %r\nwhich was parsed as reply=%r\n" % (replyStr, reply))
+            sys.stderr.write("Could not dispatch replyStr=%r\n    which was parsed as reply=%r\n" % \
+                (replyStr, reply))
             traceback.print_exc(file=sys.stderr)
                 
     def executeCmd(self, cmdVar):
@@ -394,8 +407,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 cmdr = cmdr,
             )
         except Exception, e:
-            sys.stderr.write("Could not log: %r; severity=%r; actor=%r; cmdr=%r\n" % \
-                (msgStr, severity, actor, cmdr))
+            sys.stderr.write("Could not log msgStr=%r; severity=%r; actor=%r; cmdr=%r\n    error: %s\n" % \
+                (msgStr, severity, actor, cmdr, RO.StringUtil.strFromException(e)))
             traceback.print_exc(file=sys.stderr)
     
     def logReply(self, reply):
@@ -420,7 +433,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 cmdr = reply.header.cmdrName,
             )
         except Exception, e:
-            sys.stderr.write("Could not log Reply:\n%r\n" % (reply,))
+            sys.stderr.write("Could not log reply=%r\n    error=%s\n" % \
+                (reply, RO.StringUtil.strFromException(e)))
             traceback.print_exc(file=sys.stderr)
         
     def makeReply(self,
@@ -436,24 +450,35 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
 #        print "%s.makeReply(cmdr=%s, cmdID=%s, actor=%s, msgCode=%s, dataStr=%r)" % \
 #            (self.__class__.__name__, cmdr, cmdID, actor, msgCode, dataStr)
-        if cmdr == None:
-            cmdr = self.connection.cmdr or "me.me"
-        if actor == None:
-            actor = self.name
-
-        headerStr = "%s %d %s %s" % (cmdr, cmdID, actor, msgCode)
+        msgStr = None
         try:
+            if cmdr == None:
+                cmdr = self.connection.cmdr or "me.me"
+            if actor == None:
+                actor = self.name
+    
+            headerStr = "%s %d %s %s" % (cmdr, cmdID, actor, msgCode)
             msgStr = " ".join((headerStr, dataStr))
             reply = self.parser.parse(msgStr)
-        except Exception, e:
-            errStr = "Internal error; could not create message: error: %s" % (RO.StringUtil.strFromException(e),)
-            self.logMsg(msgStr = errStr, severity = RO.Constants.sevError)
-            sys.stderr.write(errStr + "\n")
+        except Exception:
+            sys.stderr.write("%s.makeReply could not make reply from msgStr=%r; will try again with simplified msgStr\n" % \
+                (self.__class__.__name__, msgStr))
             traceback.print_exc(file=sys.stderr)
             # try again with simpler data; give up and raise an exception if that fails
-            newDataStr = "Text=%s" % (RO.StringUtil.quoteStr(dataStr))
-            newMsgStr = " ".join((headerStr, newDataStr))
-            reply = self.parser.parse(newMsgStr)            
+            newMsgStr = None
+            try:
+                newDataStr = "Text=%s" % (RO.StringUtil.quoteStr(dataStr))
+                newMsgStr = " ".join((headerStr, newDataStr))
+                reply = self.parser.parse(newMsgStr)            
+            except Exception:
+                sys.stderr.write("%s.makeReply could not make reply from simplified msgStr=%r; giving up\n" % \
+                    (self.__class__.__name__, newMsgStr,))
+                traceback.print_exc(file=sys.stderr)
+                logMsgStr = "Internal error; could not create message from msgStr=%r; see log for details" % (msgStr,)
+                self.logMsg(msgStr = logMsgStr, severity = RO.Constants.sevError)
+                raise
+            else:
+                sys.stderr.write("%s.makeReply succeeded with simplified msgStr=%r\n" % (self.__class__.__name__, newMsgStr,))
         return reply
 
     def refreshAllVar(self):
@@ -527,37 +552,44 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
 #       print "opscore.actor.CmdKeyVarDispatcher._checkRemCmdTimeouts(%s)" % cmdVarIter
         try:
-            errReply = None
-            currTime = time.time()
             for cmdVar in cmdVarIter:
+                errReply = None
+                currTime = time.time()
                 # if cmd still exits (i.e. has not been deleted for other reasons)
                 # check if it has a time limit and has timed out
-                if not self.cmdDict.has_key(cmdVar.cmdID):
+                if cmdVar.cmdID not in self.cmdDict:
                     continue
-                if not self._isConnected:
-                    errReply = self.makeReply (
-                        cmdID = cmdVar.cmdID,
-                        dataStr = "Aborted; Actor=%r; Cmd=%r; Text=\"disconnected\"" % (cmdVar.actor, cmdVar.cmdStr),
-                    )
-                    # no connection, so cannot send abort command
-                    cmdVar.abortCmdStr = ""
-                    break
-                elif cmdVar.maxEndTime and (cmdVar.maxEndTime < currTime):
-                    # time out this command
-                    errReply = self.makeReply (
-                        cmdID = cmdVar.cmdID,
-                        dataStr = "Timeout; Actor=%r; Cmd=%r" % (cmdVar.actor, cmdVar.cmdStr),
-                    )
-                    break
-            if errReply:
-                self._replyToCmdVar(cmdVar, errReply)
-    
-                # schedule myself to run again shortly
-                # (thereby giving other time to other events)
-                # continuing where I left off
-                self._checkRemCmdTimer = self.reactor.callLater(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
-        except:
-            sys.stderr.write("%s._checkRemCmdTimeouts failed\n" % (self.__class__.__name__, ))
+                try:
+                    if not self._isConnected:
+                        errReply = self.makeReply (
+                            cmdID = cmdVar.cmdID,
+                            dataStr = "Aborted; Actor=%r; Cmd=%r; Text=\"disconnected\"" % (cmdVar.actor, cmdVar.cmdStr),
+                        )
+                        # no connection, so cannot send abort command
+                        cmdVar.abortCmdStr = ""
+                        break
+                    elif cmdVar.maxEndTime and (cmdVar.maxEndTime < currTime):
+                        # time out this command
+                        errReply = self.makeReply (
+                            cmdID = cmdVar.cmdID,
+                            dataStr = "Timeout; Actor=%r; Cmd=%s" % (cmdVar.actor, RO.StringUtil.quoteStr(cmdVar.cmdStr)),
+                        )
+                        break
+                    if errReply:
+                        self._replyToCmdVar(cmdVar, errReply)
+            
+                        # schedule myself to run again shortly
+                        # (thereby giving other time to other events)
+                        # continuing where I left off
+                        self._checkRemCmdTimer = self.reactor.callLater(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
+                except Exception:
+                    sys.stderr.write("%s._checkRemCmdTimeouts failed to timeout command %s\n" % \
+                        (self.__class__.__name__, cmdVar))
+                    traceback.print_exc(file=sys.stderr)
+                    cmdVar.maxEndTime = None
+        except Exception:
+            # this is very, very unlikely
+            sys.stderr.write("%s._checkRemCmdTimeouts failed\n" % (self.__class__.__name__,))
             traceback.print_exc(file=sys.stderr)
 
         # finished checking all commands in the current cmdVarIter;
