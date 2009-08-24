@@ -236,9 +236,10 @@ class Actor(object):
 
     def cmdTraceback(self, e):
         eType, eValue, eTraceback = sys.exc_info()
-        where = inspect.getframeinfo(eTraceback)
+        tbList = traceback.extract_tb(eTraceback)
+        where = tbList[-1]
 
-        return "%r at %s:%d" % (eValue, where.filename, where.lineno)
+        return "%r at %s:%d" % (eValue, where[0], where[1])
                 
         
     def actor_loop(self):
@@ -264,7 +265,7 @@ class Actor(object):
                 except Exception, e:
                     cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
                                                (cmdStr, e))))
-                    tback('actor_loop', e)
+                    #tback('actor_loop', e)
                     continue
 
                 if not validatedCmd:
