@@ -139,7 +139,7 @@ class Cmdr(object):
         def logFunc(msgStr, severity, actor, cmdr, logger=logger):
             logger.info("%s %s %s %s" % (cmdr, actor, severity, msgStr))
 
-        self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, self.connector, 
+        self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(self.actor, self.connector, 
                                                             logFunc, includeName=True)
         opsModel.Model.setDispatcher(self.dispatcher)
 
