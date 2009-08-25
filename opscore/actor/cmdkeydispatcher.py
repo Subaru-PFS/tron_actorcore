@@ -80,6 +80,7 @@ History:
                     If timing out a command fails, don't try to time it out again.
 2009-08-25 ROwen    Bug fix: failed to dispatch replies to cmdVars with forUserCmd set, because it
                     ignored replies with a prefix on the cmdr.
+                    Added replyIsMine method.
 """
 import sys
 import time
@@ -283,8 +284,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
         # if you are the commander for this message,
         # execute the command callback (if any)
-        if reply.header.cmdrName.endswith(self.connection.cmdr) \
-            and reply.header.cmdrName[-len(self.connection.cmdr) - 1: -len(self.connection.cmdr)] in ("", "."):
+        if self.replyIsMine(reply):
             # get the command for this command id, if any
             cmdVar = self.cmdDict.get(reply.header.commandId, None)
             if cmdVar != None:
@@ -373,7 +373,13 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                     cmdVar.actor, cmdVar.cmdStr, RO.StringUtil.strFromException(e)),
             )
             self._replyToCmdVar(cmdVar, errReply)
-        
+
+    def replyIsMine(self, reply):
+        """Return True if I am the commander for this message.
+        """
+        return reply.header.cmdrName.endswith(self.connection.cmdr) \
+            and reply.header.cmdrName[-len(self.connection.cmdr) - 1: -len(self.connection.cmdr)] in ("", ".")
+
     def updConnState(self, conn):
         """If connection state changes, update refresh variables.
         """

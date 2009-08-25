@@ -9,6 +9,8 @@ History:
 2009-07-21 ROwen    Added forUserCmd support to CmdVar.
                     Added "E" message code for error.
 2009-07-23 ROwen    Added doCallbacks method to support delayCallbacks in CmdKeyVarDispatcher.
+2009-08-25 ROwen    Bug fix: failed to record watched keyVars for cmdVars with forUserCmd set,
+                    because it ignored replies with a prefix on the cmdr.
 """
 import sys
 import time
@@ -525,9 +527,10 @@ class CmdVar(object):
         """
         if (not keyVar.isCurrent) or (not keyVar.reply):
             return False
-        if keyVar.reply.header.commandId != self.cmdID:
+        # note: self.dispatcher should be set, but play it safe
+        if not self.dispatcher or not self.dispatcher.replyIsMine(keyVar.reply):
             return False
-        if keyVar.reply.header.cmdrName != self.dispatcher.connection.cmdr:
+        if keyVar.reply.header.commandId != self.cmdID:
             return False
         return True
 
