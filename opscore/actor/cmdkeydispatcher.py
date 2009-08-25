@@ -78,6 +78,8 @@ History:
 2009-08-24 ROwen    Test for valid name at creation time.
                     Improved error reporting in makeReply.
                     If timing out a command fails, don't try to time it out again.
+2009-08-25 ROwen    Bug fix: failed to dispatch replies to cmdVars with forUserCmd set, because it
+                    ignored replies with a prefix on the cmdr.
 """
 import sys
 import time
@@ -281,7 +283,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
         # if you are the commander for this message,
         # execute the command callback (if any)
-        if reply.header.cmdrName == self.connection.cmdr:
+        if reply.header.cmdrName.endswith(self.connection.cmdr) \
+            and reply.header.cmdrName[-len(self.connection.cmdr) - 1: -len(self.connection.cmdr)] in ("", "."):
             # get the command for this command id, if any
             cmdVar = self.cmdDict.get(reply.header.commandId, None)
             if cmdVar != None:
