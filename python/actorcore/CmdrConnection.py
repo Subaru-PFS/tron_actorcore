@@ -55,7 +55,7 @@ class CmdrConnection(LineReceiver):
 class CmdrConnector(ReconnectingClientFactory):
     def __init__(self, name, brains, logger=None):
         self.name = name
-        self.cmdr = name
+        self.cmdr = "."+name
         self.brains = brains
         self.readCallback = None
         self.stateCallback = None
@@ -153,29 +153,34 @@ class Cmdr(object):
         reactor.connectTCP(tronHost, tronPort, self.connector)
 
     def call(self, **argv):
+        """ Send a command and return all its output. """
+        q = self.cmdq(**argv)
+        ret = q.get()
+
+        self.logger.info("command %s returned " % (ret))
+        return ret
+        
+    def cmdq(self, **argv):
+        """ Send a command and return a Queue on which the command output will be put. """
         self.logger.info("sending command %s" % (argv))
 
         q = Queue.Queue()
         argv['callFunc'] = q.put
         cmdvar = opsKeyvar.CmdVar(**argv)
-        self.dispatcher.executeCmd(cmdvar)
-        ret = q.get()
-
-        self.logger.info("command %s returned " % (cmdvar))
+        reactor.callFromThread(self.dispatcher.executeCmd, cmdvar)
         
-        return ret
+        return q
         
     def waitForKey(self, **argv):
         logging.info("sending command %s" % (argv))
 
         q = Queue.Queue()
         argv['callFunc'] = q.put
-        cmdvar = opsKeyvar.KeyVar(**argv)
-        self.dispatcher.executeCmd(cmdvar)
+        keyvar = opsKeyvar.KeyVar(**argv)
+        reactor.callFromThread(self.dispatcher.executeCmd, keyvar)
         ret = q.get()
 
         logging.info("command %s returned " % (cmdvar))
-        
         return ret
         
 def liveTest():
