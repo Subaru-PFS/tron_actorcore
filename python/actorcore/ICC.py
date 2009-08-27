@@ -24,7 +24,10 @@ class ICC(coreActor.Actor):
         if path == None:
             path = ['./Controllers']
 
-        self.logger.info("attaching controller %s from path %s", name, path)
+        note = "attaching controller %s from path %s", name, path
+        self.logger.info(note)
+        if cmd:
+            cmd.inform('text="%s"' % (note))
         file = None
         try:
             file, filename, description = imp.find_module(name, path)
@@ -34,6 +37,7 @@ class ICC(coreActor.Actor):
             self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
                          name, file, filename, description, id(mod))
         except ImportError, e:
+            self.bcast.warn('text="importing controller %s failed: %s"' % (name, e))
             raise RuntimeError('Import of %s failed: %s' % (name, e))
         finally:
             if file:
@@ -45,15 +49,18 @@ class ICC(coreActor.Actor):
 
         # If we loaded the module and the controller is already running, cleanly stop the old one. 
         if name in self.controllers:
+            self.bcast.inform('text="stopping controller %s."' % (name))
             self.logger.info('stopping %s controller', name)
             self.controllers[name].stop()
             del self.controllers[name]
 
+        self.bcast.inform('text="starting controller %s."' % (name))
         self.logger.info('starting %s controller', name)
         try:
             conn.start()
         except Exception, e:
             print sys.exc_info()
+            self.bcast.warn('text="Could not start the controller %s: %s."' % (name, e))
             self.logger.error('Could not connect to %s', name)
             return False
         self.controllers[name] = conn
