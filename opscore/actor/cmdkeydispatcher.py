@@ -356,7 +356,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 if cmdVar.forUserCmd:
                     namePrefix = "%s.%s " % (cmdVar.forUserCmd.cmdr, self.name)
                 else:
-                    namePrefix = "%s " % (self.name)
+                    namePrefix = "%s.%s " % (self.name, self.name)
             else:
                 namePrefix = ""
             fullCmdStr = "%s%d %s %s" % (namePrefix, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
@@ -365,7 +365,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 msgStr = fullCmdStr,
                 actor = cmdVar.actor,
             )
-#             print "executing:", fullCmdStr
+            # print >> sys.stderr, "executing:", fullCmdStr
         except Exception, e:
             errReply = self.makeReply(
                 cmdID = cmdVar.cmdID,
@@ -377,8 +377,9 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     def replyIsMine(self, reply):
         """Return True if I am the commander for this message.
         """
+
         return reply.header.cmdrName.endswith(self.connection.cmdr) \
-            and reply.header.cmdrName[-len(self.connection.cmdr) - 1: -len(self.connection.cmdr)] in ("", ".")
+            and reply.header.cmdrName[-len(self.connection.cmdr): -len(self.connection.cmdr)+1] in ("", ".")
 
     def updConnState(self, conn):
         """If connection state changes, update refresh variables.
