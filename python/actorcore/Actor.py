@@ -1,6 +1,7 @@
 import imp
 import re
 import inspect
+import traceback
 import sys
 import opscore.utility.sdss3logging as opsLogging
 import logging
