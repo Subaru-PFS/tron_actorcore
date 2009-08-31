@@ -446,7 +446,8 @@ class KeysDictionary(object):
             kdict.checksum = hashlib.md5(filedata).hexdigest()
             return kdict
         except ImportError:
-            raise KeysDictionaryError('no keys dictionary found for %s' % dictname)
+            raise KeysDictionaryError('no keys dictionary found for %s: %s'
+                % (dictname,str(e)))
         except Exception,e:
             indent = '\n >> '
             description = indent + indent.join(str(e).split('\n'))
