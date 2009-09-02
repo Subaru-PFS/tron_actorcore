@@ -373,23 +373,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                     cmdVar.actor, cmdVar.cmdStr, RO.StringUtil.strFromException(e)),
             )
             self._replyToCmdVar(cmdVar, errReply)
-
-    def replyIsMine(self, reply):
-        """Return True if I am the commander for this message.
-        """
-
-        return reply.header.cmdrName.endswith(self.connection.cmdr) \
-            and reply.header.cmdrName[-len(self.connection.cmdr): -len(self.connection.cmdr)+1] in ("", ".")
-
-    def updConnState(self, conn):
-        """If connection state changes, update refresh variables.
-        """
-        wasConnected = self._isConnected
-        self._isConnected = conn.isConnected()
-#         print "updConnState; wasConnected=%s, isConnected=%s" % (wasConnected, self._isConnected)
-
-        if wasConnected != self._isConnected:
-            self.reactor.callLater(_ShortInterval, self.refreshAllVar)
         
     def logMsg(self,
         msgStr,
@@ -532,6 +515,12 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 del(self.refreshCmdDict[keyVar.refreshInfo])
         return keyVar
 
+    def replyIsMine(self, reply):
+        """Return True if I am the commander for this message.
+        """
+        return reply.header.cmdrName.endswith(self.connection.cmdr) \
+            and reply.header.cmdrName[-len(self.connection.cmdr) - 1: -len(self.connection.cmdr)] in ("", ".")
+
     def sendAllKeyVarCallbacks(self, includeNotCurrent=True):
         """Send all keyVar callbacks.
         
@@ -548,6 +537,16 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         where the first argument is positional and the others are by name
         """
         self.logFunc = logFunc
+
+    def updConnState(self, conn):
+        """If connection state changes, update refresh variables.
+        """
+        wasConnected = self._isConnected
+        self._isConnected = conn.isConnected()
+#         print "updConnState; wasConnected=%s, isConnected=%s" % (wasConnected, self._isConnected)
+
+        if wasConnected != self._isConnected:
+            self.reactor.callLater(_ShortInterval, self.refreshAllVar)
 
     def _checkRemCmdTimeouts(self, cmdVarIter):
         """Helper function for checkCmdTimeouts.
