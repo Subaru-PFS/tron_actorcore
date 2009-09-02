@@ -7,7 +7,8 @@ usage() {
     cat <<EOF >&2
 usage:
 stageManager [options] actorName command [command ...]
-where command is one of "start", "stop", "stopdead", "restart", and "status"
+where command is one of "start", "stop", "stopdead", "restart", "status",
+or a delay in seconds
 
 Control actors.
 
@@ -185,7 +186,12 @@ do_status() {
 }
 
 while true; do
+    sleepTime=1
     case $1 in
+        [0-9]*)
+	    sleepTime=$1
+	    echo "Sleeping ${sleepTime}s"
+	    ;;
 	start)
             do_start
             ;;
@@ -213,7 +219,7 @@ while true; do
 	break
     fi
 
-    sleep 1
+    sleep $sleepTime
 done
 
 exit 0
