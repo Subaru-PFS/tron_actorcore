@@ -158,6 +158,12 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         timeString = time.strftime("%Y-%m-%dT%H:%M:%S",
                                    time.gmtime(self.startTime))
         filename = self.basename + timeString + ".log"
+
+        try:
+            os.makedirs(self.dirname, 0755)
+        except OSError, e:
+            pass
+            
         path = os.path.join(self.dirname, filename)
         
         if os.path.exists(path):
