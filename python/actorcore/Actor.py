@@ -286,6 +286,10 @@ class Actor(object):
                 except Exception, e:
                     oneLiner = self.cmdTraceback(e)
                     cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
+                    try:
+                        self.commandFailed(cmd)
+                    except:
+                        pass
                     #tback('newCmd', e)
                     continue
                 
@@ -296,7 +300,11 @@ class Actor(object):
                     tback('newCmdFail', e)
                 except:
                     pass
-                
+
+    def commandFailed(self, cmd):
+        """ Gets called when a command has failed. """
+        pass
+    
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 
