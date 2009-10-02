@@ -14,6 +14,43 @@ import ConfigParser
 class ConfigError(Exception):
     pass
 
+class ProductConfig(ConfigParser.SafeConfigParser):
+    """
+    A product-aware INI configuration file parser
+    """
+    def __init__(self,productName,fileName,sectionName=None):
+        ConfigParser.SafeConfigParser.__init__(self)
+        self.sectionName = sectionName or 'DEFAULT'
+        # build a search path for INI files...
+        configFiles = [ ]
+        # look for INI files in $PRODUCTNAME_DIR/etc if a product_name is
+        # provided and a corresponding $PRODUCTNAME_DIR envvar is defined
+        if productName:
+            productPath = os.getenv(productName.upper()+'_DIR')
+            if productPath:
+                configFiles.append(os.path.join(productPath,'etc',fileName))
+        # also search the current working dir if it is different from the above
+        if not configFiles or (os.path.abspath(os.getcwd()) !=
+            os.path.abspath(os.path.join(productPath,'etc'))):
+            configFiles.append(os.path.join(os.getcwd(),fileName))
+        # read all available INI config parameters
+        self.foundFiles = self.read(configFiles)
+        
+    def getValue(self,optionName,getType=None):
+        """
+        Returns the named option value using a typed accessor.
+        
+        Supported types include 'int', 'boolean' and 'float'. The
+        default return type is a string. Raises a ConfigError if the
+        option is not defined or this object was initialized with an
+        invalid section name.
+        """
+        try:
+            getter = getattr(self,'get' + (getType or ''),self.get)
+            return getter(self.sectionName,optionName)
+        except (ConfigParser.NoOptionError,ConfigParser.NoSectionError):
+            raise ConfigError
+
 class ConfigOptionParser(optparse.OptionParser):
     """
     A command-line options parser that takes defaults from INI files
@@ -23,7 +60,7 @@ class ConfigOptionParser(optparse.OptionParser):
         # INI file containing our configuration defaults
         productName = kwargs.get('product_name',None)
         configFileName = kwargs.get('config_file','config.ini')
-        self.configSectionName = kwargs.get('config_section','DEFAULT')
+        sectionName = kwargs.get('config_section','DEFAULT')
         # strip out our special options
         if 'product_name' in kwargs:
             del kwargs['product_name']
@@ -31,21 +68,8 @@ class ConfigOptionParser(optparse.OptionParser):
             del kwargs['config_file']
         if 'config_section' in kwargs:
             del kwargs['config_section']
-        # build a search path for INI files...
-        configFiles = [ ]
-        # look for INI files in $PRODUCTNAME_DIR/etc if a product_name is
-        # provided and a corresponding $PRODUCTNAME_DIR envvar is defined
-        if productName:
-            productPath = os.getenv(productName.upper()+'_DIR')
-            if productPath:
-                configFiles.append(os.path.join(productPath,'etc',configFileName))
-        # also search the current working dir if it is different from the above
-        if not configFiles or (os.path.abspath(os.getcwd()) !=
-            os.path.abspath(os.path.join(productPath,'etc'))):
-            configFiles.append(os.path.join(os.getcwd(),configFileName))
-        # read all available INI config options
-        self.configParser = ConfigParser.SafeConfigParser()
-        self.foundFiles = self.configParser.read(configFiles)
+        # initialize our INI file parser
+        self.configOptions = ProductConfig(productName,configFileName,sectionName)
         self.configDefaults = { }
         # initialize our list of secret option names
         self.secretOptions = [ ]
@@ -60,9 +84,9 @@ class ConfigOptionParser(optparse.OptionParser):
         a special 'secret' type for handling encrypted strings.
         """
         # what type of value does this option expect
-        getter = self.configParser.get
+        getType = None
         if 'action' in kwargs and kwargs['action'] in ('store_true','store_false'):
-            getter = self.configParser.getboolean
+            getType = 'boolean'
         # loop over option aliases
         for alias in args:
             if alias[:2] != '--':
@@ -70,17 +94,18 @@ class ConfigOptionParser(optparse.OptionParser):
             # lookup each long-form option name in turn, until we get a match
             optionName = alias[2:]
             try:
-                defaultValue = getter(self.configSectionName,optionName)
+                defaultValue = self.configOptions.getValue(optionName,getType)
                 kwargs['default'] = defaultValue
                 self.configDefaults[optionName] = defaultValue
                 break
-            except (ConfigParser.NoOptionError,ConfigParser.NoSectionError):
+            except ConfigError:
                 pass
         # is this a secret option?
         optionType = kwargs.get('type','string')
         if optionType == 'secret':
             if not 'dest' in kwargs:
-                raise optparse.OptionValueError('A secret option must specify a destination')
+                raise optparse.OptionValueError(
+                    'A secret option must specify a destination')
             self.secretOptions.append(kwargs['dest'])
             kwargs['type'] = 'string'
         # do the normal option processing
@@ -122,7 +147,8 @@ class ConfigOptionParser(optparse.OptionParser):
             for secret in self.secretOptions:
                 data = engine.decrypt(ConfigOptionParser.hex2bin(getattr(options,secret)))
                 npad = ord(data[-1])
-                if npad <= 0 or npad > cipher.block_size or data[-npad:-1] != '\x00'*(npad-1):
+                if (npad <= 0 or npad > cipher.block_size or
+                    data[-npad:-1] != '\x00'*(npad-1)):
                     raise optparse.OptionValueError('badly formed value for %s' % secret)
                 setattr(options,secret,data[0:-npad])
         # return the parse results
@@ -133,7 +159,7 @@ class ConfigOptionParser(optparse.OptionParser):
         Returns a multi-line string describing our config setup
         """
         text = 'Runtime configuration defaults provided by the following files:\n\n  '
-        text += '\n  '.join(self.foundFiles)
+        text += '\n  '.join(self.configOptions.foundFiles)
         text += '\n\nDefault values are:\n\n'
         for opt in self.option_list:
             if opt.dest:
