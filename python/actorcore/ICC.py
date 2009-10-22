@@ -1,3 +1,4 @@
+from opscore.utility.qstr import qstr
 import opscore.utility.sdss3logging as opsLogging
 import logging
 
