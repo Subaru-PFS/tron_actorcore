@@ -55,7 +55,7 @@ class CmdrConnection(LineReceiver):
 class CmdrConnector(ReconnectingClientFactory):
     def __init__(self, name, brains, logger=None):
         self.name = name
-        self.cmdr = "."+name
+        self.cmdr = name
         self.brains = brains
         self.readCallback = None
         self.stateCallback = None
