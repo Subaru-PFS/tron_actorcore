@@ -51,7 +51,10 @@ class Values(list,Canonized):
         for (comma,value) in enumerate(self):
             if comma:
                 result += ','
-            if not isinstance(value,basestring):
+            if isinstance(value,float):
+                # use repr to capture the full precision
+                value = repr(float(value))
+            elif not isinstance(value,basestring):
                 value = str(value)
             if self.unquoted.match(value) and (comma or len(self) > 1):
                 # a lone value must be quoted so it is not confused with a keyword name

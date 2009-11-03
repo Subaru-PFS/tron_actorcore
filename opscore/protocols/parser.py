@@ -240,8 +240,8 @@ class ParserBase(object):
         """
         if not tok:
             raise ParseError("Unexpected end of input")
-        raise ParseError("Unexpected %s parse token: %r"
-            % (tok.type,tok.value[:min(len(tok.value),20)]))
+        raise ParseError("Unexpected %s parse token (%r) in:\n%s"
+            % (tok.type,tok.value[:min(len(tok.value),20)],self.string))
 
     def t_ANY_error(self,tok):
         """
