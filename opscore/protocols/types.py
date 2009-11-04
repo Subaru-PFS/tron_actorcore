@@ -475,9 +475,10 @@ class Bits(UInt):
                 ['%s=%s' % (n,Bits.binary(getAttr(self,n),w)) for (n,w) in self.fieldSpecs]
             )
         dct['__repr__'] = doRepr
-        def doStr(self):
+        def bitsString(self):
             return Bits.binary(self,offset)
-        dct['__str__'] = doStr
+        dct['bitsString'] = bitsString
+        #dct['__str__'] = doStr
         if dct['strFmt']:
             print 'Bits: ignoring strFmt metadata'
         
