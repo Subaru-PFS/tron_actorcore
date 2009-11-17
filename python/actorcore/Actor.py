@@ -24,6 +24,7 @@ import opscore.protocols.validation as validation
 
 import CommandLinkManager as cmdLinkManager
 import Command as actorCmd
+import utility.svn as actorSvn
 
 import pdb
 
@@ -169,7 +170,7 @@ class Actor(object):
         if versionString == "unknown" or versionString == "":
             cmd.warn("text='pathetic version string: %s'" % (versionString))
 
-        return self.actor.name, versionString
+        return "%sVersion" % (self.name), versionString
         
     def attachCmdSet(self, cname, path=None):
         """ (Re-)load and attach a named set of commands. """
