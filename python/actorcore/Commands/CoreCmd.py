@@ -16,7 +16,6 @@ import actorcore.help as help
 
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
-import actorcore.utility.svn as actorSvn
 
 class CoreCmd(object):
     """ Wrap common Actor commands """
@@ -83,15 +82,8 @@ class CoreCmd(object):
     def version(self, cmd):
         """ Return a version keyword. """
 
-        try:
-            headURL = self.actor.headURL
-        except:
-            headURL = None
-
-        versionString = actorSvn.simpleVersionName(HeadURL=headURL)
-        if versionString == "unknown" or versionString == "":
-            cmd.warn("text='pathetic version string: %s'" % (versionString))
-        cmd.finish('%sVersion=%s' % (self.actor.name, qstr(versionString)))
+        versionName, versionString = self.actor.versionString(cmd)
+        cmd.finish('%s=%s' % (versionName, qstr(versionString)))
 
     def reloadCommands(self, cmd):
         """ If cmds defined, define the listed commands, otherwise reload all command sets. """

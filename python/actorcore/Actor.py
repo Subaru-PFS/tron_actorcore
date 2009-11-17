@@ -158,6 +158,18 @@ class Actor(object):
 
         self.commandQueue = Queue.Queue()
         self.shuttingDown = False
+    
+    def versionString(self, cmd):
+        try:
+            headURL = self.headURL
+        except:
+            headURL = None
+
+        versionString = actorSvn.simpleVersionName(HeadURL=headURL)
+        if versionString == "unknown" or versionString == "":
+            cmd.warn("text='pathetic version string: %s'" % (versionString))
+
+        return self.actor.name, versionString
         
     def attachCmdSet(self, cname, path=None):
         """ (Re-)load and attach a named set of commands. """
