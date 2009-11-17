@@ -8,6 +8,9 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False):
 
     if not cmd:
         return "Unknown command %s" % cmdName
+    if len(cmd) != 1:
+        cmd = cmd[0:1]                  # urghhh
+        
     assert len(cmd) == 1
     cmd = cmd[0]
 
@@ -38,6 +41,7 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False):
             helpStr += "\nArguments:"
             
         for a in sorted(args, lambda a, b: cmp(a.name, b.name)):
+            extra = None
             for k in a.key:
                 extra = a.extraDescrip()
 
@@ -75,7 +79,10 @@ class Cmd(object):
         self.optional = optional
         self.needsValue = needsValue
         self.alternates = alternates
-        self.key = [keys[n.lower()] for n in name.split("|")]
+        if name == "@raw":
+            self.key = []
+        else:
+            self.key = [keys[n.lower()] for n in name.split("|")]
         self.__parseKeys()
 
     class Arg(object):
