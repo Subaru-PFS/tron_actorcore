@@ -258,11 +258,6 @@ class Actor(object):
     def actor_loop(self):
         """ Check the command queue and dispatch commands."""
 
-        try:
-            runInReactorThread = self.config.get('boss', 'runInReactorThread')
-        except:
-            runInReactorThread = False
-            
         while True:
             try:
                 # Get the next command
@@ -299,10 +294,7 @@ class Actor(object):
                 try:
                     cmd.cmd = validatedCmd
                     for func in cmdFuncs:
-                        if runInReactorThread:
-                            reactor.callFromThread(func, cmd)
-                        else:
-                            func(cmd)
+                        func(cmd)
                 except Exception, e:
                     oneLiner = self.cmdTraceback(e)
                     cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
@@ -343,9 +335,15 @@ class Actor(object):
         self.shuttingDown = True
         
     def run(self, doReactor=True):
-        logging.info("starting reactor....")
         try:
-            threading.Thread(target=self.actor_loop).start()
+            runInReactorThread = self.config.get('boss', 'runInReactorThread')
+        except:
+            runInReactorThread = False
+            
+        logging.info("starting reactor (in own thread=%s)...." % (not runInReactorThread))
+        try:
+            if runInReactorThread:
+                threading.Thread(target=self.actor_loop).start()
             if doReactor:
                 reactor.run()
         except Exception, e:
