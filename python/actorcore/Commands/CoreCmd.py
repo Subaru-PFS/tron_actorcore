@@ -5,12 +5,14 @@
 import pdb
 import logging
 import pprint
+import re
 import sys
 import ConfigParser
 
 import opscore.protocols.validation as validation
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
+import actorcore.help as help
 
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
@@ -26,12 +28,16 @@ class CoreCmd(object):
         # Set the keyword dictionary
         #
         self.keys = keys.KeysDictionary("actorcore_core", (1, 1),
+                                        keys.Key("cmd", types.String(), help="A command name"),
                                         keys.Key("cmds", types.String()*(1,None),
                                                  help="A list of command modules."),
+                                        keys.Key("html", help="Generate HTML"),
+                                        keys.Key("pageWidth", types.Int(),
+                                                 help="Number of characters per line"),
                                         )
 
         self.vocab = (
-            ('help', '[<cmds>]', self.cmdHelp),
+            ('help', '[<cmd>] [<pageWidth>] [(html)]', self.cmdHelp),
             ('reload', '[<cmds>]', self.reloadCommands),
             ('reloadConfiguration', '', self.reloadConfiguration),
             ('version', '', self.version),
@@ -39,34 +45,40 @@ class CoreCmd(object):
         )
 
     def cmdHelp(self, cmd):
-        """ List whatever command key info we can extract.. """
+        """Return a help string for command name, formatted for a line length of pageWidth"""
 
-        cmdKeys = cmd.cmd.keywords
-        
-        handler = self.actor.handler
-        helpList = []
-        for verb in handler.consumers.keys():
-            clist = handler.consumers[verb]
-            for c in clist:
-                callbacks = c.callbacks
-                callback = callbacks[0]
-                if len(callbacks) > 1:
-                    cmd.warn('text="skipping help for some callbacks for %s %s"' % (verb, c.format))
+        if "cmd" in cmd.cmd.keywords:
+            cmds = [cmd.cmd.keywords['cmd'].values[0]]
+        else:
+            cmds = []
+            for a, cSet in self.actor.commandSets.items():
+                if a != "CoreCmd":
+                    cmds += [c[0] for c in cSet.vocab]
 
-                # Root around for help info.
-                callbackDoc = callback.__doc__
-                if not callbackDoc:
-                    callbackDoc = "no help"
-                oneLiner = callbackDoc.split('\n',1)[0].strip()
-                helpList.append("%s %s -- %s" %
-                                (verb, c.format, oneLiner))
-                
-                # Sometimes add the rest of the doc string....
+        pageWidth = int(cmd.cmd.keywords['pageWidth'].values[0]) if "pageWidth" in cmd.cmd.keywords else 80
+        html = "html" in cmd.cmd.keywords
 
-        helpList.sort()
-        for h in helpList:
-            cmd.inform('text=%s' % (qstr(h)))
-        cmd.finish()
+        first = True
+        for cmdName in cmds:
+            helpStr = ""
+            for actorName, cSet in self.actor.commandSets.items():
+                if cmdName in [c[0] for c in cSet.vocab]:
+                    helpStr = help.help(actorName, cmdName, cSet.vocab, cSet.keys, pageWidth, html)
+                    break
+
+            if not helpStr:
+                cmd.warn('text="I\'m afraid that I can\'t help you with %s"' % cmdName)
+                continue
+
+            if first:
+                first = False
+            else:
+                cmd.inform('help=%s' % qstr("--------------------------------------------------"))
+
+            for line in helpStr.split('\n'):
+                cmd.inform('help=%s' % qstr(re.sub('"', "", line)))
+
+        cmd.finish("")
                                           
     def version(self, cmd):
         """ Return a version keyword. """
