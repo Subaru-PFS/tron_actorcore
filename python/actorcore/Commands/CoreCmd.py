@@ -14,6 +14,7 @@ import opscore.protocols.types as types
 
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
+import actorcore.utility.svn as actorSvn
 
 class CoreCmd(object):
     """ Wrap common Actor commands """
@@ -33,6 +34,7 @@ class CoreCmd(object):
             ('help', '[<cmds>]', self.cmdHelp),
             ('reload', '[<cmds>]', self.reloadCommands),
             ('reloadConfiguration', '', self.reloadConfiguration),
+            ('version', '', self.version),
             ('exitexit', '', self.exitCmd),
         )
 
@@ -65,8 +67,21 @@ class CoreCmd(object):
         for h in helpList:
             cmd.inform('text=%s' % (qstr(h)))
         cmd.finish()
-                                                                    
-    def reloadCommands(self,cmd):
+                                          
+    def version(self, cmd):
+        """ Return a version keyword. """
+
+        try:
+            headURL = self.actor.headURL
+        except:
+            headURL = None
+
+        versionString = actorSvn.simpleVersionName(HeadURL=headURL)
+        if versionString == "unknown" or versionString == "":
+            cmd.warn("text='pathetic version string: %s'" % (versionString))
+        cmd.finish('%sVersion=%s' % (self.actor.name, qstr(versionString)))
+
+    def reloadCommands(self, cmd):
         """ If cmds defined, define the listed commands, otherwise reload all command sets. """
 
         if 'cmds' in cmd.cmd.keywords:
@@ -82,7 +97,7 @@ class CoreCmd(object):
 
         cmd.finish('')
     
-    def reloadConfiguration(self,cmd):
+    def reloadConfiguration(self, cmd):
         """ Reload the configuration. """
         cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
         logging.warn("reading config file %s", self.actor.configFile)
