@@ -16,6 +16,8 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False):
 
     args = parse(cmd[1], keys)
     docstring = cmd[2].__doc__
+    if docstring == None:
+        docstring = 'No documentation at all; bad, bad programmer.'
 
     helpStr = ""
     if html:
@@ -213,7 +215,7 @@ def parse(argString, keys):
             a = mat.group(1)
 
         alternates = False
-        mat = re.search(r"\(([^>]+)\)", a)
+        mat = re.search(r"@?\(([^)]+)\)", a)
         if mat:
             alternates = True
             a = mat.group(1)
