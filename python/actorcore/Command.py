@@ -37,7 +37,7 @@ class Command(object):
         self.rawCmd = rawCmd
         self.cmd = None
         
-        self.alive = 1
+        self.alive = True
         self.immortal = immortal
         self.debug = debug
  
@@ -114,7 +114,7 @@ class Command(object):
             self.__respond('i', response)
         else:
             self.__respond(':', response)
-            self.alive = 0
+            self.alive = False
         
     def fail(self, response):
         """ Return failure. """
@@ -123,7 +123,7 @@ class Command(object):
             self.__respond('w', response)
         else:
             self.__respond('f', response)
-            self.alive = 0
+            self.alive = False
         
     def sendResponse(self, flag, response):
         """ Return a response with a specific flag. """
