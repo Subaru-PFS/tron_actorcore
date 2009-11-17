@@ -26,7 +26,7 @@ class CoreCmd(object):
         #
         self.keys = keys.KeysDictionary("actorcore_core", (1, 1),
                                         keys.Key("cmds", types.String()*(1,None),
-                                                 help="A list of command modules to reload"),
+                                                 help="A list of command modules."),
                                         )
 
         self.vocab = (
