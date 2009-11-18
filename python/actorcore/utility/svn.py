@@ -93,16 +93,16 @@ def guessVersionName(HeadURL, exitOnError=True):
 
    if re.search(r"/trunk$", HeadURL):
        versionName = "trunk"
-   elif re.search(r"/branches/(.+)$", HeadURL):
+   elif re.search(r"/branches/([^/]+).*$", HeadURL):
        versionName = "branch_%s" % re.search(r"/branches/([^/]+).*$", HeadURL).group(1)
-   elif re.search(r"/tags/(\d+(\.\d+)*)([-+][_a-zA-Z0-9]+)?$", HeadURL):
-       versionName = "%s" % re.search(r"/tags/(.*)$", HeadURL).group(1)
+   elif re.search(r"/tags/([^/]+).*$", HeadURL):
+       versionName = "%s" % re.search(r"/tags/([^/]+).*$", HeadURL).group(1)
        isTag = True
-   elif re.search(r"/tickets/(\d+)$", HeadURL):
+   elif re.search(r"/tickets/(\d+).*$", HeadURL):
        versionName = "ticket_%s" % re.search(r"/tickets/(\d+).*$", HeadURL).group(1)
    else:
        print >> sys.stderr, "Unable to guess versionName name from %s" % HeadURL
-       versionName = "unknown"
+       versionName = "unknown:%s" % (HeadURL)
 
    try:                    # Try to lookup the svn versionName
        (oldest, youngest, flags) = revision()
@@ -134,7 +134,7 @@ def guessVersionName(HeadURL, exitOnError=True):
        if not isTag or flags:
           versionName += "+svn" + youngest + ''.join(flags)
 
-   except IOError:
+   except (RuntimeError, IOError):
       pass                      # No revision data available. 
 
    return versionName
