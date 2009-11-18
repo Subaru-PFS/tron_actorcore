@@ -13,6 +13,7 @@ import opscore.protocols.validation as validation
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 import actorcore.help as help
+reload(help)
 
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback

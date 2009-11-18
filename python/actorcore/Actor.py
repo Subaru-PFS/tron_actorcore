@@ -163,6 +163,8 @@ class Actor(object):
     def versionString(self, cmd):
         try:
             headURL = self.headURL
+            headURL = headURL.split(' ')[1]
+            headURL.strip()
         except:
             headURL = None
 
@@ -237,10 +239,13 @@ class Actor(object):
         """
 
         if path == None:
-            path = os.path.join(self.product_dir, 'python', self.productName, 'Commands')
+            self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ACTORCORE_DIR'), 'python','actorcore','Commands'))
+            self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python', self.productName, 'Commands'))
+            return
 
         dirlist = os.listdir(path)
         dirlist.sort()
+        logging.warn("loading %s" % (dirlist))
 
         for f in dirlist:
             if os.path.isdir(f) and not f.startswith('.'):
@@ -262,7 +267,6 @@ class Actor(object):
         while True:
             try:
                 # Get the next command
-                self.logger.debug("Waiting for next command...")
                 try:
                     cmd = self.commandQueue.get(block = True,timeout = 3)
                 except Queue.Empty:
