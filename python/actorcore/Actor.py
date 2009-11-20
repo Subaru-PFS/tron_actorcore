@@ -260,63 +260,60 @@ class Actor(object):
 
         return "%r at %s:%d" % (eValue, where[0], where[1])
                 
+    
+    def runActorCmd(self, cmd):
+        try:
+            cmdStr = cmd.rawCmd
+
+            try:
+                validatedCmd, cmdFuncs = self.handler.match(cmdStr)
+            except Exception, e:
+                cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
+                                           (cmdStr, e))))
+                    #tback('actor_loop', e)
+                return
+
+            if not validatedCmd:
+                cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
+                return
+                
+            self.logger.info('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
+            self.activeCmd = cmd
+
+            if len(cmdFuncs) > 1:
+                cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
+                                           (cmdFuncs, validatedCmd))))
+            try:
+                cmd.cmd = validatedCmd
+                for func in cmdFuncs:
+                    func(cmd)
+            except Exception, e:
+                oneLiner = self.cmdTraceback(e)
+                cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
+                #tback('newCmd', e)
+                return
+                
+        except Exception, e:
+            cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
+                                       (e))))
+            try:
+                tback('newCmdFail', e)
+            except:
+                pass
+
         
     def actor_loop(self):
         """ Check the command queue and dispatch commands."""
 
         while True:
             try:
-                # Get the next command
-                try:
-                    cmd = self.commandQueue.get(block = True,timeout = 3)
-                except Queue.Empty:
-                    if self.shuttingDown:
-                        return
-                    else:
-                        continue
-                self.logger.info("Command received: %s" % (cmd))
-
-                cmdStr = cmd.rawCmd
-
-                try:
-                    validatedCmd, cmdFuncs = self.handler.match(cmdStr)
-                except Exception, e:
-                    cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
-                                               (cmdStr, e))))
-                    #tback('actor_loop', e)
+                cmd = self.commandQueue.get(block = True,timeout = 3)
+            except Queue.Empty:
+                if self.shuttingDown:
+                    return
+                else:
                     continue
-
-                if not validatedCmd:
-                    cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
-                    continue
-                
-                self.logger.info('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
-                self.activeCmd = cmd
-
-                if len(cmdFuncs) > 1:
-                    cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
-                                               (cmdFuncs, validatedCmd))))
-                try:
-                    cmd.cmd = validatedCmd
-                    for func in cmdFuncs:
-                        func(cmd)
-                except Exception, e:
-                    oneLiner = self.cmdTraceback(e)
-                    cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
-                    try:
-                        self.commandFailed(cmd)
-                    except:
-                        pass
-                    #tback('newCmd', e)
-                    continue
-                
-            except Exception, e:
-                cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
-                                           (e))))
-                try:
-                    tback('newCmdFail', e)
-                except:
-                    pass
+            self.runActorCmd(cmd)
 
     def commandFailed(self, cmd):
         """ Gets called when a command has failed. """
@@ -327,13 +324,18 @@ class Actor(object):
 
         self.activeCmd = None
 
-        self.logger.info('new unqueued cmd: %s' % (cmd))
+        self.logger.info('new cmd: %s' % (cmd))
         
         # Empty cmds are OK; send an empty response... 
         if len(cmd.rawCmd) == 0:
             cmd.finish('')
             return None
-        self.commandQueue.put(cmd)
+
+        if self.runInReactorThread:
+            self.runActorCmd(cmd)
+        else:
+            self.commandQueue.put(cmd)
+
         return self
     
     def _shutdown(self):
@@ -342,13 +344,13 @@ class Actor(object):
     def run(self, doReactor=True):
         """ Actually run the twisted reactor. """
         try:
-            runInReactorThread = self.config.get(self.name, 'runInReactorThread')
+            self.runInReactorThread = self.config.get(self.name, 'runInReactorThread')
         except:
-            runInReactorThread = False
+            self.runInReactorThread = False
             
-        logging.info("starting reactor (in own thread=%s)...." % (not runInReactorThread))
+        logging.info("starting reactor (in own thread=%s)...." % (not self.runInReactorThread))
         try:
-            if not runInReactorThread:
+            if not self.runInReactorThread:
                 threading.Thread(target=self.actor_loop).start()
             if doReactor:
                 reactor.run()
