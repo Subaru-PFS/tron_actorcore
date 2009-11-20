@@ -340,14 +340,15 @@ class Actor(object):
         self.shuttingDown = True
         
     def run(self, doReactor=True):
+        """ Actually run the twisted reactor. """
         try:
-            runInReactorThread = self.config.get('boss', 'runInReactorThread')
+            runInReactorThread = self.config.get(self.name, 'runInReactorThread')
         except:
             runInReactorThread = False
             
         logging.info("starting reactor (in own thread=%s)...." % (not runInReactorThread))
         try:
-            if runInReactorThread:
+            if not runInReactorThread:
                 threading.Thread(target=self.actor_loop).start()
             if doReactor:
                 reactor.run()
