@@ -153,10 +153,15 @@ class Cmdr(object):
         reactor.connectTCP(tronHost, tronPort, self.connector)
 
     def call(self, **argv):
-        """ Send a command and return all its output. """
+        """ Send a command and generate all its output. 
+
+        The arguments are passed right through to the keyvar.CmdVar. If the callCodes is
+        set to keyvar.AllCodes, this function generates all the individual response lines, 
+        otherwise it returns all the linesa at once.
+        """
+
         q = self.cmdq(**argv)
         ret = q.get()
-
         self.logger.info("command %s returned " % (ret))
         return ret
         
