@@ -61,9 +61,9 @@ class CoreCmd(object):
         first = True
         for cmdName in cmds:
             helpStr = ""
-            for actorName, cSet in self.actor.commandSets.items():
+            for csetName, cSet in self.actor.commandSets.items():
                 if cmdName in [c[0] for c in cSet.vocab]:
-                    helpStr = help.help(actorName, cmdName, cSet.vocab, cSet.keys, pageWidth, html)
+                    helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html)
                     break
 
             if not helpStr:
