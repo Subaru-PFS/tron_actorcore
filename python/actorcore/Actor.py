@@ -114,13 +114,13 @@ class Actor(object):
         opsLogging.makeOpsFileLogger(self.logDir, 'logs')
         self.logger = logging.getLogger('logs')
         self.logger.setLevel(int(self.config.get('logging','baseLevel')))
-        self.logger.propagate = False
+        #self.logger.propagate = False
         self.logger.info('%s starting up....' % (name))
 
         opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "cmds"), 'cmds')
         self.cmdlog = logging.getLogger('cmds')
         self.cmdlog.setLevel(int(self.config.get('logging','cmdLevel')))
-        self.cmdlog.propagate = False
+        #self.cmdlog.propagate = False
 
         self.console = logging.getLogger('') 
         try:
@@ -137,7 +137,7 @@ class Actor(object):
                                                     port=tronPort, 
                                                     interface=tronInterface) 
  
-        # The Command which we send spontaneous output to. 
+        # The Command which we send uncommanded output to. 
         self.bcast = actorCmd.Command(self.commandSources, 
                                       'self.0', 0, 0, None, immortal=True) 
  
@@ -150,9 +150,6 @@ class Actor(object):
         self.logger.info("Creating validation handler...")
         self.handler = validation.CommandHandler()
         
-        self.logger.info("Attaching actorcore command sets...")
-        self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ACTORCORE_DIR'),
-                                                'python','actorcore','Commands'))
         self.logger.info("Attaching actor command sets...")
         self.attachAllCmdSets()
         self.logger.info("All command sets attached...")
@@ -172,7 +169,7 @@ class Actor(object):
         if versionString == "unknown" or versionString == "":
             cmd.warn("text='pathetic version string: %s'" % (versionString))
 
-        return "%sVersion" % (self.name), versionString
+        return "version", versionString
         
     def attachCmdSet(self, cname, path=None):
         """ (Re-)load and attach a named set of commands. """
