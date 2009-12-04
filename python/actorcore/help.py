@@ -81,11 +81,19 @@ class Cmd(object):
         self.optional = optional
         self.needsValue = needsValue
         self.alternates = alternates
+
         if name == "@raw":
             self.key = []
         else:
-            self.key = [keys[n.lower()] for n in name.split("|")]
+            names = name.split("|")
+            self.key = [keys.get(n.lower(), self.StrType(n, 'no help')) for n in names]
+            
         self.__parseKeys()
+
+    class StrType(object):
+        def __init__(self, name, help):
+            self.name = name
+            self.help = help
 
     class Arg(object):
         def __init__(self, name, isArray=False):
@@ -99,14 +107,21 @@ class Cmd(object):
         self.args = []
 
         for k in self.key:
-            kTypes = k.typedValues.vtypes
-            isArray = True if len(kTypes) > 1 else False
-            arg = Cmd.Arg(k.name, isArray)
+            try:
+                kTypes = k.typedValues.vtypes
+                isArray = True if len(kTypes) > 1 else False
+                arg = Cmd.Arg(k.name, isArray)
+            except:
+                kTypes = [Cmd.StrType]
+                arg = Cmd.Arg('anon', False)
+
             self.args.append(arg)
 
             for kt in kTypes:
                 if isinstance(kt, types.Bool):
                     arg.values.append([kt, "BOOL"])
+                elif isinstance(kt, Cmd.StrType):
+                    arg.values.append([str,  "|".join([e.name for e in kt])])
                 elif isinstance(kt, types.Enum):
                     helpVals = [e[1] for e in kt.descriptors[1:]]
                     arg.values.append([kt, "|".join([e.split()[0] for e in helpVals]), helpVals])
