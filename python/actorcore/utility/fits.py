@@ -35,7 +35,7 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
         try:
             val = val[idx]
         except:
-            errStr = "failed to index %s by %s" % (val, idx)
+            errStr = "failed to index %s by %s from %s for %s" % (val, idx, keyName, cardName)
             cmd.warn('text=%s' % (qstr(errStr)))
             return makeCard(cmd, cardName, onFail, errStr)
         
@@ -43,7 +43,7 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
         try:
             val = cnv(val)
         except:
-            errStr = "failed to convert %s" % (val)
+            errStr = "failed to convert %s from %s for %s" % (val, keyName, cardName)
             cmd.warn('text=%s' % (qstr(errStr)))
             return makeCard(cmd, cardName, onFail, errStr)
         
@@ -82,9 +82,15 @@ def tccCards(models, cmd=None):
 
     tccDict = models['tcc'].keyVarDict
 
-    objSys = tccDict['objSys']
-    objSysName = str(objSys[0])
-    objSysDate = float(objSys[1])
+    try:
+        objSys = tccDict['objSys']
+        objSysName = str(objSys[0])
+        objSysDate = float(objSys[1])
+    except Exception, e:
+        objSysName = 'unknown'
+        objSysDate = 0.0
+        if cmd:
+            cmd.warn('text="could not get objsys and epoch from tcc.objSys=%s"' % (objSys))
     cards.append(makeCard(cmd, 'OBJSYS', objSysName, "The TCC objSys"))
 
     if objSysName not in ('ICRS', 'FK5', 'FK4'):
