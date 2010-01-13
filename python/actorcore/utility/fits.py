@@ -159,7 +159,7 @@ def tccCards(models, cmd=None):
                                  onFail='NaN'))
 
     cards.append(makeCardFromKey(cmd, tccDict, 'spiderInstAng', 'SPA',
-                                 cnv=_cnvPVTPosCard,
+                                 cnv=float,
                                  idx=0, comment='TCC SpiderInstAng',
                                  onFail='NaN'))
 
