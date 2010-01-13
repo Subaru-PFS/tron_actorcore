@@ -49,7 +49,9 @@ class CommandLink(LineReceiver):
         """ Called when our connection has been established. """
 
         actorLogger.debug('new CommandNub')
-        self.brains.bcast.respond('yourUserNum=%d' % self.connID)
+        cmdrName = 'self.%d' % self.connID
+        cmd = Command(self.factory, cmdrName, self.connID, 0, '')
+        cmd.finish('yourUserNum=%d' % self.connID)
         
     def lineReceived(self, cmdString):
         """ Called when a complete line has been read from the hub. """
@@ -111,7 +113,7 @@ class CommandLink(LineReceiver):
     def sendResponse(self, cmd, flag, response):
         """ Ship a command off to the hub. """
 
-        e = "%d %d %s %s\n" % (self.connID, cmd.mid, flag, response)
+        e = "%d %d %s %s\n" % (cmd.cid, cmd.mid, flag, response)
         cmdLogger.debug('queuing to all outputs: %s' % (e[:-1]))
         with self.outputQueueLock:
             self.outputQueue.append(e)

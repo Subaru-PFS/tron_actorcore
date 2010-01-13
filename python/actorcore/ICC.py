@@ -25,6 +25,7 @@ class ICC(coreActor.Actor):
         if path == None:
             path = ['./Controllers']
 
+        # import pdb; pdb.set_trace()
         self.logger.info("attaching controller %s from path %s", name, path)
         file = None
         try:
