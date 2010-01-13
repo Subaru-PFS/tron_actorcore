@@ -36,6 +36,14 @@ class CommandLinkManager(Factory):
         self.activeConnections = []
         self.connID = 1
 
+    def fetchCid(self):
+        """ Return the next available connection ID. """
+
+        cid = self.connID
+        self.connID += 1
+
+        return cid
+
     def buildProtocol(self, addr):
         """ Generate a new CommandLink instance. Called when a new connection has been established. """
 
@@ -45,8 +53,8 @@ class CommandLinkManager(Factory):
         #    logging.info('changing %s class' % (self.protocolName))
         #    self.protocol = proto
 
-        p = self.protocol(brains=self.brains, connID=self.connID)
-        self.connID += 1
+        cid = self.fetchCid()
+        p = self.protocol(brains=self.brains, connID=cid)
         p.factory = self
 
         self.activeConnections.append(p)
