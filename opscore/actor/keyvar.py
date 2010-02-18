@@ -459,7 +459,10 @@ class CmdVar(object):
         return False
     
     def handleReply(self, reply):
-        """Call command callbacks.
+        """Handle a reply (opscore.protocols.Reply) from the dispatcher.
+
+        Add reply to reply list, call command callbacks and handle cleanup if the reply ends the command.
+
         Warn and do nothing else if called after the command has finished.
         """
         if self.lastCode in DoneCodes:

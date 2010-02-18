@@ -129,6 +129,7 @@ if __name__ == "__main__":
     import time
     import opscore.protocols.types as protoTypes
     import opscore.protocols.keys as protoKeys
+    import twisted.internet.reactor
     
     kvd = KeyVarDispatcher()
 
@@ -161,3 +162,5 @@ if __name__ == "__main__":
     replyStr = "myprog.me 11 test : " + dataStr
     print "\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:"
     kvd.dispatchReplyStr(replyStr)
+    
+    twisted.internet.reactor.run()

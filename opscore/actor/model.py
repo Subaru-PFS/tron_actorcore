@@ -16,7 +16,6 @@ import RO.Comm.HubConnection
 import RO.Constants
 import RO.StringUtil
 
-from opscore.utility.twisted import cancelTimer
 import opscore.protocols.keys as protoKeys
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess

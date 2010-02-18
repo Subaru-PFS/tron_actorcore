@@ -81,18 +81,20 @@ History:
 2009-08-25 ROwen    Bug fix: failed to dispatch replies to cmdVars with forUserCmd set, because it
                     ignored replies with a prefix on the cmdr.
                     Added replyIsMine method.
+2010-02-18 ROwen    Added NullConnection to avoid using RO.Comm.HubConnect's Tk-based version;
+                    it may be a bit minimal, but it's enough for the dispatcher.
+                    Modified to use opscore.utility.timer.
+                    Fixed the test code.
 """
 import sys
 import time
 import traceback
 
-import twisted.internet.reactor
 import RO.Alg
-import RO.Comm.HubConnection
 import RO.Constants
 import RO.StringUtil
 
-from opscore.utility.twisted import cancelTimer
+from opscore.utility.timer import Timer
 import opscore.protocols.keys as protoKeys
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess
@@ -132,7 +134,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             Used when the dispatcher reports errors.
             If includeName is True, then sent as a prefix to all commands sent to the hub.
         - connection: an RO.Comm.HubConnection object or similar;
-          if omitted, an RO.Comm.HubConnection.NullConnection is used, which is useful for testing.
+          if omitted, a NullConnection is used, which is useful for testing.
         - logFunc: a function that logs a message. Argument list must be:
             (msgStr, severity, actor, cmdr)
             where the first argument is positional and the others are by name
@@ -154,7 +156,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self.delayCallbacks = bool(delayCallbacks)
         
         self.parser = protoParse.ReplyParser()
-        self.reactor = twisted.internet.reactor
         self._isConnected = False
 
         # cmdDict keys are command ID and values are KeyCommands
@@ -171,10 +172,10 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._enableCallbacks = not self.delayCallbacks
         
         # timers for various scheduled callbacks
-        self._checkCmdTimer = None
-        self._checkRemCmdTimer = None
-        self._refreshAllTimer = None
-        self._refreshNextTimer = None
+        self._checkCmdTimer = Timer()
+        self._checkRemCmdTimer = Timer()
+        self._refreshAllTimer = Timer()
+        self._refreshNextTimer = Timer()
         
         if connection:
             def readCallback(sock, data):
@@ -183,7 +184,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             self.connection.addReadCallback(readCallback)
             self.connection.addStateCallback(self.updConnState)
         else:
-            self.connection = RO.Comm.HubConnection.NullConnection()
+            self.connection = NullConnection()
         self._isConnected = self.connection.isConnected()
         self.userCmdIDGen = RO.Alg.IDGen(1, _CmdNumWrap)
         self.refreshCmdIDGen = RO.Alg.IDGen(_CmdNumWrap + 1, 2 * _CmdNumWrap)
@@ -251,16 +252,15 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             else:
                 self.refreshCmdDict[refreshInfo] = set((keyVar,))
             if self._isConnected:
-                cancelTimer(self._refreshAllTimer)
-                self._refreshAllTimer = self.reactor.callLater(_ShortInterval, self.refreshAllVar)
+                self._refreshAllTimer.start(_ShortInterval, self.refreshAllVar)
 
     def checkCmdTimeouts(self):
         """Check all pending commands for timeouts"""
 #       print "opscore.actor.CmdKeyVarDispatcher.checkCmdTimeouts()"
         
         # cancel pending update, if any
-        cancelTimer(self._checkCmdTimer)
-        cancelTimer(self._checkRemCmdTimer)
+        self._checkCmdTimer.cancel()
+        self._checkRemCmdTimer.cancel()
         
         # iterate over a copy of the values
         # so we can modify the dictionary while checking command timeouts
@@ -360,7 +360,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             else:
                 namePrefix = ""
             fullCmdStr = "%s%d %s %s" % (namePrefix, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
-            self.connection.writeLine (fullCmdStr)
+            self.connection.writeLine(fullCmdStr)
             self.logMsg (
                 msgStr = fullCmdStr,
                 actor = cmdVar.actor,
@@ -480,8 +480,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 #         print "%s.refreshAllVar(); refeshCmdDict=%s" % (self.__class__.__name__, self.refreshCmdDict)
 
         # cancel pending update, if any
-        cancelTimer(self._refreshAllTimer)
-        cancelTimer(self._refreshNextTimer)
+        self._refreshAllTimer.cancel()
+        self._refreshNextTimer.cancel()
         self._enableCallbacks = not self.delayCallbacks
         self._runningRefreshCmdSet = set()
         self._allRefreshCmdsSent = False
@@ -546,7 +546,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 #         print "updConnState; wasConnected=%s, isConnected=%s" % (wasConnected, self._isConnected)
 
         if wasConnected != self._isConnected:
-            self.reactor.callLater(_ShortInterval, self.refreshAllVar)
+            Timer(_ShortInterval, self.refreshAllVar)
 
     def _checkRemCmdTimeouts(self, cmdVarIter):
         """Helper function for checkCmdTimeouts.
@@ -590,7 +590,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                         # schedule myself to run again shortly
                         # (thereby giving other time to other events)
                         # continuing where I left off
-                        self._checkRemCmdTimer = self.reactor.callLater(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
+                        self._checkRemCmdTimer.start(_ShortInterval, self._checkRemCmdTimeouts, cmdVarIter)
                 except Exception:
                     sys.stderr.write("%s._checkRemCmdTimeouts failed to timeout command %s\n" % \
                         (self.__class__.__name__, cmdVar))
@@ -603,7 +603,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
         # finished checking all commands in the current cmdVarIter;
         # schedule a new checkCmdTimeouts at the usual interval
-        self._checkCmdTimer = self.reactor.callLater(_TimeoutInterval, self.checkCmdTimeouts)
+        self._checkCmdTimer.start(_TimeoutInterval, self.checkCmdTimeouts)
 
     @staticmethod
     def _makeDictKey(actor, keyName):
@@ -624,7 +624,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         for keyVar in keyVarList:
             if includeNotCurrent or keyVar.isCurrent:
                 keyVar.doCallbacks()
-        self.reactor.callLater(0.001, self._nextKeyVarCallback, keyVarListIter, includeNotCurrent)
+        Timer(0.001, self._nextKeyVarCallback, keyVarListIter, includeNotCurrent)
 
     def _refreshCmdCallback(self, refreshCmd):
         """Refresh command callback; complain if command failed or some keyVars not updated
@@ -695,7 +695,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 #         print "%s._sendNextRefreshCmd(%s)" % (self.__class__.__name__, refreshCmdItemIter)
         if not self._isConnected:
             # schedule parent function asap and bail out
-            self._refreshAllTimer = self.reactor.callLater(_ShortInterval, self.refreshAllVar)
+            self._refreshAllTimer.start(_ShortInterval, self.refreshAllVar)
             return
 
         if refreshCmdItemIter == None:
@@ -720,8 +720,39 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         except:
             sys.stderr.write("%s._sendNextRefreshCmd: refresh command %s failed:\n" % (self.__class__.__name__, cmdVar,))
             traceback.print_exc(file=sys.stderr)
-        self._refreshNextTimer = self.reactor.callLater(_ShortInterval, self._sendNextRefreshCmd, refreshCmdItemIter)
+        self._refreshNextTimer.start(_ShortInterval, self._sendNextRefreshCmd, refreshCmdItemIter)
 
+class NullConnection(object):
+    """Null connection for test purposes.
+    Always acts as if it is connected (so one can write data),
+    but prohibits explicit connection (maybe not necessary,
+    but done to make it clear to users that it is a fake).
+    
+    cmdr = "me.me"
+    """
+    def __init__ (self):
+        self.desUsername = "me"
+        self.cmdr = "me.me"
+
+    def connect(self):
+        raise RuntimeError("NullConnection is always connected")
+    
+    def disconnect(self):
+        raise RuntimeError("NullConnection cannot disconnect")
+    
+    def isConnected(self):
+        return True
+
+    def getCmdr(self):
+        return self.cmdr
+
+    def getProgID(self):
+        cmdr = self.getCmdr()
+        return cmdr and cmdr.split(".")[0]
+
+    def writeLine(self, str):
+        sys.stdout.write("Null connection asked to write: %s\n" % (str,))
+    
 
 if __name__ == "__main__":
     print "\nTesting opscore.actor.CmdKeyVarDispatcher\n"
