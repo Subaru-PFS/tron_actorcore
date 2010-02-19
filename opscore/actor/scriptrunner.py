@@ -672,7 +672,7 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
             cmdDescr = "%s %s..." % (cmdVar.actor, cmdVar.cmdStr[0:MaxLen])
         else:
             cmdDescr = "%s %s" % (cmdVar.actor, cmdVar.cmdStr)
-        lastReply = cmdVar.lastReply()
+        lastReply = cmdVar.lastReply
         if lastReply:
             for keyword in lastReply.keywords:
                 if keyword.name.lower() in _ErrKeys:
@@ -949,7 +949,7 @@ class _WaitCmdVars(_WaitBase):
         if self.state[0] != 0:
             # no need to wait; commands are already done or one has failed
             # schedule a callback for asap
-            print "_WaitCmdVars: no need to wait"
+#            print "_WaitCmdVars: no need to wait"
             Timer(0.001, self.varCallback)
         else:
             # need to wait; add self as callback to each cmdVar
@@ -979,9 +979,10 @@ class _WaitCmdVars(_WaitBase):
     def varCallback(self, *args, **kargs):
         """Check state of script runner and fail or continue if appropriate
         """
-        if self.scriptRunner.didFail:
+        currState, cmdVar = self.state
+        if currState < 0:
             self.fail(cmdVar)
-        elif self.scriptRunner.isPaused:
+        elif currState > 0:
             self._continue(self.retVal)
     
     def cancelWait(self):
