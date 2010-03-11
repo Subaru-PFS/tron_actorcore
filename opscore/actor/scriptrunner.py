@@ -72,6 +72,7 @@ History:
 2010-02-17 ROwen    Copied from RO to opscore and adapted to work with opscore.
                     Changed state constants from module constants to class constants
                     and from integers to strings.
+2010-03-11 ROwen    Fixed a few instances of obsolete keyVar.get() and keyVar.isCurrent().
 """
 import sys
 import threading
@@ -398,12 +399,11 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
             if defVal == Exception:
                 defVal = None
 
-        currVal, isCurrent = keyVar.get()
-        if isCurrent:
+        if keyVar.isCurrent:
             if ind != None:
-                retVal = currVal[ind]
+                retVal = keyVar[ind]
             else:
-                retVal = currVal
+                retVal = keyVar.valueList
         else:
             if defVal==Exception:
                 raise ScriptError("Value of %s invalid" % (keyVar,))
@@ -1036,7 +1036,7 @@ class _WaitKeyVar(_WaitBase):
         self.addedCallback = False
         _WaitBase.__init__(self, scriptRunner)
         
-        if self.keyVar.isCurrent() and not self.waitNext:
+        if self.keyVar.isCurrent and not self.waitNext:
             # no need to wait; value already known
             # schedule a wakeup for asap
             Timer(0.001, self.varCallback)
