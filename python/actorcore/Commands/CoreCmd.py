@@ -80,11 +80,14 @@ class CoreCmd(object):
 
         cmd.finish("")
                                           
-    def version(self, cmd):
+    def version(self, cmd, doFinish=True):
         """ Return a version keyword. """
 
         versionName, versionString = self.actor.versionString(cmd)
-        cmd.finish('%s=%s' % (versionName, qstr(versionString)))
+        if doFinish:
+            cmd.finish('%s=%s' % (versionName, qstr(versionString)))
+        else:
+            cmd.respond('%s=%s' % (versionName, qstr(versionString)))
 
     def reloadCommands(self, cmd):
         """ If cmds defined, define the listed commands, otherwise reload all command sets. """
@@ -100,7 +103,8 @@ class CoreCmd(object):
             cmd.respond('text="Attaching all command sets."')
             self.actor.attachAllCmdSets()
 
-        cmd.finish('')
+        # Finish by redeclaring the version, since we are probably a live version.
+        self.version(cmd)
     
     def reloadConfiguration(self, cmd):
         """ Reload the configuration. """
