@@ -51,6 +51,19 @@ class ProductConfig(ConfigParser.SafeConfigParser):
         except (ConfigParser.NoOptionError,ConfigParser.NoSectionError):
             raise ConfigError
 
+class ConfigOptionGroup(optparse.OptionGroup):
+    """
+    A group of related command-line options that take defaults from INI files
+    """
+    def add_option(self,*args,**kwargs):
+        """
+        Adds an option for command line processing        
+        """
+        # use our parent parser for preprocessing
+        kwargs = self.parser.preprocess_option(args,kwargs)
+        # do the normal option processing
+        return optparse.OptionGroup.add_option(self,*args,**kwargs)
+
 class ConfigOptionParser(optparse.OptionParser):
     """
     A command-line options parser that takes defaults from INI files
@@ -70,18 +83,19 @@ class ConfigOptionParser(optparse.OptionParser):
             del kwargs['config_section']
         # initialize our INI file parser
         self.configOptions = ProductConfig(productName,configFileName,sectionName)
-        self.configDefaults = { }
         # initialize our list of secret option names
         self.secretOptions = [ ]
         # initialize our base class
         optparse.OptionParser.__init__(self,*args,**kwargs)
 
-    def add_option(self,*args,**kwargs):
+    def preprocess_option(self,args,kwargs):
         """
-        Adds an option for command line processing
-        
+        Preprocesses an option before adding it to a parser or option group
+
         Obtains a default value from an INI file if one is available. Implements
-        a special 'secret' type for handling encrypted strings.
+        a special 'secret' type for handling encrypted strings. Processes any
+        special keys in kwargs and returns an updated kwargs that is suitable
+        for passing to the base optparse add_option methods.
         """
         # what type of value does this option expect
         getType = None
@@ -96,7 +110,6 @@ class ConfigOptionParser(optparse.OptionParser):
             try:
                 defaultValue = self.configOptions.getValue(optionName,getType)
                 kwargs['default'] = defaultValue
-                self.configDefaults[optionName] = defaultValue
                 break
             except ConfigError:
                 pass
@@ -108,6 +121,15 @@ class ConfigOptionParser(optparse.OptionParser):
                     'A secret option must specify a destination')
             self.secretOptions.append(kwargs['dest'])
             kwargs['type'] = 'string'
+        # return the updated keyword args
+        return kwargs
+
+    def add_option(self,*args,**kwargs):
+        """
+        Adds an option for command line processing        
+        """
+        # preprocess
+        kwargs = self.preprocess_option(args,kwargs)
         # do the normal option processing
         return optparse.OptionParser.add_option(self,*args,**kwargs)
         
