@@ -183,7 +183,7 @@ class ConfigOptionParser(optparse.OptionParser):
         text = 'Runtime configuration defaults provided by the following files:\n\n  '
         text += '\n  '.join(self.configOptions.foundFiles)
         text += '\n\nDefault values are:\n\n'
-        for opt in self.option_list:
+        for opt in self._get_all_options():
             if opt.dest:
                 if opt.default == optparse.NO_DEFAULT:
                     default_value = '(none)'

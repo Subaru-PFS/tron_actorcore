@@ -133,12 +133,22 @@ UTC = CoordinatedUniversalTime()
 class InternationalAtomicTime(CoordinatedUniversalTime):
     """
     A timezone class for tagging a datetime as being in TAI and converting to/from TAI.
+    
+    Leapseconds are documented at ftp://maia.usno.navy.mil/ser7/tai-utc.dat
     """
     def tzname(self,dt):
         return 'TAI'
     def leapseconds(self,dt):
-        if dt.year < 2006:
-            raise AstroTimeException("Leap seconds not tabulated before 2006")
-        return int(+33)
+        if dt.year < 1999:
+            raise AstroTimeException("Leap seconds not tabulated before 1999")
+        elif dt.year < 2006:
+            # leap second added 31 Dec 1999
+            return int(+32)
+        elif dt.year < 2009:
+            # leap second added 31 Dec 2005
+            return int(+33)
+        else:
+            # leap second added 31 Dec 2008
+            return int(+34)
 
 TAI = InternationalAtomicTime()
