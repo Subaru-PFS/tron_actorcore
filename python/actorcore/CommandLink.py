@@ -114,7 +114,7 @@ class CommandLink(LineReceiver):
         """ Ship a command off to the hub. """
 
         e = "%d %d %s %s\n" % (cmd.cid, cmd.mid, flag, response)
-        cmdLogger.debug('queuing to all outputs: %s' % (e[:-1]))
+        cmdLogger.info('> %s' % (e[:-1]))
         with self.outputQueueLock:
             self.outputQueue.append(e)
         reactor.callFromThread(self.sendQueuedResponses)

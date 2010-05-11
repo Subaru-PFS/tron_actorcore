@@ -122,6 +122,9 @@ class Actor(object):
         self.cmdlog.setLevel(int(self.config.get('logging','cmdLevel')))
         #self.cmdlog.propagate = False
 
+        tlog = logging.getLogger('dispatch')
+        tlog.setLevel(25)
+
         self.console = logging.getLogger('') 
         try:
             self.console.setLevel(int(self.config.get('logging','consoleLevel')))
@@ -136,11 +139,14 @@ class Actor(object):
         self.commandSources = cmdLinkManager.listen(self, 
                                                     port=tronPort, 
                                                     interface=tronInterface) 
- 
         # The Command which we send uncommanded output to. 
         self.bcast = actorCmd.Command(self.commandSources, 
                                       'self.0', 0, 0, None, immortal=True) 
- 
+
+        # IDs to send commands to ourself.
+        self.selfCID = self.commandSources.fetchCid() 
+        self.synthMID = 1
+
         # commandSets are the command handler packages. Each handles 
         # a vocabulary, which it registers when loaded. 
         # We gather them in one place mainly so that "meta-commands" (init, status) 
@@ -274,7 +280,7 @@ class Actor(object):
                 cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
                 return
                 
-            self.logger.info('dispatching new command from %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
+            self.cmdlog.info('< %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
             self.activeCmd = cmd
 
             if len(cmdFuncs) > 1:
@@ -335,13 +341,21 @@ class Actor(object):
 
         return self
     
+    def callCommand(self, cmdStr):
+        """ Send ourselves a command. """
+
+        cmd = actorCmd.Command(self.commandSources, 'self.%d' % (self.selfCID),
+                               cid=self.selfCID, mid=self.synthMID, rawCmd=cmdStr)
+        self.synthMID += 1
+        self.newCmd(cmd)
+                                                            
     def _shutdown(self):
         self.shuttingDown = True
         
     def run(self, doReactor=True):
         """ Actually run the twisted reactor. """
         try:
-            self.runInReactorThread = self.config.get(self.name, 'runInReactorThread')
+            self.runInReactorThread = self.config.getboolean(self.name, 'runInReactorThread')
         except:
             self.runInReactorThread = False
             
