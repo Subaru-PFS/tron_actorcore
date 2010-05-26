@@ -11,6 +11,9 @@ History:
 2009-07-23 ROwen    Added doCallbacks method to support delayCallbacks in CmdKeyVarDispatcher.
 2009-08-25 ROwen    Bug fix: failed to record watched keyVars for cmdVars with forUserCmd set,
                     because it ignored replies with a prefix on the cmdr.
+2010-05-26 ROwen    Added __len__ and __iter__ to KeyVar. The former supports len(keyVar); the latter
+                    is the recommended way to support iteration (which already worked).
+                    Corrected an error in the main doc string for KeyVar.
 """
 import sys
 import time
@@ -43,10 +46,9 @@ MsgCodeSeverity = {
 class KeyVar(RO.AddCallback.BaseMixin):
     """Container for keyword data.
     
-    Callback functions receive three arguments (see Design Note below):
-    - valueList: the list of new values (may be an empty list)
-    - isCurrent: see the isCurrent method below
-    - self: this object
+    A keyword variable is iterable and indexable over its values.
+    
+    Callback functions receive one argument: this object
     """
     def __init__(self, actor, key, doPrint=False):
         """Create a KeyVar.
@@ -92,6 +94,16 @@ class KeyVar(RO.AddCallback.BaseMixin):
         @raise IndexError if ind is out of range
         """
         return self.valueList[ind]
+
+    def __iter__(self):
+        """Implement for x in keyVar (appears to be redundant, but can't hurt)
+        """
+        return iter(self.valueList)
+
+    def __len__(self):
+        """Implement len(keyVar) to return the number of values
+        """
+        return len(self.valueList)
 
     def addValueCallback(self, callFunc, ind=0, cnvFunc=None, callNow=True):
         """Similar to addCallback, but the callback function receives 3 arguments including the specified value.
