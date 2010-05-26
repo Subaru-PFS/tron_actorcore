@@ -92,7 +92,7 @@ def guessVersionName(HeadURL, exitOnError=True):
    isTag = False
 
    # This is crud. It is hard to peel off the repo root. 
-   if re.search(r"/trunk/.*$", HeadURL):
+   if re.search(r"/trunk($|/.*)", HeadURL):
        versionName = "trunk"
    elif re.search(r"/branches/([^/]+).*$", HeadURL):
        versionName = "branch_%s" % re.search(r"/branches/([^/]+).*$", HeadURL).group(1)
