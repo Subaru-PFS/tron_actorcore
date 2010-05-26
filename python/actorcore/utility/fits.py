@@ -206,7 +206,7 @@ def plateCards(models, cmd):
         cartridge, plate, pointing, mjd, mapping = cartridgeKey
         if plate <= 0 or cartridge <= 0 or mjd < 50000 or mapping < 1 or pointing == '?':
             cmd.warn('text="guider cartridgeKey is not well defined: %s"' % (str(cartridgeKey)))
-            nameComment = "guider cartridgeKey %s is not well defined" % (str(cartridgeKey)))
+            nameComment = "guider cartridgeKey %s is not well defined" % (str(cartridgeKey))
             name = '0000-00000-00'
         else:
             nameComment = 'The name of the currently loaded plate'
