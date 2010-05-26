@@ -170,12 +170,17 @@ class Actor(object):
 
         if makeCmdrConnection:
             self.cmdr = CmdrConnection.Cmdr(name, self)
-            self.cmdr.connectionMade = self.connectionMade
+            self.cmdr.connectionMade = self._connectionMade
             self.cmdr.connect()
         else:
             self.cmdr = None
     
     def versionString(self, cmd):
+        """ Return the version key value. 
+
+        If you simply want to generate the keyword, call .sendVersionKey().
+        """
+
         try:
             headURL = self.headURL
             headURL = headURL.split(' ')[1]
@@ -187,8 +192,14 @@ class Actor(object):
         if versionString == "unknown" or versionString == "":
             cmd.warn("text='pathetic version string: %s'" % (versionString))
 
-        return "version", versionString
+        return versionString
         
+    def sendVersionKey(self, cmd):
+        """ Generate the version keyword in response to cmd. """
+
+        version = self.versionString(cmd)
+        cmd.inform('version=%s' % (qstr(version)))
+
     def triggerHubConnection(self):
         """ Send the hub a command to connect back to us. """
 
@@ -200,7 +211,7 @@ class Actor(object):
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar
                                         (actor='hub', cmdStr='startNubs %s' % (self.name), timeLim=5.0))
                         
-    def connectionMade(self):
+    def _connectionMade(self):
         """ twisted arranges to call this when self.cmdr has been established. """
 
         self.bcast.warn('%s is connected to the hub.' % (self.name))
@@ -209,6 +220,11 @@ class Actor(object):
         # Request that tron connect to us.
         #
         self.triggerHubConnection()
+        self.connectionMade()
+
+    def connectionMade(self):
+        """ For overriding. """
+        pass
 
     def attachCmdSet(self, cname, path=None):
         """ (Re-)load and attach a named set of commands. """
