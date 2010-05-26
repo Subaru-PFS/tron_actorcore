@@ -1,4 +1,4 @@
-setupRequired("opscore CPL")
+setupRequired("opscore")
 setupOptional("RO")
 
 pathPrepend(PATH, ${PRODUCT_DIR}/bin)
