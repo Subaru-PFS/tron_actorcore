@@ -15,6 +15,7 @@ import inspect
 from threading import Semaphore,Timer
 from twisted.internet import reactor
 
+import opscore
 from opscore.protocols.parser import CommandParser
 from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
@@ -24,6 +25,7 @@ import opscore.protocols.validation as validation
 
 import CommandLinkManager as cmdLinkManager
 import Command as actorCmd
+import CmdrConnection
 import utility.svn as actorSvn
 
 import pdb
@@ -77,7 +79,8 @@ class ModLoader():
             file.close()
 
 class Actor(object):
-    def __init__(self, name, productName=None, configFile=None): 
+    def __init__(self, name, productName=None, configFile=None, 
+                 makeCmdrConnection=True): 
         """ Build an Actor.
 
         Args:
@@ -85,6 +88,8 @@ class Actor(object):
             productName  - the name of the product; defaults to .name
             configFile   - the full path of the configuration file; defaults 
                             to $PRODUCTNAME_DIR/etc/$name.cfg
+            makeCmdrConnection
+                         - establish self.cmdr as a command connection to the hub.
         """
 
         # Define/save the actor name, the product name, the product_DIR, and the
@@ -162,6 +167,13 @@ class Actor(object):
 
         self.commandQueue = Queue.Queue()
         self.shuttingDown = False
+
+        if makeCmdrConnection:
+            self.cmdr = CmdrConnection.Cmdr(name, self)
+            self.cmdr.connectionMade = self.connectionMade
+            self.cmdr.connect()
+        else:
+            self.cmdr = None
     
     def versionString(self, cmd):
         try:
@@ -177,6 +189,27 @@ class Actor(object):
 
         return "version", versionString
         
+    def triggerHubConnection(self):
+        """ Send the hub a command to connect back to us. """
+
+        if not self.cmdr:
+            self.bcast.warn('text="CANNOT ask hub to connect to us, since we do not have a connection to it yet!"')
+            return
+
+        self.bcast.warn('%s is asking the hub to connect back to us' % (self.name))
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar
+                                        (actor='hub', cmdStr='startNubs %s' % (self.name), timeLim=5.0))
+                        
+    def connectionMade(self):
+        """ twisted arranges to call this when self.cmdr has been established. """
+
+        self.bcast.warn('%s is connected to the hub.' % (self.name))
+
+        #
+        # Request that tron connect to us.
+        #
+        self.triggerHubConnection()
+
     def attachCmdSet(self, cname, path=None):
         """ (Re-)load and attach a named set of commands. """
 
