@@ -85,6 +85,15 @@ History:
                     it may be a bit minimal, but it's enough for the dispatcher.
                     Modified to use opscore.utility.timer.
                     Fixed the test code.
+2010-05-26 ROwen    Documented includeName more thoroughly.
+                    Bug fix: if includeName True and self.connection.cmdr is set then replyIsMine doesn't
+                    recognize messages from makeReply. Fixed by changing the commander for makeReply
+                    from <self.connection.cmdr> to .<self.connection.cmdr>.
+                    Bug fix: if includeName True and self.connection.cmdr != self.name then replyIsMine
+                    doesn't recognize replies to executeCmd. Fixed by changing executeCmd to use commander
+                    name .<self.connection.cmdr> instead of <self.name>.<self.name>. Thus using
+                    self.connection.cmdr instead of self.name (the bug fix) and using a prefix of "."
+                    instead of doubling the name (a cleanup).
 """
 import sys
 import time
@@ -140,8 +149,15 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             where the first argument is positional and the others are by name
             and severity is an RO.Constants.sevX constant
             If None then nothing is logged.
-        - includeName: if True then self.name is prepended to all commands sent to the hub,
-            or if cmdVar.forUserCmd is present, then the prefix is <cmdVar.forUserCmd.cmdr>.<self.name>.
+        - includeName: if True then the commander name is prepended to all commands sent to the hub.
+            The commander name is <self.connection.cmdr>.<self.connection.cmdr>
+            unless cmdVar.forUserCmd is present, in which case the prefix is
+            <cmdVar.forUserCmd.cmdr>.<self.connection.cmdr>.
+            This option is used for "internal" actors that are not authenticated;
+            such actors must include the commander name in commands
+            (whereas authenticated actors such as TUI must (should?) not).
+            Internal actors have a self.connection.cmd that does not contain a "."
+            (and so is not a proper commander name, alas). Hence the doubled name.
         - delayCallbacks: if True then upon initial connection no KeyVar callbacks are made
             until all refresh commands have completed (at which point callbacks are made
             for each keyVar that has been set). Thus the set of keyVars will be maximally
@@ -353,13 +369,15 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     
         try:
             if self.includeName:
+                # internal actor; must specify the commander
                 if cmdVar.forUserCmd:
-                    namePrefix = "%s.%s " % (cmdVar.forUserCmd.cmdr, self.name)
+                    cmdrStr = "%s.%s " % (cmdVar.forUserCmd.cmdr, self.connection.cmdr)
                 else:
-                    namePrefix = "%s.%s " % (self.name, self.name)
+                    cmdrStr = ".%s " % (self.connection.cmdr)
             else:
-                namePrefix = ""
-            fullCmdStr = "%s%d %s %s" % (namePrefix, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
+                # external actor; do not specify the commander
+                cmdrStr = ""
+            fullCmdStr = "%s%d %s %s" % (cmdrStr, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
             self.connection.writeLine(fullCmdStr)
             self.logMsg (
                 msgStr = fullCmdStr,
@@ -446,7 +464,10 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         msgStr = None
         try:
             if cmdr == None:
-                cmdr = self.connection.cmdr or "me.me"
+                if self.includeName:
+                    cmdr = ".%s" % (self.connection.cmdr,)
+                else:
+                    cmdr = self.connection.cmdr or "me.me"
             if actor == None:
                 actor = self.name
     
