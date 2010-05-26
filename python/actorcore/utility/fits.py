@@ -78,6 +78,8 @@ def mcpCards(models, cmd=None):
     return d
 
 def tccCards(models, cmd=None):
+    """ Return a list of pyfits Cards describing the TCC state. """
+
     cards = []
 
     tccDict = models['tcc'].keyVarDict
@@ -192,25 +194,29 @@ def tccCards(models, cmd=None):
 def plateCards(models, cmd):
     """ Return a list of pyfits Cards describing the plate/cartrige/pointing"""
     
+    nameComment = "impossible error handling guider.cartridgeLoaded keyword"
     try:
         try:
             cartridgeKey = models['guider'].keyVarDict['cartridgeLoaded']
         except:
+            nameComment = "Could not fetch guider.cartridgeLoaded keyword"
             cmd.warn('text="Could not fetch guider.cartridgeLoaded keyword"')
-            raise
+            raise 
 
         cartridge, plate, pointing, mjd, mapping = cartridgeKey
         if plate <= 0 or cartridge <= 0 or mjd < 50000 or mapping < 1 or pointing == '?':
             cmd.warn('text="guider cartridgeKey is not well defined: %s"' % (str(cartridgeKey)))
+            nameComment = "guider cartridgeKey %s is not well defined" % (str(cartridgeKey)))
             name = '0000-00000-00'
         else:
+            nameComment = 'The name of the currently loaded plate'
             name = "%04d-%05d-%02d" % (plate, mjd, mapping)
     except:
         cartridge, plate, pointing, mjd, mapping = -1,-1,'?',-1,-1
         name = '0000-00000-00'
-            
+
     cards = []
-    cards.append(makeCard(cmd, 'NAME', name, 'The name of the currently loaded plate'))
+    cards.append(makeCard(cmd, 'NAME', name, nameComment))
     cards.append(makeCard(cmd, 'PLATEID', plate, 'The currently loaded plate'))
     cards.append(makeCard(cmd, 'CARTID', cartridge, 'The currently loaded cartridge'))
     cards.append(makeCard(cmd, 'MAPID', mapping, 'The mapping version of the loaded plate'))
