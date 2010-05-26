@@ -88,12 +88,10 @@ History:
 2010-05-26 ROwen    Documented includeName more thoroughly.
                     Bug fix: if includeName True and self.connection.cmdr is set then replyIsMine doesn't
                     recognize messages from makeReply. Fixed by changing the commander for makeReply
-                    from <self.connection.cmdr> to .<self.connection.cmdr>.
+                    from <self.connection.cmdr> to <self.connection.cmdr>.<self.connection.cmdr>
                     Bug fix: if includeName True and self.connection.cmdr != self.name then replyIsMine
                     doesn't recognize replies to executeCmd. Fixed by changing executeCmd to use commander
-                    name .<self.connection.cmdr> instead of <self.name>.<self.name>. Thus using
-                    self.connection.cmdr instead of self.name (the bug fix) and using a prefix of "."
-                    instead of doubling the name (a cleanup).
+                    name <self.connection.cmdr>.<self.connection.cmdr> instead of <self.name>.<self.name>.
 """
 import sys
 import time
@@ -373,7 +371,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 if cmdVar.forUserCmd:
                     cmdrStr = "%s.%s " % (cmdVar.forUserCmd.cmdr, self.connection.cmdr)
                 else:
-                    cmdrStr = ".%s " % (self.connection.cmdr)
+                    cmdrStr = "%s.%s " % (self.connection.cmdr, self.connection.cmdr)
             else:
                 # external actor; do not specify the commander
                 cmdrStr = ""
@@ -465,7 +463,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         try:
             if cmdr == None:
                 if self.includeName:
-                    cmdr = ".%s" % (self.connection.cmdr,)
+                    cmdr = "%s.%s" % (self.connection.cmdr, self.connection.cmdr)
                 else:
                     cmdr = self.connection.cmdr or "me.me"
             if actor == None:
