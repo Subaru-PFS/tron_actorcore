@@ -14,6 +14,7 @@ import hashlib
 import opscore.protocols.types as protoTypes
 import opscore.protocols.messages as protoMess
 import opscore.utility.html as utilHtml
+import RO.Alg
 
 class KeysError(Exception):
     pass
@@ -333,7 +334,7 @@ class KeysDictionary(object):
         if not name == name.lower():
             raise KeysDictionaryError('Invalid name: must be lower case: %s' % name)
         KeysDictionary.registry[name] = self
-        self.keys = { }
+        self.keys = RO.Alg.OrderedDict()
         self.namedTypes = { }
         for key in keys:
             self.add(key)
