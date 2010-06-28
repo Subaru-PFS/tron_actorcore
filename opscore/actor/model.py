@@ -5,20 +5,13 @@ History:
 2009-03-30 ROwen
 2009-07-18 ROwen    Modified to set the refreshCmd for each keyVar before adding it to the dispatcher.
 2009-07-18 ROwen    Added keyVarDict property.
+2010-06-28 ROwen    Removed many unused imports (thanks to pychecker).
 """
-import sys
-import time
-import traceback
-
-import twisted.internet.reactor
-import RO.Alg
 import RO.Comm.HubConnection
 import RO.Constants
 import RO.StringUtil
 
 import opscore.protocols.keys as protoKeys
-import opscore.protocols.parser as protoParse
-import opscore.protocols.messages as protoMess
 import keyvar
 
 __all__ = ["Model"]

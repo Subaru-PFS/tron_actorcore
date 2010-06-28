@@ -73,6 +73,8 @@ History:
                     Changed state constants from module constants to class constants
                     and from integers to strings.
 2010-03-11 ROwen    Fixed a few instances of obsolete keyVar.get() and keyVar.isCurrent().
+2010-06-28 ROwen    Made _WaitBase a modern class (thanks to pychecker).
+                    Removed unused and broken internal method _waitEndFunc (thanks to pychecker).
 """
 import sys
 import threading
@@ -684,13 +686,6 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
             reason = "?"
         self._setState(self.Failed, reason="%s failed: %s" % (cmdDescr, reason))
     
-    def _waitEndFunc(self, cancelFunc, cleanupFunc):
-        """Register the specified cancel function
-        and return a wait end function that should be called
-        when the wait ends successfully.
-        """
-        return _WaitEnd(self, cancelFunc, cleanupFunc)
-
     def _continue(self, iterID, val=None):
         """Continue executing the script.
         
@@ -780,11 +775,9 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
         else:
             print msg
     
-    def __del__(self, evt=None):
+    def __del__(self):
         """Called just before the object is deleted.
         Deletes any state callbacks and then cancels script execution.
-        The evt argument is ignored, but allows __del__ to be
-        called from a Tk event binding.
         """
         self._callbacks = []
         self.cancel()
@@ -875,7 +868,7 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
             self._waiting = True
 
 
-class _WaitBase:
+class _WaitBase(object):
     """Base class for waiting.
     Handles verifying iterID, registering the termination function,
     registering and unregistering the cancel function, etc.
@@ -1047,7 +1040,7 @@ class _WaitKeyVar(_WaitBase):
                 argList.append("ind=%s" % (ind,))
             if defVal != Exception:
                 argList.append("defVal=%r" % (defVal,))
-            if waitNext != False:
+            if waitNext:
                 argList.append("waitNext=%r" % (waitNext,))
             print "waitKeyVar(%s)" % ", ".join(argList)
 

@@ -92,6 +92,8 @@ History:
                     Bug fix: if includeName True and self.connection.cmdr != self.name then replyIsMine
                     doesn't recognize replies to executeCmd. Fixed by changing executeCmd to use commander
                     name <self.connection.cmdr>.<self.connection.cmdr> instead of <self.name>.<self.name>.
+2010-06-28 ROwen    Bug fix: sendAllKeyVarCallbacks argument includeNotCurrent was ignored (thanks to pychecker).
+                    Removed one of a duplicate import (thanks to pychecker).
 """
 import sys
 import time
@@ -540,14 +542,14 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         return reply.header.cmdrName.endswith(self.connection.cmdr) \
             and reply.header.cmdrName[-len(self.connection.cmdr) - 1: -len(self.connection.cmdr)] in ("", ".")
 
-    def sendAllKeyVarCallbacks(self, includeNotCurrent=True):
+    def sendAllKeyVarCallbacks(self, includeNotCurrent=False):
         """Send all keyVar callbacks.
         
         Inputs:
         - includeNotCurrent: issue callbacks for keyVars that are not current?
         """
         keyVarListIter = self.keyVarListDict.itervalues()
-        self._nextKeyVarCallback(keyVarListIter, includeNotCurrent=False)
+        self._nextKeyVarCallback(keyVarListIter, includeNotCurrent=includeNotCurrent)
 
     def setLogFunc(self, logFunc=None):
         """Set the log output device, or clears it if None specified.
@@ -775,7 +777,6 @@ class NullConnection(object):
 
 if __name__ == "__main__":
     print "\nTesting opscore.actor.CmdKeyVarDispatcher\n"
-    import time
     import opscore.protocols.types as protoTypes
     import twisted.internet.tksupport
     import Tkinter

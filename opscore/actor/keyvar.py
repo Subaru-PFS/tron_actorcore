@@ -14,6 +14,8 @@ History:
 2010-05-26 ROwen    Added __len__ and __iter__ to KeyVar. The former supports len(keyVar); the latter
                     is the recommended way to support iteration (which already worked).
                     Corrected an error in the main doc string for KeyVar.
+2010-06-28 ROwen    Bug fix: addValueListCallback startInd argument was ignored (thanks to pychecker).
+                    Removed unused import (thanks to pychecker).
 """
 import sys
 import time
@@ -22,8 +24,6 @@ import traceback
 import RO.AddCallback
 import RO.Constants
 import RO.MathUtil
-
-import opscore.protocols.messages as protoMess
 
 __all__ = ["KeyVar", "AllCodes", "DoneCodes", "FailedCodes", "MsgCodeSeverity"]
 
@@ -156,7 +156,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         Note: if the KeyVar has a variable number of values and some are not supplied
         then the associated functions are not called.
         
-        Raise IndexError if not 0 <= ind < maxVals
+        Raise IndexError if 0 startInd < 0 or startInd + len(callFuncList) >= maxVals
         """
         endInd = startInd + len(callFuncList) - 1
         RO.MathUtil.checkRange(startInd, 0, None, "%s startInd" % (self,))
@@ -166,7 +166,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
             cnvFunc = lambda x: x
                 
         def adapterFunc(keyVar, callFuncList=callFuncList, startInd=startInd, cnvFunc=cnvFunc):
-            for ind, callFunc in enumerate(callFuncList):
+            for ind, callFunc in enumerate(callFuncList[startInd:]):
                 try:
                     val = keyVar.valueList[ind]
                 except IndexError:
