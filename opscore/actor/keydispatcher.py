@@ -6,6 +6,7 @@ History:
 2009-07-18 ROwen    Added __all__.
 2009-07-23 ROwen    Added doCallbacks argument to dispatchReply and dispatchReplyStr
                     to support delayCallbacks in CmdKeyVarDispatcher.
+2010-07-20 ROwen    Improved the diagnostic output if a keyword's values cannot be set.
 """
 import sys
 import traceback
@@ -70,6 +71,7 @@ class KeyVarDispatcher(object):
                 try:
                     keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply, doCallbacks=doCallbacks)
                 except:
+                    print "Failed to set %s to %s:" % (keyVar, keyword.values)
                     traceback.print_exc(file=sys.stderr)
                     
     def dispatchReplyStr(self, replyStr, doCallbacks=True):
