@@ -435,6 +435,29 @@ class CmdVar(object):
             return None
         return allVals[-1]
     
+    def handleReply(self, reply):
+        """Handle a reply (opscore.protocols.Reply) from the dispatcher.
+
+        Add reply to reply list, call command callbacks and handle cleanup if the reply ends the command.
+
+        Warn and do nothing else if called after the command has finished.
+        """
+        if self.lastCode in DoneCodes:
+            sys.stderr.write("Command %s already finished; no more replies allowed\n" % (self,))
+            return
+        self.replyList.append(reply)
+        msgCode = reply.header.code
+        self.lastCode = msgCode
+        for callCodes, callFunc in self.callCodesFuncList[:]:
+            if msgCode in callCodes:
+                try:
+                    callFunc(self)
+                except Exception:
+                    sys.stderr.write("%s callback %s failed\n" % (self, callFunc))
+                    traceback.print_exc(file=sys.stderr)
+        if self.lastCode in DoneCodes:
+            self._cleanup()
+    
     @property
     def isDone(self):
         """Return True if the command is finished, False otherwise.
@@ -469,29 +492,6 @@ class CmdVar(object):
         if doRaise:
             raise ValueError("Callback %r not found" % callFunc)
         return False
-    
-    def handleReply(self, reply):
-        """Handle a reply (opscore.protocols.Reply) from the dispatcher.
-
-        Add reply to reply list, call command callbacks and handle cleanup if the reply ends the command.
-
-        Warn and do nothing else if called after the command has finished.
-        """
-        if self.lastCode in DoneCodes:
-            sys.stderr.write("Command %s already finished; no more replies allowed\n" % (self,))
-            return
-        self.replyList.append(reply)
-        msgCode = reply.header.code
-        self.lastCode = msgCode
-        for callCodes, callFunc in self.callCodesFuncList[:]:
-            if msgCode in callCodes:
-                try:
-                    callFunc(self)
-                except Exception:
-                    sys.stderr.write("%s callback %s failed\n" % (self, callFunc))
-                    traceback.print_exc(file=sys.stderr)
-        if self.lastCode in DoneCodes:
-            self._cleanup()
     
     def _timeLimKeyVarCallback(self, keyVar):
         """Handle callback from the time limit keyVar.

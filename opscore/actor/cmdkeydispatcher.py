@@ -94,6 +94,10 @@ History:
                     name <self.connection.cmdr>.<self.connection.cmdr> instead of <self.name>.<self.name>.
 2010-06-28 ROwen    Bug fix: sendAllKeyVarCallbacks argument includeNotCurrent was ignored (thanks to pychecker).
                     Removed one of a duplicate import (thanks to pychecker).
+2010-07-21 ROwen    Changed refreshAllVar to handle setting keyVars not current differently; instead of
+                    implicitly basing it on the connection state, it now is based on a new argument.
+                    Added readUnixTime field.
+                    Bug fix: command timeouts were broken.
 """
 import sys
 import time
@@ -128,6 +132,9 @@ def logToStdOut(msgStr, severity, actor, cmdr):
 
 class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     """Parse replies and sets KeyVars. Also manage CmdVars and their replies.
+
+    Fields:
+    - readUnixTime: unix time last message received from connection, or 0 if never connected.
     """
     def __init__(self,
         name = "CmdKeyVarDispatcher",
@@ -170,6 +177,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self.name = name
         self.includeName = bool(includeName)
         self.delayCallbacks = bool(delayCallbacks)
+        self.readUnixTime = 0
         
         self.parser = protoParse.ReplyParser()
         self._isConnected = False
@@ -194,10 +202,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._refreshNextTimer = Timer()
         
         if connection:
-            def readCallback(sock, data):
-                self.dispatchReplyStr(data)
             self.connection = connection
-            self.connection.addReadCallback(readCallback)
+            self.connection.addReadCallback(self._readCallback)
             self.connection.addStateCallback(self.updConnState)
         else:
             self.connection = NullConnection()
@@ -268,7 +274,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             else:
                 self.refreshCmdDict[refreshInfo] = set((keyVar,))
             if self._isConnected:
-                self._refreshAllTimer.start(_ShortInterval, self.refreshAllVar)
+                self._refreshAllTimer.start(_ShortInterval, self.refreshAllVar, resetAll=False)
 
     def checkCmdTimeouts(self):
         """Check all pending commands for timeouts"""
@@ -495,10 +501,13 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 sys.stderr.write("%s.makeReply succeeded with simplified msgStr=%r\n" % (self.__class__.__name__, newMsgStr,))
         return reply
 
-    def refreshAllVar(self):
-        """Issue all keyVar refresh commands.
+    def refreshAllVar(self, resetAll=True):
+        """Issue all keyVar refresh commands after optionally setting them all to notCurrent.
+        
+        Inputs:
+        - resetAll: reset all keyword variables to notCurrent
         """
-#         print "%s.refreshAllVar(); refeshCmdDict=%s" % (self.__class__.__name__, self.refreshCmdDict)
+#         print "%s.refreshAllVar(resetAll=%s); refeshCmdDict=%s" % (self.__class__.__name__, resetAll, self.refreshCmdDict)
 
         # cancel pending update, if any
         self._refreshAllTimer.cancel()
@@ -507,11 +516,10 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._runningRefreshCmdSet = set()
         self._allRefreshCmdsSent = False
         
-        if not self._isConnected:
+        if resetAll:
             for keyVarList in self.keyVarListDict.values():
                 for keyVar in keyVarList:
                     keyVar.setNotCurrent()
-            return
     
         self._sendNextRefreshCmd()
 
@@ -597,14 +605,12 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                         )
                         # no connection, so cannot send abort command
                         cmdVar.abortCmdStr = ""
-                        break
                     elif cmdVar.maxEndTime and (cmdVar.maxEndTime < currTime):
                         # time out this command
                         errReply = self.makeReply (
                             cmdID = cmdVar.cmdID,
                             dataStr = "Timeout; Actor=%r; Cmd=%s" % (cmdVar.actor, RO.StringUtil.quoteStr(cmdVar.cmdStr)),
                         )
-                        break
                     if errReply:
                         self._replyToCmdVar(cmdVar, errReply)
             
@@ -646,6 +652,10 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             if includeNotCurrent or keyVar.isCurrent:
                 keyVar.doCallbacks()
         Timer(0.001, self._nextKeyVarCallback, keyVarListIter, includeNotCurrent)
+
+    def _readCallback(self, sock, data):
+        self.readUnixTime = time.time()
+        self.dispatchReplyStr(data)
 
     def _refreshCmdCallback(self, refreshCmd):
         """Refresh command callback; complain if command failed or some keyVars not updated
@@ -715,8 +725,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
 #         print "%s._sendNextRefreshCmd(%s)" % (self.__class__.__name__, refreshCmdItemIter)
         if not self._isConnected:
-            # schedule parent function asap and bail out
-            self._refreshAllTimer.start(_ShortInterval, self.refreshAllVar)
             return
 
         if refreshCmdItemIter == None:

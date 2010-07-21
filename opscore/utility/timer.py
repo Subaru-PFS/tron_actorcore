@@ -1,6 +1,9 @@
 """Twisted one-shot timer
 
 Requires a running twisted reactor.
+
+History:
+2010-07-21 ROwen    Timer(...) sec and callFunc arguments may now be specified by name.
 """
 import twisted.internet.reactor
 
@@ -9,19 +12,17 @@ _reactor = twisted.internet.reactor
 class Timer(object):
     """A restartable one-shot timer
     """
-    def __init__(self, *args, **keyArgs):
+    def __init__(self, sec=None, callFunc=None, *args, **keyArgs):
         """Start or set up a one-shot timer
 
         Inputs:
         - sec: interval, in seconds (float); if omitted then the timer is not started
         - callFunc: function to call when timer fires
         *args: arguments for callFunc
-        **keyArgs: keyword arguments for callFunc
-        
-        Warning: sec and callFunc are positional; they may not be specified by name
+        **keyArgs: keyword arguments for callFunc; must not include "sec" or "callFunc"
         """
-        if args:
-            self._timer = _reactor.callLater(*args, **keyArgs)
+        if sec != None:
+            self._timer = _reactor.callLater(sec, callFunc, *args, **keyArgs)
         else:
             self._timer = None
     
@@ -32,7 +33,7 @@ class Timer(object):
         - sec: interval, in seconds (float)
         - callFunc: function to call when timer fires
         *args: arguments for callFunc
-        **keyArgs: keyword arguments for callFunc
+        **keyArgs: keyword arguments for callFunc; must not include "sec" or "callFunc"
         """
         self.cancel()
         self._timer = _reactor.callLater(sec, callFunc, *args, **keyArgs)
