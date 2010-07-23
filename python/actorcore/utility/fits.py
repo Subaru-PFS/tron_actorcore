@@ -77,6 +77,23 @@ def mcpCards(models, cmd=None):
 
     return d
 
+def apoCards(models, cmd=None):
+    """ Return a list of pyfits Cards describing APO weather state. """
+
+    cards = []
+
+    apoDict = models['apo'].keyVarDict
+    #for key in ('pressure', 'windd', 'winds', 'gustd', 'gusts', 'temp', 'dpTemp', 'humidity', 'dusta', 'dustb', 'dustc', 'dustd'):
+    for key in ('pressure'):
+        cardName = key.upper()
+        card = makeCardFromKey(cmd, weatherDict, key, cardName,
+                               comment='%s' % (key)
+                               onFail='NaN')
+        cards.append(card)
+
+    return cards
+    
+
 def tccCards(models, cmd=None):
     """ Return a list of pyfits Cards describing the TCC state. """
 
