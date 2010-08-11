@@ -83,8 +83,8 @@ def apoCards(models, cmd=None):
     cards = []
 
     apoDict = models['apo'].keyVarDict
-    #for key in ('pressure', 'windd', 'winds', 'gustd', 'gusts', 'temp', 'dpTemp', 'humidity', 'dusta', 'dustb', 'dustc', 'dustd'):
-    for key in ('pressure'):
+    for key in ('pressure', 'windd', 'winds', 'gustd', 'gusts', 'temp', 'dpTemp', 'humidity', 'dusta', 'dustb', 'dustc', 'dustd'):
+    #for key in ('pressure'):
         cardName = key.upper()
         card = makeCardFromKey(cmd, weatherDict, key, cardName,
                                comment='%s' % (key)
