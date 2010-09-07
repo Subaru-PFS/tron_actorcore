@@ -30,20 +30,24 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
         errStr = "failed to fetch %s" % (keyName)
         cmd.warn('text=%s' % (qstr(errStr)))
         return makeCard(cmd, cardName, onFail, errStr)
-    
-    if idx != None:
-        try:
+
+    try:
+        if idx != None:
             val = val[idx]
-        except:
-            errStr = "failed to index %s by %s from %s for %s" % (val, idx, keyName, cardName)
-            cmd.warn('text=%s' % (qstr(errStr)))
-            return makeCard(cmd, cardName, onFail, errStr)
-        
+        else:
+            val = val.getValue()
+    except Exception, e:
+        errStr = "failed to index %s by %s from %s for %s: %s" % \
+            (val, idx, keyName, cardName, e)
+        cmd.warn('text=%s' % (qstr(errStr)))
+        return makeCard(cmd, cardName, onFail, errStr)
+
     if cnv != None:
         try:
             val = cnv(val)
-        except:
-            errStr = "failed to convert %s from %s for %s" % (val, keyName, cardName)
+        except Exception, e:
+            errStr = "failed to convert %s from %s for %s using %s: %s" % \
+                (val, keyName, cardName, cnv, e)
             cmd.warn('text=%s' % (qstr(errStr)))
             return makeCard(cmd, cardName, onFail, errStr)
         
@@ -81,13 +85,14 @@ def apoCards(models, cmd=None):
     """ Return a list of pyfits Cards describing APO weather state. """
 
     cards = []
-
-    apoDict = models['apo'].keyVarDict
-    for key in ('pressure', 'windd', 'winds', 'gustd', 'gusts', 'temp', 'dpTemp', 'humidity', 'dusta', 'dustb', 'dustc', 'dustd'):
-    #for key in ('pressure'):
+    weatherDict = models['apo'].keyVarDict
+    for key in ('pressure', 'windd', 'winds', 'gustd', 'gusts', 
+                'temp', 'dpTemp', 'humidity', 
+                'dusta', 'dustb', 'dustc', 'dustd'):
         cardName = key.upper()
         card = makeCardFromKey(cmd, weatherDict, key, cardName,
-                               comment='%s' % (key)
+                               comment='%s' % (key),
+                               cnv=float,
                                onFail='NaN')
         cards.append(card)
 
