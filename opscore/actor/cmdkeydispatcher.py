@@ -134,7 +134,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     """Parse replies and sets KeyVars. Also manage CmdVars and their replies.
 
     Fields:
-    - readUnixTime: unix time last message received from connection, or 0 if never connected.
+    - readUnixTime: unix time at which last message received from connection; 0 if no message ever received.
     """
     def __init__(self,
         name = "CmdKeyVarDispatcher",
