@@ -96,6 +96,16 @@ class ValueType(type,Descriptive):
             matched = ValueType._nameSpec.match(kwargs['name'])
             if not matched or not matched.end() == len(kwargs['name']):
                 raise ValueTypeError('invalid type name: %s' % kwargs['name'])
+                
+        # check that any format strings provided are not circular
+        if 'reprFmt' in kwargs:
+            fmt = kwargs['reprFmt']
+            if (fmt.find('%s') != -1) or (fmt.find('%r') != -1):
+                raise ValueTypeError('reprFmt cannot contain %r or %s')
+        if 'strFmt' in kwargs:
+            fmt = kwargs['strFmt']
+            if (fmt.find('%s') != -1) or (fmt.find('%r') != -1):
+                raise ValueTypeError('strFmt cannot contain %r or %s')
 
         get = lambda name,default=None: kwargs.get(name,cls.__dict__.get(name,default))
 

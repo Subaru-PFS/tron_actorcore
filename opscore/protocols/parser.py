@@ -238,6 +238,10 @@ class ParserBase(object):
         """
         Handles parse errors
         """
+        # reset the lexer in case we were doing some modal processing
+        # (this should only happen for the raw command keyword)
+        # see http://www.dabeaz.com/ply/ply.html#ply_nn21
+        self.lexer.begin('INITIAL')
         if not tok:
             raise ParseError("Unexpected end of input")
         raise ParseError("Unexpected %s parse token (%r) in:\n%s"
