@@ -270,7 +270,7 @@ class Float(ValueType):
         fvalue = float(cls.validate(value))
         # the limit value is float(340282346638528859811704183484516925440)
         # where 3402... is (2 - 2^(-23)) 2^127
-        if abs(fvalue) > 3.4028234663852886e+38:
+        if abs(fvalue) > 3.4028234663852886e+38 and abs(fvalue) != float('inf'):
             raise OverflowError('Invalid literal for Float: %r' % value)
         return float.__new__(cls,fvalue)
     
