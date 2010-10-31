@@ -64,6 +64,7 @@ class ValueType(type,Descriptive):
     A metaclass for types that represent an enumerated or numeric value
     """
     _nameSpec = re.compile('[A-Za-z][A-Za-z0-9_]*')
+    _metaKeys = ('reprFmt','strFmt','invalid','units','help','name')
     
     def __new__(cls,*args,**kwargs):
         """
@@ -86,6 +87,12 @@ class ValueType(type,Descriptive):
                 return self.reprFmt % self
             else:
                 return cls.baseType.__str__(self)
+                
+        # check for any invalid metadata keys
+        for key in kwargs.iterkeys():
+            if key not in ValueType._metaKeys and (
+                not hasattr(cls,'customKeys') or key not in cls.customKeys):
+                raise ValueTypeError('invalid metadata key "%s" for %s' % (key,cls.__name__))
 
         # force the invalid string, if present, to be lowercase
         if 'invalid' in kwargs:
@@ -341,6 +348,7 @@ class Enum(ValueType):
 
     baseType = str
     storage = 'int2'
+    customKeys = ('labelHelp')
     
     @classmethod
     def init(cls,dct,*args,**kwargs):
