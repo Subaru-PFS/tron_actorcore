@@ -98,6 +98,9 @@ History:
                     implicitly basing it on the connection state, it now is based on a new argument.
                     Added readUnixTime field.
                     Bug fix: command timeouts were broken.
+2010-11-18 ROwen    Moved setLogFunc, logMsg, logReply methods to KeyDispatcher.
+                    Moved name field to KeyDispatcher.
+                    Moved logToStdOut function to KeyDispatcher.
 """
 import sys
 import time
@@ -114,7 +117,7 @@ import opscore.protocols.messages as protoMess
 import keydispatcher
 import keyvar
 
-__all__ = ["logToStdOut", "CmdKeyVarDispatcher"]
+__all__ = ["CmdKeyVarDispatcher"]
 
 # intervals (in milliseconds) for various background tasks
 _RefreshInterval = 1.0 # time interval between variable refresh checks (sec)
@@ -124,11 +127,6 @@ _ShortInterval =   0.01 # short time interval; used to schedule a callback right
 _CmdNumWrap = 1000 # value at which user command ID numbers wrap
 
 _RefreshTimeLim = 20 # time limit for refresh commands (sec)
-
-
-def logToStdOut(msgStr, severity, actor, cmdr):
-    print msgStr
-
 
 class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     """Parse replies and sets KeyVars. Also manage CmdVars and their replies.
@@ -147,7 +145,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     
         Inputs:
         - name: dispatcher name; must be a valid actor name (_ is OK; avoid other punctuation and whitespace).
-            Used when the dispatcher reports errors.
+            Used as the default actor for logMsg.
             If includeName is True, then sent as a prefix to all commands sent to the hub.
         - connection: an RO.Comm.HubConnection object or similar;
           if omitted, a NullConnection is used, which is useful for testing.
@@ -172,9 +170,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
         Raises ValueError if name cannot be used as an actor name
         """
-        keydispatcher.KeyVarDispatcher.__init__(self)
+        keydispatcher.KeyVarDispatcher.__init__(self, name=name, logFunc=logFunc)
         
-        self.name = name
         self.includeName = bool(includeName)
         self.delayCallbacks = bool(delayCallbacks)
         self.readUnixTime = 0
@@ -210,8 +207,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._isConnected = self.connection.isConnected()
         self.userCmdIDGen = RO.Alg.IDGen(1, _CmdNumWrap)
         self.refreshCmdIDGen = RO.Alg.IDGen(_CmdNumWrap + 1, 2 * _CmdNumWrap)
-        
-        self.setLogFunc(logFunc)        
         
         try:
             self.makeReply(dataStr="TestName")
@@ -398,62 +393,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             )
             self._replyToCmdVar(cmdVar, errReply)
         
-    def logMsg(self,
-        msgStr,
-        severity = RO.Constants.sevNormal,
-        actor = "TUI",
-        cmdr = None,
-    ):
-        """Writes a message to the log.
-        On error, prints message to stderr and returns normally.
-        
-        Inputs:
-        - msgStr: message to display; a final \n is appended
-        - severity: message severity (an RO.Constants.sevX constant)
-        - actor: name of actor
-        - cmdr: commander; defaults to self
-        """
-        if not self.logFunc:
-            return
-
-        try:
-            self.logFunc(
-                msgStr,
-                severity = severity,
-                actor = actor,
-                cmdr = cmdr,
-            )
-        except Exception, e:
-            sys.stderr.write("Could not log msgStr=%r; severity=%r; actor=%r; cmdr=%r\n    error: %s\n" % \
-                (msgStr, severity, actor, cmdr, RO.StringUtil.strFromException(e)))
-            traceback.print_exc(file=sys.stderr)
-    
-    def logReply(self, reply):
-        """Log a reply (an opscore.protocols.messages.Reply)
-
-        reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
-         - header.program: name of the program that triggered the message (string)
-         - header.commandId: command ID that triggered the message (int) 
-         - header.actor: the actor that generated the message (string)
-         - header.code: the message type code (opscore.protocols.types.Enum)
-         - string: the original unparsed message (string)
-         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
-        Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
-        """
-        try:
-            msgCode = reply.header.code
-            severity = keyvar.MsgCodeSeverity[msgCode]
-            self.logMsg(
-                msgStr = reply.string,
-                severity = severity,
-                actor = reply.header.actor,
-                cmdr = reply.header.cmdrName,
-            )
-        except Exception, e:
-            sys.stderr.write("Could not log reply=%r\n    error=%s\n" % \
-                (reply, RO.StringUtil.strFromException(e)))
-            traceback.print_exc(file=sys.stderr)
-        
     def makeReply(self,
         cmdr = None,
         cmdID = 0,
@@ -558,14 +497,6 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """
         keyVarListIter = self.keyVarListDict.itervalues()
         self._nextKeyVarCallback(keyVarListIter, includeNotCurrent=includeNotCurrent)
-
-    def setLogFunc(self, logFunc=None):
-        """Set the log output device, or clears it if None specified.
-        
-        The function must take the following arguments: (msgStr, severity, actor, cmdr)
-        where the first argument is positional and the others are by name
-        """
-        self.logFunc = logFunc
 
     def updConnState(self, conn):
         """If connection state changes, update refresh variables.

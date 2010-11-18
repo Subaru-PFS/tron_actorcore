@@ -7,20 +7,46 @@ History:
 2009-07-23 ROwen    Added doCallbacks argument to dispatchReply and dispatchReplyStr
                     to support delayCallbacks in CmdKeyVarDispatcher.
 2010-07-20 ROwen    Improved the diagnostic output if a keyword's values cannot be set.
+2010-11-18 ROwen    Added setLogFunc, logMsg, logReply methods from CmdKeyDispatcher.
+                    Added name field from CmdKeyDispatcher.
+                    Added logToStdOut function.
+                    Modified dispatchReply to log an error (instead of printing a traceback)
+                    when the values for a keyword are invalid.
 """
 import sys
 import traceback
 import opscore.protocols.parser
 import keyvar
 
-__all__ = ["KeyVarDispatcher"]
+import RO.Constants
+import RO.StringUtil
+
+__all__ = ["logToStdOut", "KeyVarDispatcher"]
+
+
+def logToStdOut(msgStr, severity, actor, cmdr):
+    print msgStr
+
 
 class KeyVarDispatcher(object):
     """Parse replies and set KeyVars.
     """
-    def __init__(self):
+    def __init__(self,
+        name = "KeyVarDispatcher",
+        logFunc = None,
+    ):
         """Create a new KeyVarDispatcher
+        
+        Inputs:
+        - name: dispatcher name; must be a valid actor name (_ is OK; avoid other punctuation and whitespace).
+            Used as the default actor for logMsg.
+        - logFunc: a function that logs a message. Argument list must be:
+            (msgStr, severity, actor, cmdr)
+            where the first argument is positional and the others are by name
+            and severity is an RO.Constants.sevX constant
+            If None then nothing is logged.
         """
+        self.name = str(name)
         self.parser = opscore.protocols.parser.ReplyParser()
 
         # dictionary of lists of KeyVars; keys are (actor.lower(), keyName.lower()) tuples;
@@ -30,6 +56,8 @@ class KeyVarDispatcher(object):
 
         # set of actors for which loadActorDictionary has been called
         self.loadedActors = set()
+
+        self.setLogFunc(logFunc)        
     
     def addKeyVar(self, keyVar):
         """
@@ -70,6 +98,12 @@ class KeyVarDispatcher(object):
             for keyVar in keyVarList:
                 try:
                     keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply, doCallbacks=doCallbacks)
+                except TypeError:
+                    self.logMsg(
+                        "InvalidKeywordData=%s.%s, %s" % (actor, keyword.name, keyword.values),
+                        severity = RO.Constants.sevError,
+                        fallbackToStdOut = True,
+                    )
                 except:
                     print "Failed to set %s to %s:" % (keyVar, keyword.values)
                     traceback.print_exc(file=sys.stderr)
@@ -100,7 +134,78 @@ class KeyVarDispatcher(object):
         if not keyVarList:
             raise LookupError("Could not find a keyVar with actor=%s, keyName=%s" % (actor, keyName))
         return keyVarList[0]
-                
+
+    def logMsg(self,
+        msgStr,
+        severity = RO.Constants.sevNormal,
+        actor = None,
+        cmdr = None,
+        fallbackToStdOut = False,
+    ):
+        """Writes a message to the log.
+        On error, prints message to stderr and returns normally.
+        
+        Inputs:
+        - msgStr: message to display; a final \n is appended
+        - severity: message severity (an RO.Constants.sevX constant)
+        - actor: name of actor
+        - cmdr: commander; defaults to self
+        - fallbackToStdOut: if True and there is no logFunc then prints the message to stdout.
+        """
+        if actor == None:
+            actor = self.name
+
+        if not self.logFunc:
+            if fallbackToStdOut:
+                logToStdOut(
+                    msgStr,
+                    severity = severity,
+                    actor = actor,
+                    cmdr = cmdr,
+                )
+            return
+
+        try:
+            self.logFunc(
+                msgStr,
+                severity = severity,
+                actor = actor,
+                cmdr = cmdr,
+            )
+        except Exception, e:
+            sys.stderr.write("Could not log msgStr=%r; severity=%r; actor=%r; cmdr=%r\n    error: %s\n" % \
+                (msgStr, severity, actor, cmdr, RO.StringUtil.strFromException(e)))
+            traceback.print_exc(file=sys.stderr)
+    
+    def logReply(self, reply, fallbackToStdOut = False):
+        """Log a reply (an opscore.protocols.messages.Reply)
+
+        Inputs:
+        - reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
+          - header.program: name of the program that triggered the message (string)
+          - header.commandId: command ID that triggered the message (int) 
+          - header.actor: the actor that generated the message (string)
+          - header.code: the message type code (opscore.protocols.types.Enum)
+          - string: the original unparsed message (string)
+          - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
+          Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
+        - fallbackToStdOut: if True and there is no logFunc then prints the message to stdout.
+        """
+        try:
+            msgCode = reply.header.code
+            severity = keyvar.MsgCodeSeverity[msgCode]
+            self.logMsg(
+                msgStr = reply.string,
+                severity = severity,
+                actor = reply.header.actor,
+                cmdr = reply.header.cmdrName,
+                fallbackToStdOut = fallbackToStdOut,
+            )
+        except Exception, e:
+            sys.stderr.write("Could not log reply=%r\n    error=%s\n" % \
+                (reply, RO.StringUtil.strFromException(e)))
+            traceback.print_exc(file=sys.stderr)
+
     def removeKeyVar(self, keyVar):
         """Remove the specified keyword variable, returning the KeyVar if removed, else None
 
@@ -119,6 +224,14 @@ class KeyVarDispatcher(object):
             return keyVar
         else:
             return None
+
+    def setLogFunc(self, logFunc=None):
+        """Set the log output device, or clears it if None specified.
+        
+        The function must take the following arguments: (msgStr, severity, actor, cmdr)
+        where the first argument is positional and the others are by name
+        """
+        self.logFunc = logFunc
 
     @staticmethod
     def _makeDictKey(actor, keyName):

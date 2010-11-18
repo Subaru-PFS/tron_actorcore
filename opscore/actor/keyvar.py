@@ -16,6 +16,7 @@ History:
                     Corrected an error in the main doc string for KeyVar.
 2010-06-28 ROwen    Bug fix: addValueListCallback startInd argument was ignored (thanks to pychecker).
                     Removed unused import (thanks to pychecker).
+2010-11-18 ROwen    Changed set to raise TypeError instead of RuntimeError if the values are inappropriate.
 """
 import sys
 import time
@@ -237,11 +238,11 @@ class KeyVar(RO.AddCallback.BaseMixin):
         - reply: a parsed Reply object (opscore.protocols.messages.Reply)
         - doCallbacks: if True then issue callbacks
         
-        @raise RuntimeError if the values cannot be set.
+        @raise TypeError if the values cannot be set.
         """
         valueList = list(valueList)
         if not self._typedValues.consume(valueList):
-            raise RuntimeError("%s could not parse valueList=%s" % (self, valueList))
+            raise TypeError("%s invalid valueList=%s" % (self, valueList))
 
         # print to stderr, if requested
         if self.doPrint:
