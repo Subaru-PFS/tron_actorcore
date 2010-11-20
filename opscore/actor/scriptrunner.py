@@ -75,6 +75,7 @@ History:
 2010-03-11 ROwen    Fixed a few instances of obsolete keyVar.get() and keyVar.isCurrent().
 2010-06-28 ROwen    Made _WaitBase a modern class (thanks to pychecker).
                     Removed unused and broken internal method _waitEndFunc (thanks to pychecker).
+2010-11-19 ROwen    Bug fix: FailCodes -> FailedCodes.
 """
 import sys
 import threading
@@ -468,7 +469,7 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
         if checkFail:
             cmdVar.addCallback(
                 callFunc = self._cmdFailCallback,
-                callCodes = keyvar.FailCodes,
+                callCodes = keyvar.FailedCodes,
             )
         if self.debug:
             argList = ["actor=%r, cmdStr=%r" % (actor, cmdStr)]

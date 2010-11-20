@@ -17,6 +17,7 @@ History:
 2010-06-28 ROwen    Bug fix: addValueListCallback startInd argument was ignored (thanks to pychecker).
                     Removed unused import (thanks to pychecker).
 2010-11-18 ROwen    Changed set to raise TypeError instead of RuntimeError if the values are inappropriate.
+2010-11-19 ROwen    Bug fix: added CmdVar to __all__.
 """
 import sys
 import time
@@ -26,7 +27,7 @@ import RO.AddCallback
 import RO.Constants
 import RO.MathUtil
 
-__all__ = ["KeyVar", "AllCodes", "DoneCodes", "FailedCodes", "MsgCodeSeverity"]
+__all__ = ["KeyVar", "CmdVar", "AllCodes", "DoneCodes", "FailedCodes", "MsgCodeSeverity"]
 
 AllCodes = "IWE:F!>D"
 DoneCodes = ":F!"
