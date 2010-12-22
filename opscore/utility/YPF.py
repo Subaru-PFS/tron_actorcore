@@ -63,7 +63,6 @@ strRe_s = r'''((?:"%s*") |
 # ctype -> regexp
 typeRe_s = { 'int':intRe_s, \
              'short':intRe_s, \
-             'long':intRe_s, \
              'float':floatRe_s, \
              'double':floatRe_s, \
              'char':strRe_s
@@ -72,7 +71,6 @@ typeRe_s = { 'int':intRe_s, \
 # ctype -> numpy type
 nptypes = { 'int':'i4',
             'short':'i2',
-            'long':'i8',
             'float':'f4',
             'double':'f8',
             'char':'S'
@@ -256,29 +254,16 @@ class YPFEnum(object):
 class YPFStruct(object):
 
     # Match a single structure tag.
-    typedefRE = re.compile(r'''^\s*
-                            (?P<type>[a-z][a-z0-9_]*)
+    typedefRE = re.compile(r'''\s*(?P<type>[a-z][a-z0-9_]*)
                             \s+
                             (?P<name>[a-z][a-z0-9_]*)
-                            (?:
-                               (?:(?P<brace>\[)|\<)         # Accept [ or <
-                               (?P<arr1>(?:[1-9][0-9]*)?)   # Must reject name[][] in code.
-                               (?(brace)]|>)                # Use ] or >, depending on the open
-                            )
-                            (?:
-                               (?P=brace)                   # I _refuse_ to allow [] in one, <> in the other.
-                               (?P<arr2>(?:[1-9][0-9]*)?)
-                               (?(brace)]|>)
-                            )?
+                            (?:\[(?P<arr1>(?:[1-9][0-9]*)?)\])?
+                            (?:\[(?P<arr2>[1-9][0-9]*)\])?
                             ;\s*(?P<rest>.*)''',
                            re.VERBOSE|re.IGNORECASE)
 
     # The trailing semicolon is not in idReport's IDCOMMENT
-    typedefNameRE = re.compile(r'''^\s*
-                               }\s*
-                               (?P<name>[a-z][a-z0-9_]*)
-                               \s*;?
-                               \s*''',
+    typedefNameRE = re.compile(r'''^\s*\}\s*(?P<name>[a-z][a-z0-9_]*)\s*;?\s*''',
                                re.VERBOSE|re.IGNORECASE)
 
     def __init__(self, name, enums=None, fields=None,
@@ -342,14 +327,13 @@ class YPFStruct(object):
                 raise RuntimeError('unmatched struct definition at %s' % (l))
             
             g = m.groupdict()
-            arrSize = int(g.get('arr1', 1))
+            if g['arr1']:
+                arrSize = int(g['arr1'])
+            else:
+                arrSize = 1
                 
-            if 'arr2' in g:
-                if g['arr2'] == '' and g['arr1'] == '':
-                    raise RuntimeError('only one array dimension can be free (in %s)' % (l))
-                if g['arr2']:
-                    arrSize = (int(g.get('arr2', 1)), arrSize)
-                
+            if g['arr2']:
+                arrSize = (int(g['arr2']), arrSize)
 
             defn = (g['name'], g['type'], arrSize)
             parts.append(defn)
