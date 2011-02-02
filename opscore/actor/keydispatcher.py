@@ -12,7 +12,8 @@ History:
                     Added logToStdOut function.
                     Modified dispatchReply to log an error (instead of printing a traceback)
                     when the values for a keyword are invalid.
-2011-01-02 ROwen    Enhanced dispatchReplyStr's error handling and reporting to match CmdKeyDispatcher.
+2011-01-02 ROwen    API change: added keywords to logging function argument list.
+                    Enhanced dispatchReplyStr's error handling and reporting to match CmdKeyDispatcher.
                     Changed dispatchReply to log its replies, instead of CmdKeyDispatcher.
                     Added setKeyVarsFromReply which is called by dispatchReply.
 """
@@ -28,7 +29,7 @@ import RO.StringUtil
 __all__ = ["logToStdOut", "KeyVarDispatcher"]
 
 
-def logToStdOut(msgStr, severity, actor, cmdr):
+def logToStdOut(msgStr, severity, actor, cmdr, keywords):
     print msgStr
 
 
@@ -45,7 +46,7 @@ class KeyVarDispatcher(object):
         - name: dispatcher name; must be a valid actor name (_ is OK; avoid other punctuation and whitespace).
             Used as the default actor for logMsg.
         - logFunc: a function that logs a message. Argument list must be:
-            (msgStr, severity, actor, cmdr)
+            (msgStr, severity, actor, cmdr, keywords)
             where the first argument is positional and the others are by name
             and severity is an RO.Constants.sevX constant
             If None then nothing is logged.
@@ -143,6 +144,7 @@ class KeyVarDispatcher(object):
         severity = RO.Constants.sevNormal,
         actor = None,
         cmdr = None,
+        keywords = None,
         fallbackToStdOut = False,
     ):
         """Writes a message to the log.
@@ -154,10 +156,14 @@ class KeyVarDispatcher(object):
         - severity: message severity (an RO.Constants.sevX constant)
         - actor: name of actor
         - cmdr: commander; defaults to self
+        - keywords: parsed keywords (an opscore.protocols.messages.Keywords);
+            warning: this is not KeyVars from the model; it is lower-level data
         - fallbackToStdOut: if True and there is no logFunc then prints the message to stdout.
         """
         if actor == None:
             actor = self.name
+        if keywords == None:
+            keywords = opscore.protocols.messages.Keywords()
 
         if not self.logFunc:
             if fallbackToStdOut:
@@ -166,6 +172,7 @@ class KeyVarDispatcher(object):
                     severity = severity,
                     actor = actor,
                     cmdr = cmdr,
+                    keywords = keywords,
                 )
             return
 
@@ -175,10 +182,11 @@ class KeyVarDispatcher(object):
                 severity = severity,
                 actor = actor,
                 cmdr = cmdr,
+                keywords = keywords,
             )
         except Exception, e:
-            sys.stderr.write("Could not log msgStr=%r; severity=%r; actor=%r; cmdr=%r\n    error: %s\n" % \
-                (msgStr, severity, actor, cmdr, RO.StringUtil.strFromException(e)))
+            sys.stderr.write("Could not log msgStr=%r; severity=%r; actor=%r; cmdr=%r; keywords=%r\n    error: %s\n" % \
+                (msgStr, severity, actor, cmdr, keywords, RO.StringUtil.strFromException(e)))
             traceback.print_exc(file=sys.stderr)
     
     def logReply(self, reply, fallbackToStdOut = False):
@@ -201,6 +209,7 @@ class KeyVarDispatcher(object):
             self.logMsg(
                 msgStr = reply.string,
                 severity = severity,
+                keywords = reply.keywords,
                 actor = reply.header.actor,
                 cmdr = reply.header.cmdrName,
                 fallbackToStdOut = fallbackToStdOut,
