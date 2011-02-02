@@ -101,6 +101,8 @@ History:
 2010-11-18 ROwen    Moved setLogFunc, logMsg, logReply methods to KeyDispatcher.
                     Moved name field to KeyDispatcher.
                     Moved logToStdOut function to KeyDispatcher.
+2011-01-02 ROwen    Moved logReplyStr to KeyDispatcher.
+                    Modified to let KeyDispatcher log replies.
 """
 import sys
 import time
@@ -285,7 +287,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._checkRemCmdTimeouts(cmdVarIter)
     
     def dispatchReply(self, reply):
-        """Set KeyVars based on the supplied Reply
+        """Log the reply, set KeyVars and CmdVars.
         
         reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
          - header.program: name of the program that triggered the message (string)
@@ -296,42 +298,16 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
          - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
-        # handle KeyVars
+        # log message and set KeyVars
         keydispatcher.KeyVarDispatcher.dispatchReply(self, reply, doCallbacks=self._enableCallbacks)
 
-        # if you are the commander for this message,
-        # execute the command callback (if any)
+        # if you are the commander for this message, execute the command callback (if any)
         if self.replyIsMine(reply):
             # get the command for this command id, if any
             cmdVar = self.cmdDict.get(reply.header.commandId, None)
             if cmdVar != None:
                 # send reply but don't log (that's already been done)
                 self._replyToCmdVar(cmdVar, reply, doLog=False)
-                    
-    def dispatchReplyStr(self, replyStr):
-        """Read, parse and dispatch a message from the hub.
-        """
-#        print "%s.dispatchReplyStr(%r)" % (self.__class__.__name__, replyStr)
-        # parse message; if that fails, log it as an error
-        try:
-            reply = self.parser.parse(replyStr)
-        except Exception, e:
-            self.logMsg(
-                msgStr = "CouldNotParse; Reply=%r; Text=%r" % (replyStr, RO.StringUtil.strFromException(e)),
-                severity = RO.Constants.sevError,
-            )
-            return
-        
-        # log message
-        self.logReply(reply)
-        
-        # dispatch message
-        try:
-            self.dispatchReply(reply)
-        except Exception, e:
-            sys.stderr.write("Could not dispatch replyStr=%r\n    which was parsed as reply=%r\n" % \
-                (replyStr, reply))
-            traceback.print_exc(file=sys.stderr)
                 
     def executeCmd(self, cmdVar):
         """Execute a command (of type opscore.actor.keyvar.CmdVar).

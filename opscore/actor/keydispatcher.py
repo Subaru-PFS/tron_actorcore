@@ -12,10 +12,14 @@ History:
                     Added logToStdOut function.
                     Modified dispatchReply to log an error (instead of printing a traceback)
                     when the values for a keyword are invalid.
+2011-01-02 ROwen    Enhanced dispatchReplyStr's error handling and reporting to match CmdKeyDispatcher.
+                    Changed dispatchReply to log its replies, instead of CmdKeyDispatcher.
+                    Added setKeyVarsFromReply which is called by dispatchReply.
 """
 import sys
 import traceback
 import opscore.protocols.parser
+import opscore.protocols.messages
 import keyvar
 
 import RO.Constants
@@ -45,6 +49,7 @@ class KeyVarDispatcher(object):
             where the first argument is positional and the others are by name
             and severity is an RO.Constants.sevX constant
             If None then nothing is logged.
+            See logMsg for details on the arguments.
         """
         self.name = str(name)
         self.parser = opscore.protocols.parser.ReplyParser()
@@ -74,7 +79,7 @@ class KeyVarDispatcher(object):
         keyList.append(keyVar)
 
     def dispatchReply(self, reply, doCallbacks=True):
-        """Set KeyVars based on the supplied Reply
+        """Log the reply and set KeyVars based on the supplied Reply
         
         reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
          - header.program: name of the program that triggered the message (string)
@@ -85,35 +90,33 @@ class KeyVarDispatcher(object):
          - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
-#         print "dispatchReply(reply=%s, doCallbacks=%s)" % (reply, doCallbacks)
-        actor = reply.header.actor.lower()
-        if actor.startswith("keys_"):
-            # data is from the hub's keyword cache
-            actor = actor[5:]
-            isGenuine = False
-        else:
-            isGenuine = True
-        for keyword in reply.keywords:
-            keyVarList = self.getKeyVarList(actor, keyword.name)
-            for keyVar in keyVarList:
-                try:
-                    keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply, doCallbacks=doCallbacks)
-                except TypeError:
-                    self.logMsg(
-                        "InvalidKeywordData=%s.%s, %s" % (actor, keyword.name, keyword.values),
-                        severity = RO.Constants.sevError,
-                        fallbackToStdOut = True,
-                    )
-                except:
-                    print "Failed to set %s to %s:" % (keyVar, keyword.values)
-                    traceback.print_exc(file=sys.stderr)
+        self.logReply(reply)
+        self.setKeyVarsFromReply(reply, doCallbacks=doCallbacks)
                     
-    def dispatchReplyStr(self, replyStr, doCallbacks=True):
+    def dispatchReplyStr(self, replyStr):
         """Read, parse and dispatch a message from the hub.
+        
+        If parsing fails then log an error message.
+        If dispatching fails then log an error message and print a traceback to stderr.
         """
 #        print "%s.dispatchReplyStr(%r)" % (self.__class__.__name__, replyStr)
-        reply = self.parser.parse(replyStr)
-        self.dispatchReply(reply, doCallbacks=doCallbacks)
+        # parse message; if that fails, log it as an error
+        try:
+            reply = self.parser.parse(replyStr)
+        except Exception, e:
+            self.logMsg(
+                msgStr = "CouldNotParse; Reply=%r; Text=%r" % (replyStr, RO.StringUtil.strFromException(e)),
+                severity = RO.Constants.sevError,
+            )
+            return
+        
+        # dispatch message
+        try:
+            self.dispatchReply(reply)
+        except Exception, e:
+            sys.stderr.write("Could not dispatch replyStr=%r\n    which was parsed as reply=%r\n" % \
+                (replyStr, reply))
+            traceback.print_exc(file=sys.stderr)
 
     def getKeyVarList(self, actor, keyName):
         """Return the list of KeyVars by this name and actor; return [] if no match.
@@ -143,7 +146,8 @@ class KeyVarDispatcher(object):
         fallbackToStdOut = False,
     ):
         """Writes a message to the log.
-        On error, prints message to stderr and returns normally.
+        On error, prints an error message that includes the original message data
+        plus a traceback to stderr and returns normally.
         
         Inputs:
         - msgStr: message to display; a final \n is appended
@@ -224,6 +228,41 @@ class KeyVarDispatcher(object):
             return keyVar
         else:
             return None
+
+    def setKeyVarsFromReply(self, reply, doCallbacks=True):
+        """Set KeyVars based on the supplied Reply
+        
+        reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
+         - header.program: name of the program that triggered the message (string)
+         - header.commandId: command ID that triggered the message (int) 
+         - header.actor: the actor that generated the message (string)
+         - header.code: the message type code (opscore.protocols.types.Enum)
+         - string: the original unparsed message (string)
+         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
+        Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
+        """
+#         print "dispatchReply(reply=%s, doCallbacks=%s)" % (reply, doCallbacks)
+        actor = reply.header.actor.lower()
+        if actor.startswith("keys_"):
+            # data is from the hub's keyword cache
+            actor = actor[5:]
+            isGenuine = False
+        else:
+            isGenuine = True
+        for keyword in reply.keywords:
+            keyVarList = self.getKeyVarList(actor, keyword.name)
+            for keyVar in keyVarList:
+                try:
+                    keyVar.set(keyword.values, isGenuine=isGenuine, reply=reply, doCallbacks=doCallbacks)
+                except TypeError:
+                    self.logMsg(
+                        "InvalidKeywordData=%s.%s, %s" % (actor, keyword.name, keyword.values),
+                        severity = RO.Constants.sevError,
+                        fallbackToStdOut = True,
+                    )
+                except:
+                    print "Failed to set %s to %s:" % (keyVar, keyword.values)
+                    traceback.print_exc(file=sys.stderr)
 
     def setLogFunc(self, logFunc=None):
         """Set the log output device, or clears it if None specified.
