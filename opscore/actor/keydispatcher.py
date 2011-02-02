@@ -12,7 +12,7 @@ History:
                     Added logToStdOut function.
                     Modified dispatchReply to log an error (instead of printing a traceback)
                     when the values for a keyword are invalid.
-2011-01-02 ROwen    API change: added keywords to logging function argument list.
+2011-02-02 ROwen    API change: added keywords to logging function argument list.
                     Enhanced dispatchReplyStr's error handling and reporting to match CmdKeyDispatcher.
                     Changed dispatchReply to log its replies, instead of CmdKeyDispatcher.
                     Added setKeyVarsFromReply which is called by dispatchReply.

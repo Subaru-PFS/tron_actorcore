@@ -101,7 +101,7 @@ History:
 2010-11-18 ROwen    Moved setLogFunc, logMsg, logReply methods to KeyDispatcher.
                     Moved name field to KeyDispatcher.
                     Moved logToStdOut function to KeyDispatcher.
-2011-01-02 ROwen    Moved logReplyStr to KeyDispatcher.
+2011-02-02 ROwen    Moved logReplyStr to KeyDispatcher.
                     Modified to let KeyDispatcher log replies.
 """
 import sys
