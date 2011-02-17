@@ -86,24 +86,26 @@ def apoCards(models, cmd=None):
 
     cards = []
     weatherDict = models['apo'].keyVarDict
-	keys = (('pressure', None, float),
-			('windd', None, float),
-			('winds', None, float),
-			('gustd', None, float),
-			('gusts', None, float),
-			('airTempPT', 'airtemp', float),
-			('dpTempPT', 'dewpoint', float),
-			('dpErrPT', None, str),
-			('humidity', None, float),
-			('dusta', None, float),
-			('dustb', None, float),
-			('windd25m', None, float),
-			('winds25m', None, float))
+    keys = (('pressure', None, float),
+            ('windd', None, float),
+            ('winds', None, float),
+            ('gustd', None, float),
+            ('gusts', None, float),
+            ('airTempPT', 'airtemp', float),
+            ('dpTempPT', 'dewpoint', float),
+            ('dpErrPT', None, str),
+            ('humidity', None, float),
+            ('dusta', None, float),
+            ('dustb', None, float),
+            ('windd25m', None, float),
+            ('winds25m', None, float))
 
-	for keyName, cardName, cnv in keys:
-        cardName = key.upper()
-        card = makeCardFromKey(cmd, weatherDict, key, cardName,
-                               comment='%s' % (key),
+    for keyName, cardName, cnv in keys:
+        if not cardName:
+            cardName = keyName
+        cardName = cardName.upper()
+        card = makeCardFromKey(cmd, weatherDict, keyName, cardName,
+                               comment='%s' % (keyName),
                                cnv=cnv,
                                onFail='NaN')
         cards.append(card)
