@@ -76,6 +76,8 @@ History:
 2010-06-28 ROwen    Made _WaitBase a modern class (thanks to pychecker).
                     Removed unused and broken internal method _waitEndFunc (thanks to pychecker).
 2010-11-19 ROwen    Bug fix: FailCodes -> FailedCodes.
+2011-05-04 ROwen    Bug fix: startCmd debug mode was broken; it called nonexistent dispatcher.makeMsgDict
+                    instead of dispatcher.makeReply and cmdVar.reply instead of cmdVar.handleReply.
 """
 import sys
 import threading
@@ -492,14 +494,13 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
 
             # set up command completion callback
             def endCmd(self=self, cmdVar=cmdVar):
-                endMsgDict = self.dispatcher.makeMsgDict(
+                endReply = self.dispatcher.makeReply(
                     cmdr = None,
+                    cmdID = cmdVar.cmdID,
                     actor = cmdVar.actor,
-                    type = ":",
-                    
+                    msgCode = ":",
                 )
-                cmdVar.reply(endMsgDict)
-                msgStr = "%s finished" % cmdVar.cmdStr
+                cmdVar.handleReply(endReply)
                 self._showCmdMsg("%s finished" % cmdVar.cmdStr)
             Timer(1.0, endCmd)
 

@@ -103,6 +103,7 @@ History:
                     Moved logToStdOut function to KeyDispatcher.
 2011-02-02 ROwen    Moved logReplyStr to KeyDispatcher.
                     Modified to let KeyDispatcher log replies.
+2011-05-04 ROwen    Made makeReply a bit more robust by detecting cmdID == None and changing it to 0. 
 """
 import sys
 import time
@@ -391,6 +392,8 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                     cmdr = self.connection.cmdr or "me.me"
             if actor == None:
                 actor = self.name
+            if cmdID == None:
+                cmdID = 0
     
             headerStr = "%s %d %s %s" % (cmdr, cmdID, actor, msgCode)
             msgStr = " ".join((headerStr, dataStr))
