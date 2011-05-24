@@ -144,7 +144,7 @@ class TypedValues(Consumer):
                 values.append(protoTypes.InvalidValue)
             self.index += 1
             return True
-        except (IndexError,ValueError,TypeError):
+        except (IndexError,ValueError,TypeError,OverflowError):
             return False
     
     def describeAsHTML(self):
