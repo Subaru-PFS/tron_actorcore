@@ -16,6 +16,7 @@ History:
                     Enhanced dispatchReplyStr's error handling and reporting to match CmdKeyDispatcher.
                     Changed dispatchReply to log its replies, instead of CmdKeyDispatcher.
                     Added setKeyVarsFromReply which is called by dispatchReply.
+2011-06-13 ROwen    API change: added cmdID to the logging function argument list.
 """
 import sys
 import traceback
@@ -29,7 +30,7 @@ import RO.StringUtil
 __all__ = ["logToStdOut", "KeyVarDispatcher"]
 
 
-def logToStdOut(msgStr, severity, actor, cmdr, keywords):
+def logToStdOut(msgStr, *dumArgs, **dumKeyArgs):
     print msgStr
 
 
@@ -144,6 +145,7 @@ class KeyVarDispatcher(object):
         severity = RO.Constants.sevNormal,
         actor = None,
         cmdr = None,
+        cmdID = 0,
         keywords = None,
         fallbackToStdOut = False,
     ):
@@ -156,6 +158,7 @@ class KeyVarDispatcher(object):
         - severity: message severity (an RO.Constants.sevX constant)
         - actor: name of actor
         - cmdr: commander; defaults to self
+        - cmdID: command ID; defaults to 0
         - keywords: parsed keywords (an opscore.protocols.messages.Keywords);
             warning: this is not KeyVars from the model; it is lower-level data
         - fallbackToStdOut: if True and there is no logFunc then prints the message to stdout.
@@ -172,6 +175,7 @@ class KeyVarDispatcher(object):
                     severity = severity,
                     actor = actor,
                     cmdr = cmdr,
+                    cmdID = cmdID,
                     keywords = keywords,
                 )
             return
@@ -182,6 +186,7 @@ class KeyVarDispatcher(object):
                 severity = severity,
                 actor = actor,
                 cmdr = cmdr,
+                cmdID = cmdID,
                 keywords = keywords,
             )
         except Exception, e:
@@ -195,7 +200,7 @@ class KeyVarDispatcher(object):
         Inputs:
         - reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
           - header.program: name of the program that triggered the message (string)
-          - header.commandId: command ID that triggered the message (int) 
+          - header.commandId: command ID that triggered the message (int)
           - header.actor: the actor that generated the message (string)
           - header.code: the message type code (opscore.protocols.types.Enum)
           - string: the original unparsed message (string)
@@ -212,6 +217,7 @@ class KeyVarDispatcher(object):
                 keywords = reply.keywords,
                 actor = reply.header.actor,
                 cmdr = reply.header.cmdrName,
+                cmdID = reply.header.commandId,
                 fallbackToStdOut = fallbackToStdOut,
             )
         except Exception, e:

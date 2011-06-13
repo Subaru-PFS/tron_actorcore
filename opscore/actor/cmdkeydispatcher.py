@@ -104,6 +104,8 @@ History:
 2011-02-02 ROwen    Moved logReplyStr to KeyDispatcher.
                     Modified to let KeyDispatcher log replies.
 2011-05-04 ROwen    Made makeReply a bit more robust by detecting cmdID == None and changing it to 0. 
+2011-06-13 ROwen    Added static method getMaxUserCmdID.
+                    Changed to log cmdID when issuing a command.
 """
 import sys
 import time
@@ -360,6 +362,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             self.logMsg (
                 msgStr = fullCmdStr,
                 actor = cmdVar.actor,
+                cmdID = cmdVar.cmdID,
             )
             # print >> sys.stderr, "executing:", fullCmdStr
         except Exception, e:
@@ -369,6 +372,15 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                     cmdVar.actor, cmdVar.cmdStr, RO.StringUtil.strFromException(e)),
             )
             self._replyToCmdVar(cmdVar, errReply)
+    
+    @staticmethod
+    def getMaxUserCmdID():
+        """Return the maximum user command ID number.
+        
+        User command ID numbers range from 1 through getMaxUserCmdID()
+        Refresh command ID numbers range from getMaxUserCmdID() + 1 through 2 * getMaxUserCmdID()
+        """
+        return _CmdNumWrap
         
     def makeReply(self,
         cmdr = None,
