@@ -1,5 +1,8 @@
 setupRequired("opscore")
 setupOptional("RO")
 
+# Just for stageManager bits
+setupOptional("tron")
+
 pathPrepend(PATH, ${PRODUCT_DIR}/bin)
 pathPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
