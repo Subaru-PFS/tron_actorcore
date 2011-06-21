@@ -136,8 +136,8 @@ class Cmdr(object):
         # Start a dispatcher, connected to our logger. Wire the dispatcher
         # in to the Model "singleton"
         logger = logging.getLogger('dispatch')
-        def logFunc(msgStr, severity, actor, cmdr, keywords, logger=logger):
-            logger.info("%s %s %s %s" % (cmdr, actor, severity, msgStr))
+        def logFunc(msgStr, severity, actor, cmdr, keywords, cmdID=0, logger=logger):
+            logger.info("%s %s.%s %s %s" % (cmdr, actor, cmdID, severity, msgStr))
 
         self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, self.connector, 
                                                             logFunc, includeName=True)
