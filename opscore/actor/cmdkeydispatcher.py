@@ -106,6 +106,7 @@ History:
 2011-05-04 ROwen    Made makeReply a bit more robust by detecting cmdID == None and changing it to 0. 
 2011-06-13 ROwen    Added static method getMaxUserCmdID.
                     Changed to log cmdID when issuing a command.
+2011-07-28 ROwen    Modified to not log commands as they are sent; use cmds actor data instead.
 """
 import sys
 import time
@@ -359,11 +360,11 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 cmdrStr = ""
             fullCmdStr = "%s%d %s %s" % (cmdrStr, cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
             self.connection.writeLine(fullCmdStr)
-            self.logMsg (
-                msgStr = fullCmdStr,
-                actor = cmdVar.actor,
-                cmdID = cmdVar.cmdID,
-            )
+#             self.logMsg (
+#                 msgStr = fullCmdStr,
+#                 actor = cmdVar.actor,
+#                 cmdID = cmdVar.cmdID,
+#             )
             # print >> sys.stderr, "executing:", fullCmdStr
         except Exception, e:
             errReply = self.makeReply(
