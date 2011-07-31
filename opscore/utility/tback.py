@@ -35,5 +35,5 @@ def tback(system, e, info=None, logger=None):
 
         ex_list = traceback.format_exception(exc_type, exc_value, exc_traceback)
         logger.warn("\n======== %s exception: %s\n" % (system, ''.join(ex_list)))
-        logger.warn("\n======== %s exception details: %s\n" % (system, ''.join(tr_list)))
+        logger.warn(''.join(tr_list))
         

@@ -11,14 +11,9 @@ before any other 'import logging's, as it defines the default logging formatter.
   import sdss3logging
   import logging
 
-  sdss3logging.makeOpsFileLogger('/tmp', 'name1')
-  mylogger = logging.getLogger('name')
-  myLogger.setLevel(logging.DEBUG)
-
-  consoleLogger = logging.getLogger()
-  consoleLogger.setLevel(logging.CRITICAL)
+  opsLogging.setRootLogger('/tmp/cpl/log1')
   
-After which any other module can get that logger with:
+After which any other module can :
 
   import logging
   mylogger = logging.getLogger('name')
@@ -35,8 +30,13 @@ Todo:
 import logging
 import os
 import os.path
+import sys
 import time
 import types
+
+# Configure the default formatter and logger.
+logging.basicConfig(datefmt = "%Y-%m-%d %H:%M:%S",
+                    format = "%(asctime)s.%(msecs)03dZ %(name)-16s %(levelno)s %(filename)s:%(lineno)d %(message)s")
 
 class OpsLogFormatter(logging.Formatter):
     def __init__(self):
@@ -53,7 +53,7 @@ class OpsLogFormatter(logging.Formatter):
         self.converter = time.gmtime
         
 class OpsRotatingFileHandler(logging.StreamHandler):
-    APOrolloverHour = 10.0              # Check this....
+    APOrolloverHour = 24 * 0.3
     
     def __init__(self, dirname='.', basename='', rolloverTime=None):
         """ create a logging.FileHandler which:
@@ -70,7 +70,7 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         logging.StreamHandler.__init__(self)
         self.stream = None              # StreamHandler opens stderr, which we do not want to close.
         
-        self.dirname = os.path.expanduser(dirname)
+        self.dirname = os.path.expandvars(os.path.expanduser(dirname))
         self.basename = basename
         self.formatter = OpsLogFormatter()
         
@@ -100,14 +100,12 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         # Get local midnight for the day.
         t = list(time.localtime(now))
         t[3] = t[4] = t[5] = 0
-        
         self.rolloverAt = time.mktime(t) + self.rolloverTime
         
         # Add a day if we are past today's rolloverTime.
         if now >= self.rolloverAt:
-            t[2] += 1
-            self.rolloverAt = time.mktime(t) + self.rolloverTime
-
+            self.rolloverAt += 24*3600
+        
         assert(now < self.rolloverAt)
 
     def emit(self, record):
@@ -202,7 +200,7 @@ def makeOpsFileHandler(dirname, basename='', propagate=True):
 
     return handler
 
-def makeOpsFileLogger(dirname, name, basename='', propagate=False):
+def makeOpsFileLogger(dirname, name, basename='', propagate=True):
     """ create a rotating file logger with APO-style filenames and timestamps..
 
     Args:
@@ -220,12 +218,33 @@ def makeOpsFileLogger(dirname, name, basename='', propagate=False):
 
     return tlog
 
-# Configure the default formatter and logger.
-logging.basicConfig(datefmt = "%Y-%m-%d %H:%M:%S",
-                    format = "%(asctime)s.%(msecs)03dZ %(name)-16s %(levelno)s %(filename)s:%(lineno)d %(message)s")
+def setupRootLogger(basedir, level=logging.INFO, filter=None, consoleFilter=None):
+    rootLogger = logging.getLogger()
+    rootHandler = makeOpsFileHandler(basedir)
+    if filter:
+        rootHandler.addFilter(filter)
+    rootHandler.setLevel(level)
+    rootLogger.setLevel(logging.DEBUG)
+    rootLogger.addHandler(rootHandler)
 
+    # Shut stdout output down if we are not a terminal.
+    for h in rootLogger.handlers:
+        if isinstance(h, logging.StreamHandler) and h.stream == sys.stderr:
+            if h.stream.isatty():
+                if consoleFilter:
+                    h.addFilter(consoleFilter)
+                h.setLevel(level)
+            else:
+                # Basically disable stderr output
+                h.setLevel(logging.CRITICAL + 1)
+                rootLogger.info('disabled all but critical stderr output')
+                rootLogger.setLevel(level)
+        
+    return rootLogger
+    
 def main():
     consoleLogger = logging.getLogger()
+
     consoleLogger.setLevel(logging.INFO)
     
     myLogger = makeOpsFileLogger('/tmp', 'tlog')
