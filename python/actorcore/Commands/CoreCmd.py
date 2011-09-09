@@ -32,16 +32,19 @@ class CoreCmd(object):
                                         keys.Key("cmds", types.String()*(1,None),
                                                  help="A list of command modules."),
                                         keys.Key("html", help="Generate HTML"),
+                                        keys.Key("full", help="Generta full help for all commands"),
                                         keys.Key("pageWidth", types.Int(),
                                                  help="Number of characters per line"),
                                         )
 
         self.vocab = (
-            ('help', '[<cmd>] [<pageWidth>] [(html)]', self.cmdHelp),
+            ('help', '[(full)] [<cmd>] [<pageWidth>] [(html)]', self.cmdHelp),
             ('reload', '[<cmds>]', self.reloadCommands),
             ('reloadConfiguration', '', self.reloadConfiguration),
             ('version', '', self.version),
             ('exitexit', '', self.exitCmd),
+            ('ipdb', '', self.ipdbCmd),
+            ('ipython', '', self.ipythonCmd),
         )
 
     def cmdHelp(self, cmd):
@@ -49,11 +52,16 @@ class CoreCmd(object):
 
         if "cmd" in cmd.cmd.keywords:
             cmds = [cmd.cmd.keywords['cmd'].values[0]]
+            fullHelp = True
         else:
             cmds = []
             for a, cSet in self.actor.commandSets.items():
                 if a != "CoreCmd":
                     cmds += [c[0] for c in cSet.vocab]
+            fullHelp = False
+            
+        if "full" in cmd.cmd.keywords:
+            fullHelp = True
 
         pageWidth = int(cmd.cmd.keywords['pageWidth'].values[0]) if "pageWidth" in cmd.cmd.keywords else 80
         html = "html" in cmd.cmd.keywords
@@ -63,7 +71,8 @@ class CoreCmd(object):
             helpStr = ""
             for csetName, cSet in self.actor.commandSets.items():
                 if cmdName in [c[0] for c in cSet.vocab]:
-                    helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html)
+                    helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html,
+                                        fullHelp=fullHelp)
                     break
 
             if not helpStr:
@@ -72,11 +81,11 @@ class CoreCmd(object):
 
             if first:
                 first = False
-            else:
+            elif fullHelp:
                 cmd.inform('help=%s' % qstr("--------------------------------------------------"))
 
             for line in helpStr.split('\n'):
-                cmd.inform('help=%s' % qstr(re.sub('"', "", line)))
+                cmd.inform('help=%s' % qstr(line))
 
         cmd.finish("")
                                           
@@ -127,3 +136,44 @@ class CoreCmd(object):
 
         reactor.stop()
         sys.exit(0)
+
+    def ipdbCmd(self, cmd):
+        """ Try to start some debugger. """
+
+        try:
+            import IPython.core.debugger as iPdb
+            debug_here = iPdb.Tracer()
+            cmd.warn('text="starting ipdb on console..."')
+            debugFunction = debug_here
+        except Exception, e:
+            import pdb
+            cmd.warn('text="starting pdb on console..."')
+            debugFunction = pdb.set_trace
+            
+        try:
+            debugFunction()
+        except Exception, e:
+            cmd.fail('text="debugger blammo: %s"' % (e))
+            return
+        
+        cmd.warn('text="back to regular operations"')
+        cmd.finish()
+
+    def ipythonCmd(self, cmd):
+        """ Try to start a subshell. """
+        
+        try:
+            from IPython import embed
+        except Exception, e:
+            cmd.fail('text="failed to start ipython: %s"' % (e))
+            return
+
+        cmd.warn('text="starting ipython on console..."')
+        try:
+            embed() # this call anywhere in your program will start IPython
+        except Exception, e:
+            cmd.fail('text="ipython blammo: %s"' % (e))
+            return
+        
+        cmd.warn('text="back to normal interpreter"')
+        cmd.finish()

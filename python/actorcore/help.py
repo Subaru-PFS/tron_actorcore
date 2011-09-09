@@ -1,7 +1,7 @@
 import re
 import opscore.protocols.types as types
 
-def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False):
+def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=True):
     """Return a help string for command cmdName, formatted for a line length of pageWidth"""
 
     cmd = [p for p in vocab if p[0] == cmdName]
@@ -22,8 +22,10 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False):
     helpStr = ""
     if html:
         helpStr += "<DT>%s %s" % (actorName, cmdName)
-    else:
+    elif fullHelp:
         helpStr += "Usage: %s %s" % (actorName, cmdName)
+    else:
+        helpStr += "%s %s" % (actorName, cmdName)
         
     for a in args:
         if not html and len(helpStr.split("\n")[-1]) + len(str(a)) + 1 > pageWidth:
@@ -32,10 +34,14 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False):
         helpStr += " %s" % (str(a))
     if html:
         helpStr += "</DT>\n<DD>"
-    helpStr += "\n"
 
-    helpStr += "\n%s" % (formatString(docstring.split("\n")[0], pageWidth))
-
+    if fullHelp:
+        helpStr += "\n"
+        helpStr += "\n%s" % (formatString(docstring.split("\n")[0], pageWidth))
+    else:
+        helpStr += "\n    %s" % (docstring.split("\n")[0])
+        return helpStr
+    
     if args:
         if html:
             helpStr += "\n<TABLE>"

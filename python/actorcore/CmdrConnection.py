@@ -1,4 +1,3 @@
-import opscore.utility.sdss3logging
 import logging
 import threading
 import Queue
@@ -39,7 +38,7 @@ class CmdrConnection(LineReceiver):
         """
         
         with self.lock:
-            self.logger.info("sending command %s" % (cmdStr))
+            self.logger.debug("transporting command %s" % (cmdStr))
             self.transport.write(cmdStr)
 
     def lineReceived(self, replyStr):
@@ -75,7 +74,7 @@ class CmdrConnector(ReconnectingClientFactory):
     def buildProtocol(self, addr):
         """ A new connection has been established. Create a new Protocol. """
 
-        self.logger.info('launching new CmdrConnection')
+        self.logger.warn('launching new CmdrConnection')
 
         assert (self.activeConnection == None), "connection already active!"
         assert (self.readCallback != None), "readCallback has not yet been set!"
@@ -118,7 +117,7 @@ class CmdrConnector(ReconnectingClientFactory):
     def writeLine(self, cmdStr):
         """ Called by the dispatcher to send a command. """
 
-        self.logger.warn('writing %s' % (cmdStr))
+        self.logger.info('writing %s' % (cmdStr))
         if not self.activeConnection:
             raise RuntimeError("not connected.")
         self.activeConnection.write(cmdStr + '\n')
@@ -136,6 +135,8 @@ class Cmdr(object):
         # Start a dispatcher, connected to our logger. Wire the dispatcher
         # in to the Model "singleton"
         logger = logging.getLogger('dispatch')
+        logger.setLevel(logging.WARN)
+        
         def logFunc(msgStr, severity, actor, cmdr, keywords, cmdID=0, logger=logger):
             logger.info("%s %s.%s %s %s" % (cmdr, actor, cmdID, severity, msgStr))
 
@@ -167,7 +168,7 @@ class Cmdr(object):
         
     def cmdq(self, **argv):
         """ Send a command and return a Queue on which the command output will be put. """
-        self.logger.info("sending command %s" % (argv))
+        self.logger.info("queueing command %s" % (argv))
 
         q = Queue.Queue()
         argv['callFunc'] = q.put

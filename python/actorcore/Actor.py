@@ -111,31 +111,26 @@ class Actor(object):
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.configFile)
         
-        self.logDir = self.config.get(self.name, 'logdir')
+        self.logDir = self.config.get('logging', 'logdir')
         assert self.logDir, "logdir must be set!"
 
-        # All loggers can and should be picked up by other modules with "logging.getLogger(name)"
-        # Make the root logger go to a rotating file.
-        opsLogging.makeOpsFileLogger(self.logDir, 'logs')
-        self.logger = logging.getLogger('logs')
-        self.logger.setLevel(int(self.config.get('logging','baseLevel')))
-        #self.logger.propagate = False
-        self.logger.info('%s starting up....' % (name))
-
-        opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "cmds"), 'cmds')
-        self.cmdlog = logging.getLogger('cmds')
-        self.cmdlog.setLevel(int(self.config.get('logging','cmdLevel')))
-        #self.cmdlog.propagate = False
-
-        tlog = logging.getLogger('dispatch')
-        tlog.setLevel(25)
-
+        # Make the root logger go to a rotating file. All others derive from this.
+        opsLogging.setupRootLogger(self.logDir)
+        
         self.console = logging.getLogger('') 
         try:
             self.console.setLevel(int(self.config.get('logging','consoleLevel')))
         except:
             self.console.setLevel(int(self.config.get('logging','baseLevel')))
  
+        self.logger = logging.getLogger('actor')
+        self.logger.setLevel(int(self.config.get('logging','baseLevel')))
+
+        self.logger.info('%s starting up....' % (name))
+
+        self.cmdLog = logging.getLogger('cmds')
+        self.cmdLog.setLevel(int(self.config.get('logging','cmdLevel')))
+
         self.parser = CommandParser()
 
         # The list of all connected sources. 
@@ -316,7 +311,8 @@ class Actor(object):
     def runActorCmd(self, cmd):
         try:
             cmdStr = cmd.rawCmd
-
+            self.cmdLog.info('raw cmd: %s' % (cmdStr))
+            
             try:
                 validatedCmd, cmdFuncs = self.handler.match(cmdStr)
             except Exception, e:
@@ -329,9 +325,7 @@ class Actor(object):
                 cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
                 return
                 
-            self.cmdlog.info('< %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
-            self.activeCmd = cmd
-
+            self.cmdLog.info('< %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
             if len(cmdFuncs) > 1:
                 cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
                                            (cmdFuncs, validatedCmd))))
@@ -373,8 +367,6 @@ class Actor(object):
     
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
-
-        self.activeCmd = None
 
         self.logger.info('new cmd: %s' % (cmd))
         
