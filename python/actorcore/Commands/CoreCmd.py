@@ -56,9 +56,9 @@ class CoreCmd(object):
         else:
             cmds = []
             for a, cSet in self.actor.commandSets.items():
-                if a != "CoreCmd":
-                    cmds += [c[0] for c in cSet.vocab]
+                cmds += [c[0] for c in cSet.vocab]
             fullHelp = False
+            cmds.sort()
             
         if "full" in cmd.cmd.keywords:
             fullHelp = True
@@ -68,14 +68,18 @@ class CoreCmd(object):
 
         first = True
         for cmdName in cmds:
-            helpStr = ""
+            helpList = []
             for csetName, cSet in self.actor.commandSets.items():
                 if cmdName in [c[0] for c in cSet.vocab]:
-                    helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html,
-                                        fullHelp=fullHelp)
-                    break
+                    try:
+                        helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html,
+                                            fullHelp=fullHelp)
+                    except Exception, e:
+                        helpStr = "something went wrong when building help for %s: %s" % (cmdName, e)
+                        cmd.warn('text=%s' % (qstr(helpStr)))
+                    helpList.append(helpStr)
 
-            if not helpStr:
+            if not helpList:
                 cmd.warn('text="I\'m afraid that I can\'t help you with %s"' % cmdName)
                 continue
 
@@ -84,8 +88,9 @@ class CoreCmd(object):
             elif fullHelp:
                 cmd.inform('help=%s' % qstr("--------------------------------------------------"))
 
-            for line in helpStr.split('\n'):
-                cmd.inform('help=%s' % qstr(line))
+            for helpChunk in helpList:
+                for line in helpChunk.split('\n'):
+                    cmd.inform('help=%s' % qstr(line))
 
         cmd.finish("")
                                           
