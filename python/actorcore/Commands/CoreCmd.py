@@ -38,7 +38,7 @@ class CoreCmd(object):
                                         )
 
         self.vocab = (
-            ('help', '[(full)] [<cmd>] [<pageWidth>] [(html)]', self.cmdHelp),
+            ('help', '[(full)] [<cmds>] [<pageWidth>] [(html)]', self.cmdHelp),
             ('reload', '[<cmds>]', self.reloadCommands),
             ('reloadConfiguration', '', self.reloadConfiguration),
             ('version', '', self.version),
@@ -48,10 +48,13 @@ class CoreCmd(object):
         )
 
     def cmdHelp(self, cmd):
-        """Return a help string for command name, formatted for a line length of pageWidth"""
+        """ Return a summary of all commands, or the complete help string for the specified commands.
 
-        if "cmd" in cmd.cmd.keywords:
-            cmds = [cmd.cmd.keywords['cmd'].values[0]]
+        Also allows generating an html file.
+        """
+
+        if "cmds" in cmd.cmd.keywords:
+            cmds = cmd.cmd.keywords['cmds'].values
             fullHelp = True
         else:
             cmds = []
@@ -121,7 +124,12 @@ class CoreCmd(object):
         self.version(cmd)
     
     def reloadConfiguration(self, cmd):
-        """ Reload the configuration. """
+        """ Reload the configuration.
+
+        Note that only some configuration variables will take effect, depending on how
+        they are used. Read the Source, etc.
+        """
+        
         cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
         logging.warn("reading config file %s", self.actor.configFile)
 
