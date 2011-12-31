@@ -47,7 +47,7 @@ class OpsLogFormatter(logging.Formatter):
         """
         
         dateFmt = "%Y-%m-%d %H:%M:%S"
-        fmt = "%(asctime)s.%(msecs)03dZ %(name)s %(levelno)s %(filename)s:%(lineno)d %(message)s"
+        fmt = "%(asctime)s.%(msecs)03dZ %(name)-16s %(levelno)s %(filename)s:%(lineno)d %(message)s"
         
         logging.Formatter.__init__(self, fmt, dateFmt)
         self.converter = time.gmtime
@@ -121,6 +121,9 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         if self.shouldRollover(record):
             self.doRollover(record=record)
 
+        #logging.StreamHandler.emit(self, record)
+        #return
+    
         try:
             msg = self.format(record)
             fs = "%s\n"
@@ -142,7 +145,15 @@ class OpsRotatingFileHandler(logging.StreamHandler):
     def shouldRollover(self, record):
         """ Determine if rollover should occur, based on the timestamp of the LogRecord. """
 
-        return record.created >= self.rolloverAt
+        dt = self.rolloverAt - record.created
+        if dt < 0:
+            return True
+
+        if dt > 24*3600:
+            sys.stderr.write('shouldRollover %s >= %s = %s\n' %
+                             (record.created, self.rolloverAt, record.created >= self.rolloverAt))
+
+        return False
 
     def doRollover(self, record=None):
         """ We keep log files forever, and want them named by the start date.
@@ -168,12 +179,19 @@ class OpsRotatingFileHandler(logging.StreamHandler):
             # Append? Raise?
             raise RuntimeError("logfile %s already exists. Would append to it." % (path))
 
-        if self.stream:
-            self.stream.flush()
-            self.stream.close()
-        self.stream = open(path, 'a+')
+        oldStream = self.stream
+        try:
+            self.stream = open(path, 'a+')
+        except Exception, e:
+            sys.stderr.write("Failed to rollover to new logfile %s: %s\n" % (path, e))
+            return
+            
         self.filename = path
-        
+
+        if oldStream:
+            oldStream.flush()
+            oldStream.close()
+
         # Fiddle the current.log link
         linkname = os.path.join(self.dirname, '%scurrent.log' % (self.basename))
         try:
@@ -218,27 +236,47 @@ def makeOpsFileLogger(dirname, name, basename='', propagate=True):
 
     return tlog
 
-def setupRootLogger(basedir, level=logging.INFO, filter=None, consoleFilter=None):
-    rootLogger = logging.getLogger()
+try:
+    rootHandler
+except:
+    rootHandler = None
+    consoleHandler = None
+
+def setConsoleLevel(level):
+    if not consoleHandler:
+        logging.critical('the root logger must be setup via sdss3logging.setupRootHandler() before the console level can be set.')
+        return
+        
+    consoleHandler.setLevel(level)
+        
+def setupRootLogger(basedir, level=logging.INFO):
+    """ (re-)configure the root logger to save all output to a APO-style rotating file Handler, plus a console Handler. """
+
+    global rootHandler
+    global consoleHandler
+
+    # Make sure we are able to delete/replace any existing handler
+    lastRootHandler = rootHandler
+
     rootHandler = makeOpsFileHandler(basedir)
-    if filter:
-        rootHandler.addFilter(filter)
-    rootHandler.setLevel(level)
-    rootLogger.setLevel(logging.DEBUG)
+    rootHandler.setLevel(logging.DEBUG)
+
+    rootLogger = logging.getLogger()
+    rootLogger.setLevel(level)
+    if lastRootHandler:
+        rootLogger.removeHandler(lastRootHandler)
     rootLogger.addHandler(rootHandler)
 
     # Shut stdout output down if we are not a terminal.
     for h in rootLogger.handlers:
         if isinstance(h, logging.StreamHandler) and h.stream == sys.stderr:
+            consoleHandler = h
             if h.stream.isatty():
-                if consoleFilter:
-                    h.addFilter(consoleFilter)
-                h.setLevel(level)
+                setConsoleLevel(level)
             else:
                 # Basically disable stderr output
-                h.setLevel(logging.CRITICAL + 1)
-                rootLogger.info('disabled all but critical stderr output')
-                rootLogger.setLevel(level)
+                rootLogger.warn('disabling all but critical stderr output')
+                setConsoleLevel(logging.CRITICAL + 1)
         
     return rootLogger
     
