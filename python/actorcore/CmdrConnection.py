@@ -117,7 +117,7 @@ class CmdrConnector(ReconnectingClientFactory):
     def writeLine(self, cmdStr):
         """ Called by the dispatcher to send a command. """
 
-        self.logger.info('writing %s' % (cmdStr))
+        self.logger.info('>> %s' % (cmdStr))
         if not self.activeConnection:
             raise RuntimeError("not connected.")
         self.activeConnection.write(cmdStr + '\n')
@@ -135,7 +135,11 @@ class Cmdr(object):
         # Start a dispatcher, connected to our logger. Wire the dispatcher
         # in to the Model "singleton"
         logger = logging.getLogger('dispatch')
-        logger.setLevel(logging.WARN)
+        try:
+            dispatchLevel = self.actor.config.get('logging', 'dispatchLevel') 
+        except:
+            dispatchLevel = logging.WARN
+        logger.setLevel(dispatchLevel)
         
         def logFunc(msgStr, severity, actor, cmdr, keywords, cmdID=0, logger=logger):
             logger.info("%s %s.%s %s %s" % (cmdr, actor, cmdID, severity, msgStr))
@@ -178,7 +182,7 @@ class Cmdr(object):
         return q
         
     def waitForKey(self, **argv):
-        logging.info("sending command %s" % (argv))
+        self.logger.info("sending command %s" % (argv))
 
         q = Queue.Queue()
         argv['callFunc'] = q.put
@@ -186,7 +190,7 @@ class Cmdr(object):
         reactor.callFromThread(self.dispatcher.executeCmd, keyvar)
         ret = q.get()
 
-        logging.info("command %s returned " % (cmdvar))
+        self.logger.info("waitForKey %s returned %s " % (argv, ret))
         return ret
         
 def liveTest():

@@ -141,6 +141,13 @@ class CoreCmd(object):
             return
         
         self.actor.config = newConfig
+        self.actor.configureLogs()
+        
+        try:
+            self.actor.reloadConfiguration(self, cmd)
+        except:
+            pass
+        
         cmd.finish('text="reloaded configuration file')
     
     def exitCmd(self, cmd):

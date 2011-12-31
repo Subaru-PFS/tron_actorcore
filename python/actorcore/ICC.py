@@ -65,7 +65,7 @@ class ICC(coreActor.Actor):
         """ (Re-)load and (re-)connect to the hardware controllers listed in config:tron.controllers. 
         """
 
-	clist = eval(self.config.get(self.name, 'controllers'))
+        clist = eval(self.config.get(self.name, 'controllers'))
         self.logger.info("All controllers = %s",clist)
         for c in clist:
             if c not in self.allControllers:

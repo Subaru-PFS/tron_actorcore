@@ -36,44 +36,44 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=Tru
             helpStr += "\n%s" % (formatString(docstring.split("\n")[0], pageWidth))
         else:
             helpStr += "\n    %s" % (docstring.split("\n")[0])
-            return helpStr
 
-        if args:
-            if html:
-                helpStr += "\n<TABLE>"
-            else:
-                helpStr += "\nArguments:"
+        if fullHelp or html:
+            if args: 
+                if html:
+                    helpStr += "\n<TABLE>"
+                else:
+                    helpStr += "\nArguments:"
 
-            for a in sorted(args, lambda a, b: cmp(a.name, b.name)):
-                extra = None
-                for k in a.key:
-                    extra = a.extraDescrip()
+                for a in sorted(args, lambda a, b: cmp(a.name, b.name)):
+                    extra = None
+                    for k in a.key:
+                        extra = a.extraDescrip()
 
-                    if html:
-                        lineFmt = "\n<TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>%s</TD><TD>%s</TD><TD>%s</TD></TR>"
-
-                        helpStr += lineFmt % (k.name, k.help, "")
-                    else:
-                        helpStr += "\n\t%-35s %s" % (k.name, k.help)
-
-                if extra:
-                    for e in extra:
                         if html:
-                            helpStr += lineFmt % ("", "", e)
+                            lineFmt = "\n<TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;</TD><TD>%s</TD><TD>%s</TD><TD>%s</TD></TR>"
+
+                            helpStr += lineFmt % (k.name, k.help, "")
                         else:
-                            helpStr += "\n\t%-35s            %s" % ("", e)
-            if html:
-                helpStr += "\n</TABLE>"
+                            helpStr += "\n\t%-35s %s" % (k.name, k.help)
 
-        moreHelp = "\n".join(docstring.split("\n")[1:])
-        if moreHelp:
-            helpStr += "\n\n"
+                    if extra:
+                        for e in extra:
+                            if html:
+                                helpStr += lineFmt % ("", "", e)
+                            else:
+                                helpStr += "\n\t%-35s            %s" % ("", e)
+                if html:
+                    helpStr += "\n</TABLE>"
 
-            formatted = []
-            for para in re.split("\n\s*\n", moreHelp):
-                formatted.append(formatString(para, pageWidth))
+            moreHelp = "\n".join(docstring.split("\n")[1:])
+            if moreHelp:
+                helpStr += "\n\n"
 
-            helpStr += ("\n\n" + ("<P>" if html else "")).join(formatted)
+                formatted = []
+                for para in re.split("\n\s*\n", moreHelp):
+                    formatted.append(formatString(para, pageWidth))
+
+                helpStr += ("\n\n" + ("<P>" if html else "")).join(formatted)
 
         allHelp.append(helpStr)
 

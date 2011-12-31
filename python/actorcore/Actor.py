@@ -110,27 +110,10 @@ class Actor(object):
         logging.warn("reading config file %s", self.configFile)
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.configFile)
-        
-        self.logDir = self.config.get('logging', 'logdir')
-        assert self.logDir, "logdir must be set!"
 
-        # Make the root logger go to a rotating file. All others derive from this.
-        opsLogging.setupRootLogger(self.logDir)
-        
-        self.console = logging.getLogger('') 
-        try:
-            self.console.setLevel(int(self.config.get('logging','consoleLevel')))
-        except:
-            self.console.setLevel(int(self.config.get('logging','baseLevel')))
- 
-        self.logger = logging.getLogger('actor')
-        self.logger.setLevel(int(self.config.get('logging','baseLevel')))
+        self.configureLogs()
 
         self.logger.info('%s starting up....' % (name))
-
-        self.cmdLog = logging.getLogger('cmds')
-        self.cmdLog.setLevel(int(self.config.get('logging','cmdLevel')))
-
         self.parser = CommandParser()
 
         # The list of all connected sources. 
@@ -169,7 +152,40 @@ class Actor(object):
             self.cmdr.connect()
         else:
             self.cmdr = None
-    
+
+    def configureLogs(self, cmd=None):
+        """ (re-)configure our logs. """
+        
+        self.logDir = self.config.get('logging', 'logdir')
+        assert self.logDir, "logdir must be set!"
+
+        # Make the root logger go to a rotating file. All others derive from this.
+        opsLogging.setupRootLogger(self.logDir)
+
+        # The real stderr/console filtering is actually done through the console Handler.
+        try:
+            consoleLevel = int(self.config.get('logging','consoleLevel'))
+        except:
+            consoleLevel = int(self.config.get('logging','baseLevel'))
+        opsLogging.setConsoleLevel(consoleLevel)
+        
+        # self.console needs to be renamed ore deleted, I think.
+        self.console = logging.getLogger('') 
+        self.console.setLevel(int(self.config.get('logging','baseLevel')))
+ 
+        self.logger = logging.getLogger('actor')
+        self.logger.setLevel(int(self.config.get('logging','baseLevel')))
+        self.logger.propagate = True
+        self.logger.info('(re-)configured root and actor logs')
+
+        self.cmdLog = logging.getLogger('cmds')
+        self.cmdLog.setLevel(int(self.config.get('logging','cmdLevel')))
+        self.cmdLog.propagate = True
+        self.cmdLog.info('(re-)configured cmds log')
+        
+        if cmd:
+            cmd.inform('text="reconfigured logs"')
+            
     def versionString(self, cmd):
         """ Return the version key value. 
 
@@ -292,7 +308,7 @@ class Actor(object):
 
         dirlist = os.listdir(path)
         dirlist.sort()
-        logging.warn("loading %s" % (dirlist))
+        self.logger.warn("loading %s" % (dirlist))
 
         for f in dirlist:
             if os.path.isdir(f) and not f.startswith('.'):
@@ -311,7 +327,7 @@ class Actor(object):
     def runActorCmd(self, cmd):
         try:
             cmdStr = cmd.rawCmd
-            self.cmdLog.info('raw cmd: %s' % (cmdStr))
+            self.cmdLog.debug('raw cmd: %s' % (cmdStr))
             
             try:
                 validatedCmd, cmdFuncs = self.handler.match(cmdStr)
@@ -325,7 +341,7 @@ class Actor(object):
                 cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
                 return
                 
-            self.cmdLog.info('< %s:%d: %s' % (cmd.cmdr, cmd.mid, validatedCmd))
+            self.cmdLog.info('< %s:%d %s' % (cmd.cmdr, cmd.mid, validatedCmd))
             if len(cmdFuncs) > 1:
                 cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
                                            (cmdFuncs, validatedCmd))))
@@ -368,7 +384,7 @@ class Actor(object):
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 
-        self.logger.info('new cmd: %s' % (cmd))
+        self.cmdLog.info('new cmd: %s' % (cmd))
         
         # Empty cmds are OK; send an empty response... 
         if len(cmd.rawCmd) == 0:
@@ -400,7 +416,7 @@ class Actor(object):
         except:
             self.runInReactorThread = False
             
-        logging.info("starting reactor (in own thread=%s)...." % (not self.runInReactorThread))
+        self.logger.info("starting reactor (in own thread=%s)...." % (not self.runInReactorThread))
         try:
             if not self.runInReactorThread:
                 threading.Thread(target=self.actor_loop).start()
@@ -410,5 +426,5 @@ class Actor(object):
             tback('run', e)
 
         if doReactor:
-            logging.info("reactor dead, cleaning up...")
+            self.logger.info("reactor dead, cleaning up...")
             self._shutdown()
