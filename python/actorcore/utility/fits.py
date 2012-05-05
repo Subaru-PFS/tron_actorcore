@@ -1,5 +1,6 @@
 from opscore.utility.qstr import qstr
 import pyfits
+import numpy
 
 def extendHeader(cmd, header, cards):
     """ Add all the cards to the header. """
@@ -131,11 +132,12 @@ def tccCards(models, cmd=None):
             cmd.warn('text="could not get objsys and epoch from tcc.objSys=%s"' % (objSys))
     cards.append(makeCard(cmd, 'OBJSYS', objSysName, "The TCC objSys"))
 
-    if objSysName not in ('ICRS', 'FK5', 'FK4'):
+    if objSysName in ('None', 'Mount', 'Obs', 'Phys', 'Inst'):
         cards.append(makeCard(cmd, 'RA', 'NaN', 'Telescope is not tracking the sky'))
         cards.append(makeCard(cmd, 'DEC', 'NaN', 'Telescope is not tracking the sky'))
         cards.append(makeCard(cmd, 'RADEG', 'NaN', 'Telescope is not tracking the sky'))
         cards.append(makeCard(cmd, 'DECDEG', 'NaN', 'Telescope is not tracking the sky'))
+        cards.append(makeCard(cmd, 'SPA', 'NaN', 'Telescope is not tracking the sky'))
     else:
         cards.append(makeCardFromKey(cmd, tccDict, 'objNetPos', 'RA',
                                      cnv=_cnvPVTPosCard, idx=0,
@@ -153,6 +155,11 @@ def tccCards(models, cmd=None):
                                      cnv=_cnvPVTPosCard, idx=1,
                                      comment='Dec of telescope pointing (deg)',
                                      onFail='NaN'))
+        cards.append(makeCardFromKey(cmd, tccDict, 'spiderInstAng', 'SPA',
+                                     cnv=_cnvPVTPosCard,
+                                     idx=0, comment='TCC SpiderInstAng',
+                                     onFail='NaN'))
+
 
     cards.append(makeCardFromKey(cmd, tccDict, 'rotType', 'ROTTYPE',
                                  cnv=str,
@@ -194,11 +201,6 @@ def tccCards(models, cmd=None):
     cards.append(makeCardFromKey(cmd, tccDict, 'axePos', 'IPA',
                                  cnv=float,
                                  idx=2, comment='Rotator axis pos. (approx, deg)',
-                                 onFail='NaN'))
-
-    cards.append(makeCardFromKey(cmd, tccDict, 'spiderInstAng', 'SPA',
-                                 cnv=_cnvPVTPosCard,
-                                 idx=0, comment='TCC SpiderInstAng',
                                  onFail='NaN'))
 
     cards.append(makeCardFromKey(cmd, tccDict, 'secFocus', 'FOCUS',
@@ -266,7 +268,13 @@ def _cnvListCard(val, itemCnv=int):
     return " ".join([str(itemCnv(v)) for v in val])
     
 def _cnvPVTPosCard(pvt, atTime=None):
-    return pvt.getPos()
+    try:
+        return pvt.getPos()
+    except:
+        return numpy.nan
+
 def _cnvPVTVelCard(pvt):
-    return pvt.getVel()
-    
+    try:
+        return pvt.getVel()
+    except:
+         return numpy.nan
