@@ -94,7 +94,7 @@ def apoCards(models, cmd=None):
             ('gusts', None, float),
             ('airTempPT', 'airtemp', float),
             ('dpTempPT', 'dewpoint', float),
-            ('dpErrPT', None, str),
+            #('dpErrPT', None, str),
             ('humidity', None, float),
             ('dusta', None, float),
             ('dustb', None, float),
