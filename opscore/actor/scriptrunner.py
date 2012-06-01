@@ -78,7 +78,9 @@ History:
 2010-11-19 ROwen    Bug fix: FailCodes -> FailedCodes.
 2011-05-04 ROwen    Bug fix: startCmd debug mode was broken; it called nonexistent dispatcher.makeMsgDict
                     instead of dispatcher.makeReply and cmdVar.reply instead of cmdVar.handleReply.
-2012-06-01 ROwen    Bug fix: _WaitCmdVars tried to remove callbacks from finished CmdVars.
+2012-06-01 ROwen    Use best effort to remove callbacks during cleanup, instead of raising an exception on failure.
+                    Modified _WaitCmdVars to not try to register callbacks on commands that are finished,
+                    and to not try to remove callbacks from CmdVars that are done.
 """
 import sys
 import threading
@@ -951,9 +953,10 @@ class _WaitCmdVars(_WaitBase):
             # need to wait; add self as callback to each cmdVar
             # and remove self.scriptRunner._cmdFailCallback if present
             for cmdVar in self.cmdVars:
-                cmdVar.removeCallback(self.scriptRunner._cmdFailCallback, doRaise=False)
-                cmdVar.addCallback(self.varCallback)
-            self.addedCallback = True
+                if not cmdVar.isDone:
+                    cmdVar.removeCallback(self.scriptRunner._cmdFailCallback, doRaise=False)
+                    cmdVar.addCallback(self.varCallback)
+                    self.addedCallback = True
 
     @property
     def state(self):
@@ -1075,7 +1078,7 @@ class _WaitKeyVar(_WaitBase):
         """
 #       print "_WaitKeyVar.cleanup"
         if self.addedCallback:
-            self.keyVar.removeCallback(self.varCallback)
+            self.keyVar.removeCallback(self.varCallback, doRaise=False)
         
     def getVal(self):
         """Return current value[ind] or the list of values if ind=None.
