@@ -78,6 +78,7 @@ History:
 2010-11-19 ROwen    Bug fix: FailCodes -> FailedCodes.
 2011-05-04 ROwen    Bug fix: startCmd debug mode was broken; it called nonexistent dispatcher.makeMsgDict
                     instead of dispatcher.makeReply and cmdVar.reply instead of cmdVar.handleReply.
+2012-06-01 ROwen    Bug fix: _WaitCmdVars tried to remove callbacks from finished CmdVars.
 """
 import sys
 import threading
@@ -994,10 +995,10 @@ class _WaitCmdVars(_WaitBase):
 #       print "_WaitCmdVars.cleanup"
         if self.addedCallback:
             for cmdVar in self.cmdVars:
-                didRemove = cmdVar.removeCallback(self.varCallback, doRaise=False)
-                if not didRemove:
-                    sys.stderr.write("_WaitCmdVar cleanup could not remove callback from %s\n" % \
-                        (cmdVar,))
+                if not cmdVar.isDone:
+                    didRemove = cmdVar.removeCallback(self.varCallback, doRaise=False)
+                    if not didRemove:
+                        sys.stderr.write("_WaitCmdVar cleanup could not remove callback from %s\n" % (cmdVar,))
 
     def fail(self, cmdVar):
         """A command var failed.
