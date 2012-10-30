@@ -17,6 +17,7 @@ class CmdrConnection(LineReceiver):
         """ The Commander twisted Protocol: sends command lines and passes on replies. 
         """
 
+        self.MAX_LENGTH = 64*1024
         self.delimiter = '\n'
         self.readCallback = readCallback
         self.brains = brains
@@ -136,7 +137,7 @@ class Cmdr(object):
         # in to the Model "singleton"
         logger = logging.getLogger('dispatch')
         try:
-            dispatchLevel = self.actor.config.get('logging', 'dispatchLevel') 
+            dispatchLevel = int(self.actor.config.get('logging', 'dispatchLevel'))
         except:
             dispatchLevel = logging.WARN
         logger.setLevel(dispatchLevel)
