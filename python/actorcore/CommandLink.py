@@ -6,9 +6,8 @@ import logging
 actorLogger = logging.getLogger('actor')
 cmdLogger = logging.getLogger('cmds')
 
-import os
+
 import re
-import sys
 import threading
 from twisted.internet import reactor
 
@@ -114,7 +113,11 @@ class CommandLink(LineReceiver):
         """ Ship a command off to the hub. """
 
         e = "%d %d %s %s\n" % (cmd.cid, cmd.mid, flag, response)
-        cmdLogger.info('> %s' % (e[:-1]))
+        if cmdLogger.level <= logging.INFO or len(e) <= 80:
+            cmdLogger.info('> %s' % (e[:-1]))
+        else:
+            cmdLogger.info('> %s...' % (e[:80]))
+
         with self.outputQueueLock:
             self.outputQueue.append(e)
         reactor.callFromThread(self.sendQueuedResponses)

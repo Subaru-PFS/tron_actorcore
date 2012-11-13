@@ -1,4 +1,3 @@
-setupRequired("opscore")
 setupOptional("RO")
 
 # Just for stageManager bits

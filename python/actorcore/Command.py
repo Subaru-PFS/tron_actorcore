@@ -138,7 +138,7 @@ class Command(object):
         if not self.alive:
             self.source.sendResponse(self, 'w', 
                                      'text="this command has already been finished!!!! (%s %s): %s"' % \
-                                         (self.cmdr, self.mid, self.rawCmd))
+                                     (self.cmdr, self.mid, self.rawCmd))
         self.source.sendResponse(self, flag, response)
         # self.actor.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
         
