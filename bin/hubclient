@@ -71,7 +71,8 @@ class TCPClient(Tkinter.Frame):
         
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-    
+        self.doCmd('hub setUsername %s' % (self.cmdrName))
+        
     def connState(self, sock):
         stateVal, stateStr, reason = sock.getFullState()
         if reason:
