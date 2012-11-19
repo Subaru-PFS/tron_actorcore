@@ -35,6 +35,7 @@ class CommandLink(LineReceiver):
         """
         # LineReceiver.__init__(self) # How can they live without?
         
+        self.MAX_LENGTH = 256*1024
         self.brains = brains
         self.connID = connID
         self.delimiter = eol

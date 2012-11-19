@@ -149,6 +149,7 @@ class Actor(object):
         if makeCmdrConnection:
             self.cmdr = CmdrConnection.Cmdr(name, self)
             self.cmdr.connectionMade = self._connectionMade
+            self.cmdr.connectionLost = self.connectionLost
             self.cmdr.connect()
         else:
             self.cmdr = None
@@ -234,6 +235,10 @@ class Actor(object):
         self.connectionMade()
 
     def connectionMade(self):
+        """ For overriding. """
+        pass
+
+    def connectionLost(self, reason):
         """ For overriding. """
         pass
 
@@ -327,7 +332,8 @@ class Actor(object):
     def runActorCmd(self, cmd):
         try:
             cmdStr = cmd.rawCmd
-            self.cmdLog.debug('raw cmd: %s' % (cmdStr))
+            if self.cmdLog.level <= logging.DEBUG:
+                self.cmdLog.debug('raw cmd: %s' % (cmdStr))
             
             try:
                 validatedCmd, cmdFuncs = self.handler.match(cmdStr)
@@ -341,7 +347,7 @@ class Actor(object):
                 cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
                 return
                 
-            self.cmdLog.info('< %s:%d %s' % (cmd.cmdr, cmd.mid, validatedCmd))
+            self.cmdLog.debug('< %s:%d %s' % (cmd.cmdr, cmd.mid, validatedCmd))
             if len(cmdFuncs) > 1:
                 cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
                                            (cmdFuncs, validatedCmd))))
@@ -384,7 +390,11 @@ class Actor(object):
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 
-        self.cmdLog.info('new cmd: %s' % (cmd))
+        if self.cmdLog.level <= logging.DEBUG:
+            self.cmdLog.debug('new cmd: %s' % (cmd))
+        else:
+            dcmd = cmd.rawCmd if len(cmd.rawCmd) < 80 else cmd.rawCmd[:80] + "..."
+            self.cmdLog.info('new cmd: %s' % (dcmd))
         
         # Empty cmds are OK; send an empty response... 
         if len(cmd.rawCmd) == 0:

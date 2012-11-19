@@ -29,6 +29,9 @@ class CmdrConnection(LineReceiver):
     def connectionMade(self):
         self.brains.connectionMade()
         
+    def connectionLost(self, reason):
+        self.brains.connectionLost(reason)
+        
     def write(self, cmdStr):
         """ Main entry point for sending a command.
 
@@ -118,7 +121,7 @@ class CmdrConnector(ReconnectingClientFactory):
     def writeLine(self, cmdStr):
         """ Called by the dispatcher to send a command. """
 
-        self.logger.info('>> %s' % (cmdStr))
+        self.logger.debug('>> %s' % (cmdStr))
         if not self.activeConnection:
             raise RuntimeError("not connected.")
         self.activeConnection.write(cmdStr + '\n')
@@ -152,6 +155,9 @@ class Cmdr(object):
     def connectionMade(self):
         pass
     
+    def connectionLost(self, reason):
+        pass
+    
     def connect(self):
         tronHost = self.actor.config.get('tron', 'tronHost')
         tronPort = int(self.actor.config.get('tron', 'tronCmdrPort'))
@@ -168,12 +174,18 @@ class Cmdr(object):
 
         q = self.cmdq(**argv)
         ret = q.get()
-        self.logger.info("command %s returned " % (ret))
+        trimmedResponse = str(ret)
+        if True or len(trimmedResponse) > 80 and self.logger.level > logging.DEBUG:
+            # trimmedResponse = trimmedResponse[:80] + "..."
+            trimmedResponse = "len(trimmedResponse) == %d, level=%s" % (len(trimmedResponse),
+                                                                        self.logger.level)
+        self.logger.info("command returned %s" % (trimmedResponse))
         return ret
         
     def cmdq(self, **argv):
         """ Send a command and return a Queue on which the command output will be put. """
-        self.logger.info("queueing command %s" % (argv))
+        trimmedCmd = argv['cmdStr'] if len(argv['cmdStr']) < 80 else argv['cmdStr'][:80]+"..."
+        self.logger.info("queueing command %s(%s)" % (argv['actor'], trimmedCmd))
 
         q = Queue.Queue()
         argv['callFunc'] = q.put
