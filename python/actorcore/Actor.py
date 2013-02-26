@@ -3,16 +3,16 @@ import re
 import inspect
 import traceback
 import sys
-import opscore.utility.sdss3logging as opsLogging
-import logging
 import os
 import Queue
-import time
+
 import ConfigParser
 import threading
-import inspect
 
-from threading import Semaphore,Timer
+# import our routines before logging itself. 
+import opscore.utility.sdss3logging as opsLogging
+import logging
+
 from twisted.internet import reactor
 
 import opscore
@@ -26,9 +26,6 @@ import opscore.protocols.validation as validation
 import CommandLinkManager as cmdLinkManager
 import Command as actorCmd
 import CmdrConnection
-import utility.svn as actorSvn
-
-import pdb
 
 class ModLoader():
     def load_module(self, fullpath, name):
@@ -80,7 +77,8 @@ class ModLoader():
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None, 
-                 makeCmdrConnection=True): 
+                 makeCmdrConnection=True, productPrefix="ICS_MHS_",
+                 modelNames=()): 
         """ Build an Actor.
 
         Args:
@@ -96,9 +94,9 @@ class Actor(object):
         # configuration file.
         self.name = name
         self.productName = productName if productName else self.name
-        product_dir_name = '$%s_DIR' % (self.productName.upper())
+        product_dir_name = '$%s%s_DIR' % (productPrefix.upper(), self.productName.upper())
         self.product_dir = os.path.expandvars(product_dir_name)
-        
+
         if not self.product_dir:
             raise RuntimeError('environment variable %s must be defined' % (product_dir_name))
 
@@ -112,10 +110,13 @@ class Actor(object):
         self.config.read(self.configFile)
 
         self.configureLogs()
-
         self.logger.info('%s starting up....' % (name))
         self.parser = CommandParser()
 
+        self.modelNames = modelNames
+        self.models = {}
+        self.updateHubModels()
+        
         # The list of all connected sources. 
         tronInterface = self.config.get('tron', 'interface') 
         tronPort = self.config.getint('tron', 'port') 
@@ -138,7 +139,7 @@ class Actor(object):
 
         self.logger.info("Creating validation handler...")
         self.handler = validation.CommandHandler()
-        
+
         self.logger.info("Attaching actor command sets...")
         self.attachAllCmdSets()
         self.logger.info("All command sets attached...")
@@ -153,12 +154,13 @@ class Actor(object):
             self.cmdr.connect()
         else:
             self.cmdr = None
-
+                
     def configureLogs(self, cmd=None):
         """ (re-)configure our logs. """
         
         self.logDir = self.config.get('logging', 'logdir')
-        assert self.logDir, "logdir must be set!"
+        if not self.logDir:
+            raise RuntimeError("logdir must be set!")
 
         # Make the root logger go to a rotating file. All others derive from this.
         opsLogging.setupRootLogger(self.logDir)
@@ -200,7 +202,7 @@ class Actor(object):
         except:
             headURL = None
 
-        versionString = actorSvn.simpleVersionName(HeadURL=headURL)
+        versionString = "unknown" # get from git
         if versionString == "unknown" or versionString == "":
             cmd.warn("text='pathetic version string: %s'" % (versionString))
 
@@ -220,17 +222,41 @@ class Actor(object):
             return
 
         self.bcast.warn('%s is asking the hub to connect back to us' % (self.name))
-        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar
-                                        (actor='hub', cmdStr='startNubs %s' % (self.name), timeLim=5.0))
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
+                                                                    cmdStr='startNubs %s' % (self.name), 
+                                                                    timeLim=5.0))
+                        
+    def updateHubModels(self):
+        """ Send the hub commands to update which model we want updates from. """
+
+        if self.modelNames and not self.models:
+            for n in self.modelNames:
+                self.models[n] = opscore.actor.model.Model(n)
+                
+
+    def updateHubInterest(self):
+        if not self.cmdr:
+            self.bcast.warn('text="CANNOT ask hub to connect to us, since we do not have a connection to it yet!"')
+            return
+
+        actorString = " ".join(self.modelNames)
+        self.bcast.warn('%s is asking the hub to send us updates from %s' % (self.name, self.modelNames))
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
+                                                                    cmdStr='listen clearActors',
+                                                                    timeLim=5.0))
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
+                                                                    cmdStr='listen addActors %s' % (actorString),
+                                                                    timeLim=5.0))
                         
     def _connectionMade(self):
         """ twisted arranges to call this when self.cmdr has been established. """
 
         self.bcast.warn('%s is connected to the hub.' % (self.name))
 
-        #
+        # Tell the hub to keep us updated with keys from the models we are interested in.
+        self.updateHubInterest()
+        
         # Request that tron connect to us.
-        #
         self.triggerHubConnection()
         self.connectionMade()
 
@@ -307,8 +333,10 @@ class Actor(object):
         """
 
         if path == None:
-            self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ACTORCORE_DIR'), 'python','actorcore','Commands'))
-            self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python', self.productName, 'Commands'))
+            self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ICS_MHS_ACTORCORE_DIR'), 
+                                                    'python','actorcore','Commands'))
+            self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python', 
+                                                    self.productName, 'Commands'))
             return
 
         dirlist = os.listdir(path)
