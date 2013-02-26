@@ -46,7 +46,8 @@ done
 
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-PRODUCT=$1; shift
+ACTOR=$1; shift
+PRODUCT=ics_mhs_$ACTOR
 
 if [ -z $PRODUCT ]; then
     echo "Please specify a product to control" >&2
@@ -101,7 +102,7 @@ get_pid() {
     print=$1
 
     PID=""
-    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python ${PRODUCT}_main.py/ {print \$1}")
+    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python ${ACTOR}_main.py/ {print \$1}")
     PID=$pid
 
     if [ "$print" = 1 -o $verbose != 0 ]; then
@@ -133,18 +134,19 @@ do_start() {
 
     now=`now`.log
     (cd $PRODLOG_DIR; rm -f current.log; ln -s $now current.log)
-    cd $PRODUCT_DIR/python/$PRODUCT
-    python ${PRODUCT}_main.py >$PRODLOG_DIR/$now 2>&1 &
+    cd $PRODUCT_DIR/python/$ACTOR
+    python ${ACTOR}_main.py >$PRODLOG_DIR/$now 2>&1 &
 
     # Check that it really started...
     #
-    sleep 1
+    sleep 2
     get_pid
 
     if test "$PID"; then
         echo " done."
     else
         echo " FAILED!" >&2
+        cat $PRODLOG_DIR/$now >&2
     fi
 }
 
