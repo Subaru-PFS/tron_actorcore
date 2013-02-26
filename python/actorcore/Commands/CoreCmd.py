@@ -107,7 +107,7 @@ class CoreCmd(object):
             cmd.respond('version=%s' % (qstr(versionString)))
 
     def reloadCommands(self, cmd):
-        """ If cmds defined, define the listed commands, otherwise reload all command sets. """
+        """ If cmds argument is defined, reload the listed command sets, otherwise reload all command sets. """
 
         if 'cmds' in cmd.cmd.keywords:
             # Load the specified module
