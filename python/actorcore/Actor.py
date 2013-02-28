@@ -115,7 +115,6 @@ class Actor(object):
 
         self.modelNames = modelNames
         self.models = {}
-        self.updateHubModels()
         
         # The list of all connected sources. 
         tronInterface = self.config.get('tron', 'interface') 
@@ -152,6 +151,7 @@ class Actor(object):
             self.cmdr.connectionMade = self._connectionMade
             self.cmdr.connectionLost = self.connectionLost
             self.cmdr.connect()
+            self.updateHubModels()
         else:
             self.cmdr = None
                 
