@@ -1,3 +1,5 @@
+setupRequired("ics_mhs_config")
+
 # Just for stageManager bits
 setupOptional("ics_mhs_tron")
 

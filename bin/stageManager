@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-LOG_DIR=$HOME/logs
+LOG_DIR=${ICS_MHS_LOGS_ROOT:-$HOME/logs}
 verbose=0
 
 usage() {
@@ -26,7 +26,7 @@ while [ ! -z $1 ]; do
 	    usage
 	    exit 0;;
       -l|--logs)
-	    LOG_DIR=$HOME/logs
+	    LOG_DIR=$1
 
 	    if [ -z $LOG_DIR ]; then
 		echo "Please specify a logging directory with the $1 flag" >&2
