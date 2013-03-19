@@ -70,23 +70,19 @@ if test -z "$PRODUCT_DIR"; then
     fi
 fi
 
-if [ $verbose = 1 ]; then
-    echo
-    echo ====================== Using $PRODUCT from $PRODUCT_DIR
-    echo
-fi
-
-# Put logs in a per-product directory.
-# The product itself might then stuff logs into subdirectories.
-PRODLOG_DIR=$LOG_DIR/$PRODUCT
-if [ ! -d $PRODLOG_DIR ]; then
-    mkdir -p $PRODLOG_DIR
-fi
-
 if test $# = 0; then
     usage
 fi
 cmds="$@"
+
+LOG_DIR=$LOG_DIR/$ACTOR
+mkdir -p $LOG_DIR
+
+if [ $verbose = 1 ]; then
+    echo
+    echo ====================== Using $PRODUCT from $PRODUCT_DIR and logging into $LOG_DIR
+    echo
+fi
 
 cd $PRODUCT_DIR
 
@@ -131,11 +127,9 @@ do_start() {
     # sudoers: tron hub35m = NOPASSWD: /usr/local/bin/www-access, /bin/kill
     #sudo /usr/local/bin/www-access reset
 
-
-    now=`now`.log
-    (cd $PRODLOG_DIR; rm -f current.log; ln -s $now current.log)
+    stdioLog=$LOG_DIR/stdio-`now`.log
     cd $PRODUCT_DIR/python/$ACTOR
-    python ${ACTOR}_main.py >$PRODLOG_DIR/$now 2>&1 &
+    python ${ACTOR}_main.py >$stdioLog 2>&1 &
 
     # Check that it really started...
     #
@@ -146,7 +140,7 @@ do_start() {
         echo " done."
     else
         echo " FAILED!" >&2
-        cat $PRODLOG_DIR/$now >&2
+        cat $stdioLog >&2
     fi
 }
 
