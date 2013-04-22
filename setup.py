@@ -7,5 +7,6 @@ python setup.py install
 import sdss3tools
 
 sdss3tools.setup(
-    description = "Common code base for SDSS-III actor system",
+    description = "Common code base for PFS MHS actor system",
+    name = "ics_mhs_actorcore"
 )
