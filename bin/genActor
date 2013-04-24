@@ -10,7 +10,7 @@ if test -z "$productDir"; then
     exit 1
 fi
 
-if test -a "$productDir"; then
+if test -e "$productDir"; then
     echo "new product directory $productDir already exists!"
     exit 2
 fi
