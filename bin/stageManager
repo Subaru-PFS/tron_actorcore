@@ -47,9 +47,9 @@ done
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 ACTOR=$1; shift
-PRODUCT=ics_mhs_$ACTOR
+PRODUCT=${ACTOR}Actor
 
-if [ -z $PRODUCT ]; then
+if test -z "$ACTOR"; then
     echo "Please specify a product to control" >&2
     usage
 fi
@@ -61,7 +61,7 @@ if test -z "$PRODUCT_DIR"; then
 	echo "Product $PRODUCT is not setup" >&2
     fi
 
-    setup $PRODUCT # > /dev/null 2>&1
+    setup -v $PRODUCT
 
     PRODUCT_DIR=$(eups list -s -d $PRODUCT)
     if test -z "$PRODUCT_DIR"; then
@@ -123,13 +123,9 @@ do_start() {
 
     printf "Starting new $PRODUCT..."
 
-    # reset WWW access.
-    # sudoers: tron hub35m = NOPASSWD: /usr/local/bin/www-access, /bin/kill
-    #sudo /usr/local/bin/www-access reset
-
     stdioLog=$LOG_DIR/stdio-`now`.log
-    cd $PRODUCT_DIR/python/$ACTOR
-    python ${ACTOR}_main.py >$stdioLog 2>&1 &
+    cd $PRODUCT_DIR
+    python python/$PRODUCT/main.py >$stdioLog 2>&1 &
 
     # Check that it really started...
     #

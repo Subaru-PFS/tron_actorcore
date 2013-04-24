@@ -77,7 +77,7 @@ class ModLoader():
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None, 
-                 makeCmdrConnection=True, productPrefix="ICS_MHS_",
+                 makeCmdrConnection=True, productPrefix="",
                  modelNames=()): 
         """ Build an Actor.
 
