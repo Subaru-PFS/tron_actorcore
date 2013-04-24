@@ -1,0 +1,4 @@
+This is a list of the things which currently (2013-04-24) need to be
+changed in order to turn this template actor tree into a working and
+named actor tree,
+
