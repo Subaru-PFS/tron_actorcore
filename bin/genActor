@@ -1,0 +1,43 @@
+#!/bin/sh
+
+# Need getopt...
+
+actorName=$1; shift
+productDir=$1; shift
+
+if test -z "$productDir"; then
+    echo "usage: `basename $0` actorName productDirectoryName"
+    exit 1
+fi
+
+if test -a "$productDir"; then
+    echo "new product directory $productDir already exists!"
+    exit 2
+fi
+
+productName=`basename $productDir`
+templateDir="$ICS_MHS_ACTORCORE_DIR/templateActor"
+if test ! -d "$templateDir"; then 
+    echo "template directory $templateDir does not exist!"
+    exit 3
+fi
+
+echo "Creating product director for product $productName from template at $templateDir to new directory at $productDir..."
+/bin/cp -pr $templateDir $productDir
+
+
+( cd $productDir
+  for f in $(find . -name '*__ACTOR_NAME__*'); do
+      mv $f $(echo $f | sed "s/__ACTOR_NAME__/$actorName/g")
+  done
+  for f in $(find . -name '*__PRODUCT_NAME__*'); do
+      mv $f $(echo $f | sed "s/__PRODUCT_NAME__/$productName/g")
+  done
+  for f in $(find . -type f); do
+      sed "s/__ACTOR_NAME__/$actorName/g; s/__PRODUCT_NAME__/$productName/g" <$f >$f.temp
+      mv $f.temp $f
+  done
+)
+
+exit 0
+
