@@ -105,11 +105,8 @@ class Actor(object):
 
         # Missing config bits should make us blow up.
         self.configFile = os.path.expandvars(self.configFile)
-        logging.warn("reading config file %s", self.configFile)
-        self.config = ConfigParser.ConfigParser()
-        self.config.read(self.configFile)
 
-        self.configureLogs()
+        self._reloadConfiguration()
         self.logger.info('%s starting up....' % (name))
         self.parser = CommandParser()
 
@@ -117,8 +114,8 @@ class Actor(object):
         self.models = {}
         
         # The list of all connected sources. 
-        tronInterface = self.config.get('tron', 'interface') 
-        tronPort = self.config.getint('tron', 'port') 
+        tronInterface = self.config.get(self.name, 'interface') 
+        tronPort = self.config.getint(self.name, 'port') 
         self.commandSources = cmdLinkManager.listen(self, 
                                                     port=tronPort, 
                                                     interface=tronInterface) 
@@ -154,7 +151,27 @@ class Actor(object):
             self.updateHubModels()
         else:
             self.cmdr = None
-                
+
+    def _reloadConfiguration(self, cmd=None):
+        logging.warn("reading config file %s", self.configFile)
+
+        try:
+            newConfig = ConfigParser.ConfigParser()
+            newConfig.read(self.configFile)
+        except Exception, e:
+            if cmd:
+                cmd.fail('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
+            raise
+        
+        self.config = newConfig
+        self.configureLogs()
+
+        try:
+            # Call optional user hook.
+            self.reloadConfiguration(cmd)
+        except:
+            pass
+        
     def configureLogs(self, cmd=None):
         """ (re-)configure our logs. """
         
@@ -220,6 +237,10 @@ class Actor(object):
         if not self.cmdr:
             self.bcast.warn('text="CANNOT ask hub to connect to us, since we do not have a connection to it yet!"')
             return
+
+        # Need to allow some "auto" mode...
+        #hostname = self.config.get(self.name, 'interface')
+        #port = int(self.config.get(self.name, 'port'))
 
         self.bcast.warn('%s is asking the hub to connect back to us' % (self.name))
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 

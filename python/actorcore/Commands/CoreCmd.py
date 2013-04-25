@@ -131,24 +131,10 @@ class CoreCmd(object):
         """
         
         cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
-        logging.warn("reading config file %s", self.actor.configFile)
-
         try:
-            newConfig = ConfigParser.ConfigParser()
-            newConfig.read(self.actor.configFile)
-        except Exception, e:
-            cmd.fail('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
-            return
-        
-        self.actor.config = newConfig
-        self.actor.configureLogs()
-        
-        try:
-            self.actor.reloadConfiguration(self, cmd)
+            self.actor._reloadConfiguration(self, cmd)
         except:
-            pass
-        
-        cmd.finish('text="reloaded configuration file')
+            cmd.finish('text="reloaded configuration file')
     
     def exitCmd(self, cmd):
         """ Brutal exit when all else has failed. """
