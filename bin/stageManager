@@ -98,7 +98,7 @@ get_pid() {
     print=$1
 
     PID=""
-    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python ${ACTOR}_main.py/ {print \$1}")
+    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python\/${PRODUCT}\/main.py/ {print \$1}")
     PID=$pid
 
     if [ "$print" = 1 -o $verbose != 0 ]; then
