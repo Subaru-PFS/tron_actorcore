@@ -3,10 +3,13 @@
 # Need getopt...
 
 actorName=$1; shift
-productDir=$1; shift
+
+productName=${actorName}Actor
+productDir=$productName
 
 if test -z "$productDir"; then
-    echo "usage: `basename $0` actorName productDirectoryName"
+    echo "usage: `basename $0` actorName"
+    echo "   instantiate a new actor $actorName, in the directory $productDir"
     exit 1
 fi
 
@@ -15,7 +18,6 @@ if test -e "$productDir"; then
     exit 2
 fi
 
-productName=`basename $productDir`
 templateDir="$ICS_MHS_ACTORCORE_DIR/templateActor"
 if test ! -d "$templateDir"; then 
     echo "template directory $templateDir does not exist!"
@@ -24,7 +26,6 @@ fi
 
 echo "Creating product director for product $productName from template at $templateDir to new directory at $productDir..."
 /bin/cp -pr $templateDir $productDir
-
 
 ( cd $productDir
   for f in $(find . -name '*__ACTOR_NAME__*'); do
