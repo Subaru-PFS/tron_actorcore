@@ -4,21 +4,18 @@ __all__ = ['CommandLinkManager', 'listen']
 
 import logging
 
-import os
-import sys
-import threading
-
-from opscore.utility.qstr import qstr
 from twisted.internet.protocol import Factory
+from twisted.internet import reactor
+
 from CommandLink import CommandLink
-from Command import Command
 
 class CommandLinkManager(Factory):
     """ Launch an instance of the given Protocol when a new connection comes in. """
 
     protocol = CommandLink
     
-    def __init__(self, brains, protocolName='CommandLink'):
+    def __init__(self, brains, protocolName='CommandLink',
+                 port=0, interface=''):
         """ Manage a dynamic set of CommandLinks. 
 
         Args:
@@ -28,6 +25,7 @@ class CommandLinkManager(Factory):
         We track all the protocol instances here, so that we can output replies on all active
         connections.
         """
+
         # Factory.__init__(self)   # snarl: twisted uses old-style classes...
         
         self.brains = brains
@@ -36,6 +34,8 @@ class CommandLinkManager(Factory):
         self.activeConnections = []
         self.connID = 1
 
+        self.listeningPort = reactor.listenTCP(port, self, interface=interface)
+        
     def fetchCid(self):
         """ Return the next available connection ID. """
 
@@ -43,6 +43,9 @@ class CommandLinkManager(Factory):
         self.connID += 1
 
         return cid
+
+    def startFactory(self):
+        pass
 
     def buildProtocol(self, addr):
         """ Generate a new CommandLink instance. Called when a new connection has been established. """
@@ -79,10 +82,9 @@ class CommandLinkManager(Factory):
         
 def listen(actor, port, interface=''):
     """ Launch a manager listening on a given interface+port""" 
-    from twisted.internet import reactor
-
     mgr = CommandLinkManager(actor)
     p = reactor.listenTCP(port, mgr, interface=interface)
+    
     return mgr
 
 def main():

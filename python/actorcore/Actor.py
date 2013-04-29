@@ -114,11 +114,11 @@ class Actor(object):
         self.models = {}
         
         # The list of all connected sources. 
-        tronInterface = self.config.get(self.name, 'interface') 
-        tronPort = self.config.getint(self.name, 'port') 
-        self.commandSources = cmdLinkManager.listen(self, 
-                                                    port=tronPort, 
-                                                    interface=tronInterface) 
+        listenInterface = self.config.get(self.name, 'interface') 
+        listenPort = self.config.getint(self.name, 'port') 
+        self.commandSources = cmdLinkManager.CommandLinkManager(self, 
+                                                                port=listenPort, 
+                                                                interface=listenInterface) 
         # The Command which we send uncommanded output to. 
         self.bcast = actorCmd.Command(self.commandSources, 
                                       'self.0', 0, 0, None, immortal=True) 
@@ -238,13 +238,17 @@ class Actor(object):
             self.bcast.warn('text="CANNOT ask hub to connect to us, since we do not have a connection to it yet!"')
             return
 
-        # Need to allow some "auto" mode...
-        #hostname = self.config.get(self.name, 'interface')
-        #port = int(self.config.get(self.name, 'port'))
+        ourAddr = self.commandSources.listeningPort.getHost()
+        self.bcast.diag('text=%s' % (qstr("asking the hub to connect back to us at %s" % (ourAddr))))
+        ourPort = ourAddr.port
+        ourHost = ourAddr.host
 
-        self.bcast.warn('%s is asking the hub to connect back to us' % (self.name))
+        cmdStr = "startNub %s %s %s" % (("hostname=%s" % ourHost) if ourHost else "",
+                                        ("port=%s" % ourPort) if ourPort else "",
+                                        self.name)
+        self.bcast.diag('text=%s' % (qstr("asking the hub to connect back to us with: %s" % (cmdStr))))
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
-                                                                    cmdStr='startNubs %s' % (self.name), 
+                                                                    cmdStr=cmdStr,
                                                                     timeLim=5.0))
                         
     def updateHubModels(self):
