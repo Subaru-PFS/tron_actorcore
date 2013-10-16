@@ -47,7 +47,10 @@ done
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 ACTOR=$1; shift
-PRODUCT=${ACTOR}Actor
+# the short name
+PRODUCT_NAME=${ACTOR}Actor
+# the name to use for eups setups
+PRODUCT=ics_mhs_$PRODUCT_NAME
 
 if test -z "$ACTOR"; then
     echo "Please specify a product to control" >&2
@@ -98,7 +101,7 @@ get_pid() {
     print=$1
 
     PID=""
-    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python\/${PRODUCT}\/main.py/ {print \$1}")
+    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python\/${PRODUCT_NAME}\/${PRODUCT_NAME}_main.py/ {print \$1}")
     PID=$pid
 
     if [ "$print" = 1 -o $verbose != 0 ]; then
@@ -125,7 +128,7 @@ do_start() {
 
     stdioLog=$LOG_DIR/stdio-`now`.log
     cd $PRODUCT_DIR
-    python python/$PRODUCT/main.py >$stdioLog 2>&1 &
+    python/$PRODUCT_NAME/${PRODUCT_NAME}_main.py >$stdioLog 2>&1 &
 
     # Check that it really started...
     #
