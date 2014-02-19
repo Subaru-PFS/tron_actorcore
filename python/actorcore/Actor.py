@@ -27,54 +27,6 @@ import CommandLinkManager as cmdLinkManager
 import Command as actorCmd
 import CmdrConnection
 
-class ModLoader():
-    def load_module(self, fullpath, name):
-        """ Try to load a named module in the given path. 
- 
-        The imp.find_module() docs give the following boring prescription: 
- 
-          'This function does not handle hierarchical module names 
-          (names containing dots). In order to find P.M, that is, 
-          submodule M of package P, use find_module() and 
-          load_module() to find and load package P, and then use 
-          find_module() with the path argument set to P.__path__. When 
-          P itself has a dotted name, apply this recipe recursively.' 
-         """
-
-        self.icclog.info("trying to load module path=%s name=%s", fullpath, name)
-
-        parts = fullpath.split('.')
-        path = None
-        while len(parts) > 1:
-            pname = parts[0]
-            try:
-                self.icclog.debug("pre-loading path=%s pname=%s", path, pname)
-                file, filename, description = imp.find_module(pname, path)
-
-                self.icclog.debug("pre-loading package file=%s filename=%s description=%s",
-                                  file, filename, description)
-                mod = imp.load_module(pname, file, filename, description)
-                path = mod.__path__
-                parts = parts[1:]
-            except ImportError, e:
-                raise
-            finally:
-                file.close()
-
-        try:
-            self.icclog.debug("trying to find path=%s class=%s",
-                              path, name)
-            file, filename, description = imp.find_module(name, path)
-
-            self.icclog.debug("trying to attach file=%s filename=%s description=%s",
-                              file, filename, description)
-            mod = imp.load_module(name, file, filename, description)
-            return mod
-        except ImportError, e:
-            raise
-        finally:
-            file.close()
-
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None, 
                  makeCmdrConnection=True, productPrefix="",
@@ -88,6 +40,9 @@ class Actor(object):
                             to $PRODUCTNAME_DIR/etc/$name.cfg
             makeCmdrConnection
                          - establish self.cmdr as a command connection to the hub.
+                           This needs to be True if we send commands or listen to keys.
+            modelNames   - a list of actor names, whose key dictionaries we want to 
+                           listen to and have in our .models[]
         """
 
         # Define/save the actor name, the product name, the product_DIR, and the
@@ -112,6 +67,9 @@ class Actor(object):
 
         self.modelNames = modelNames
         self.models = {}
+        if self.modelNames and not makeCmdrConnection:
+            self.logger.warn("modelNames were requested but makeCmdrConnection is False. Forcing that to True.")
+            makeCmdrConnection = True
         
         # The list of all connected sources. 
         listenInterface = self.config.get(self.name, 'interface') 
