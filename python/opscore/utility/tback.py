@@ -30,7 +30,7 @@ def tback(system, e, info=None, logger=None):
         frames.reverse()
         for f in frames:
             tr_list.append("\n\n====== frame %d locals:\n" % (i))
-            tr_list.append(pprint.pformat(f[0].f_locals), depth=4)
+            tr_list.append(pprint.pformat(f[0].f_locals, depth=4))
             i += 1
 
         ex_list = traceback.format_exception(exc_type, exc_value, exc_traceback)
