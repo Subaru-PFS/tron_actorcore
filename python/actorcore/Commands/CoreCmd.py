@@ -45,6 +45,7 @@ class CoreCmd(object):
             ('exitexit', '', self.exitCmd),
             ('ipdb', '', self.ipdbCmd),
             ('ipython', '', self.ipythonCmd),
+            ('ikernel', '', self.ikernelCmd),
         )
 
     def cmdHelp(self, cmd):
@@ -182,4 +183,23 @@ class CoreCmd(object):
             return
         
         cmd.warn('text="back to normal interpreter"')
+        cmd.finish()
+
+    def iKernelCmd(self, cmd):
+        """ Try to start a subshell. """
+        
+        try:
+            import twistedloop
+        except Exception, e:
+            cmd.fail('text="failed to import twistedloop: %s"' % (e))
+            return
+
+        cmd.warn('text="starting ipython kernel ..."')
+        try:
+            twistedloop.startloop()
+        except Exception, e:
+            cmd.fail('text="ipython blammo: %s"' % (e))
+            return
+        
+        cmd.finish('text="back to normal interpreter"')
         cmd.finish()
