@@ -7,21 +7,28 @@ except:
 import logging
 
 class FakeCommand(object):
+    def __init__(self):
+        self.logger = logging.getLogger()
+        
     def inform(self, s):
-        print("fake.inform: %s" % (s))
+        self.logger.info("fake.inform: %s" % (s))
     def diag(self, s):
-        print("fake.diag: %s" % (s))
+        self.logger.debug("fake.diag: %s" % (s))
     def warn(self, s):
-        print("fake.warn: %s" % (s))
+        self.logger.warn("fake.warn: %s" % (s))
     def fail(self, s):
-        print("fake.fail: %s" % (s))
+        self.logger.error("fake.fail: %s" % (s))
     def finish(self, s):
-        print("fake.finish: %s" % (s))
+        self.logger.info("fake.finish: %s" % (s))
 
 class FakeActor(object):
     """ A minimal object to stand in for a proper Actor. """
 
     def __init__(self):
+        logging.setLevel(logging.DEBUG)
+        logging.debug("FakeActor starting up")
         self.models = {}
         self.bcast = FakeCommand()
         self.cmdr = None
+
+        self.bcast.info("FakeActor started")
