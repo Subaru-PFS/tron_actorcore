@@ -201,9 +201,9 @@ class Actor(object):
         ourPort = ourAddr.port
         ourHost = ourAddr.host
 
-        cmdStr = "startNub %s %s %s" % (("hostname=%s" % ourHost) if ourHost else "",
-                                        ("port=%s" % ourPort) if ourPort else "",
-                                        self.name)
+        cmdStr = "startNubs %s %s %s" % (("hostname=%s" % ourHost) if ourHost else "",
+                                         ("port=%s" % ourPort) if ourPort else "",
+                                         self.name)
         self.bcast.diag('text=%s' % (qstr("asking the hub to connect back to us with: %s" % (cmdStr))))
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
                                                                     cmdStr=cmdStr,
