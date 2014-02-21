@@ -45,7 +45,6 @@ class CoreCmd(object):
             ('exitexit', '', self.exitCmd),
             ('ipdb', '', self.ipdbCmd),
             ('ipython', '', self.ipythonCmd),
-            ('ikernel', '', self.ikernelCmd),
         )
 
     def cmdHelp(self, cmd):
