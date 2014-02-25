@@ -197,25 +197,22 @@ class Actor(object):
             return
 
         ourAddr = self.commandSources.listeningPort.getHost()
-        self.bcast.diag('text=%s' % (qstr("asking the hub to connect back to us at %s" % (ourAddr))))
         ourPort = ourAddr.port
         ourHost = ourAddr.host
 
-        cmdStr = "startNubs %s %s %s" % (("hostname=%s" % ourHost) if ourHost else "",
-                                         ("port=%s" % ourPort) if ourPort else "",
-                                         self.name)
+        cmdStr = "startNub %s %s:%s" % (self.name, ourHost, ourPort)
         self.bcast.diag('text=%s' % (qstr("asking the hub to connect back to us with: %s" % (cmdStr))))
-        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
                                                                     cmdStr=cmdStr,
                                                                     timeLim=5.0))
-                        
+
     def updateHubModels(self):
         """ Send the hub commands to update which model we want updates from. """
 
         if self.modelNames and not self.models:
             for n in self.modelNames:
                 self.models[n] = opscore.actor.model.Model(n)
-                
+
 
     def updateHubInterest(self):
         if not self.cmdr:
