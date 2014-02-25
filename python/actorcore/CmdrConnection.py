@@ -1,13 +1,11 @@
 import logging
 import threading
 import Queue
-import ConfigParser
 
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.protocols.basic import LineReceiver
 
-import opscore.utility as opsUtils
 import opscore.actor.cmdkeydispatcher as opsDispatcher
 import opscore.actor.model as opsModel
 import opscore.actor.keyvar as opsKeyvar
@@ -80,8 +78,8 @@ class CmdrConnector(ReconnectingClientFactory):
 
         self.logger.warn('launching new CmdrConnection')
 
-        assert (self.activeConnection == None), "connection already active!"
-        assert (self.readCallback != None), "readCallback has not yet been set!"
+        assert (self.activeConnection is None), "connection already active!"
+        assert (self.readCallback is not None), "readCallback has not yet been set!"
         
         self.resetDelay()
         proto = CmdrConnection(self.readCallback, brains=self.brains, logger=self.logger)
@@ -110,7 +108,7 @@ class CmdrConnector(ReconnectingClientFactory):
 
     def isConnected(self):
         """ Called by the dispatcher to find out if we are connected."""
-        return self.activeConnection != None
+        return self.activeConnection is not None
 
     def addReadCallback(self, readCallback):
         self.readCallback = readCallback
@@ -214,7 +212,8 @@ def liveTest():
     logger = logging.getLogger('test')
 
     def showVal(keyVar, logger=logger):
-        logger.info("keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent))
+        logger.info("keyVar %s.%s = %r, isCurrent = %s" % 
+                    (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent))
                 
     cmdr = Cmdr('test.me')
     cmdr.connect()
@@ -232,4 +231,3 @@ def main():
     
 if __name__ == "__main__":
     main()
-                       

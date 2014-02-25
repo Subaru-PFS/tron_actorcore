@@ -8,8 +8,6 @@
 """
 __all__ = ['Command']
 
-import pdb
-
 import logging
 from opscore.utility.qstr import qstr
 
@@ -107,7 +105,7 @@ class Command(object):
     def finish(self, response=None):
         """ Return successful command finish. """
 
-        if response == None:
+        if response is None:
             response = ''
             
         if self.immortal:
@@ -137,7 +135,7 @@ class Command(object):
 
         if not self.alive:
             self.source.sendResponse(self, 'w', 
-                                     'text="this command has already been finished!!!! (%s %s): %s"' % \
+                                     'text="this command has already been finished!!!! (%s %s): %s"' % 
                                      (self.cmdr, self.mid, self.rawCmd))
         self.source.sendResponse(self, flag, response)
         # self.actor.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
@@ -171,7 +169,7 @@ class Command(object):
 
         if self.debug > 4:
             CPL.log("MCCommand.coverArgs",
-                    "requiredArgs=%r optionalArgs=%r ignoreFirst=%r argDict=%r" \
+                    "requiredArgs=%r optionalArgs=%r ignoreFirst=%r argDict=%r" 
                     % (requiredArgs, optionalArgs, ignoreFirst, self.argDict))
 
         # Start with a copy of the command args, which we consume as we copy to

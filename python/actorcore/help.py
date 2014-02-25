@@ -125,7 +125,7 @@ class Cmd(object):
                 if isinstance(kt, types.Bool):
                     arg.values.append([kt, "BOOL"])
                 elif isinstance(kt, Cmd.StrType):
-                    arg.values.append([str,  "|".join([e.name for e in kt])])
+                    arg.values.append([str, "|".join([e.name for e in kt])])
                 elif isinstance(kt, types.Enum):
                     helpVals = [e[1] for e in kt.descriptors[1:]]
                     arg.values.append([kt, "|".join([e.split()[0] for e in helpVals]), helpVals])

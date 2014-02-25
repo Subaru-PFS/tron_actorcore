@@ -9,7 +9,7 @@ import Queue
 import ConfigParser
 import threading
 
-# import our routines before logging itself. 
+# import our routines before logging itself.
 import opscore.utility.sdss3logging as opsLogging
 import logging
 
@@ -28,20 +28,20 @@ import Command as actorCmd
 import CmdrConnection
 
 class Actor(object):
-    def __init__(self, name, productName=None, configFile=None, 
+    def __init__(self, name, productName=None, configFile=None,
                  makeCmdrConnection=True, productPrefix="",
-                 modelNames=()): 
+                 modelNames=()):
         """ Build an Actor.
 
         Args:
             name         - the name of the actor: what name we are advertised as to tron.
             productName  - the name of the product; defaults to .name
-            configFile   - the full path of the configuration file; defaults 
+            configFile   - the full path of the configuration file; defaults
                             to $PRODUCTNAME_DIR/etc/$name.cfg
             makeCmdrConnection
                          - establish self.cmdr as a command connection to the hub.
                            This needs to be True if we send commands or listen to keys.
-            modelNames   - a list of actor names, whose key dictionaries we want to 
+            modelNames   - a list of actor names, whose key dictionaries we want to
                            listen to and have in our .models[]
         """
 
@@ -70,25 +70,25 @@ class Actor(object):
         if self.modelNames and not makeCmdrConnection:
             self.logger.warn("modelNames were requested but makeCmdrConnection is False. Forcing that to True.")
             makeCmdrConnection = True
-        
-        # The list of all connected sources. 
-        listenInterface = self.config.get(self.name, 'interface') 
-        listenPort = self.config.getint(self.name, 'port') 
-        self.commandSources = cmdLinkManager.CommandLinkManager(self, 
-                                                                port=listenPort, 
-                                                                interface=listenInterface) 
-        # The Command which we send uncommanded output to. 
-        self.bcast = actorCmd.Command(self.commandSources, 
-                                      'self.0', 0, 0, None, immortal=True) 
+
+        # The list of all connected sources.
+        listenInterface = self.config.get(self.name, 'interface')
+        listenPort = self.config.getint(self.name, 'port')
+        self.commandSources = cmdLinkManager.CommandLinkManager(self,
+                                                                port=listenPort,
+                                                                interface=listenInterface)
+        # The Command which we send uncommanded output to.
+        self.bcast = actorCmd.Command(self.commandSources,
+                                      'self.0', 0, 0, None, immortal=True)
 
         # IDs to send commands to ourself.
-        self.selfCID = self.commandSources.fetchCid() 
+        self.selfCID = self.commandSources.fetchCid()
         self.synthMID = 1
 
-        # commandSets are the command handler packages. Each handles 
-        # a vocabulary, which it registers when loaded. 
-        # We gather them in one place mainly so that "meta-commands" (init, status) 
-        # can find the others. 
+        # commandSets are the command handler packages. Each handles
+        # a vocabulary, which it registers when loaded.
+        # We gather them in one place mainly so that "meta-commands" (init, status)
+        # can find the others.
         self.commandSets = {}
 
         self.logger.info("Creating validation handler...")
@@ -120,7 +120,7 @@ class Actor(object):
             if cmd:
                 cmd.fail('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
             raise
-        
+
         self.config = newConfig
         self.configureLogs()
 
@@ -129,10 +129,10 @@ class Actor(object):
             self.reloadConfiguration(cmd)
         except:
             pass
-        
+
     def configureLogs(self, cmd=None):
         """ (re-)configure our logs. """
-        
+
         self.logDir = self.config.get('logging', 'logdir')
         if not self.logDir:
             raise RuntimeError("logdir must be set!")
@@ -146,26 +146,26 @@ class Actor(object):
         except:
             consoleLevel = int(self.config.get('logging','baseLevel'))
         opsLogging.setConsoleLevel(consoleLevel)
-        
+
         # self.console needs to be renamed ore deleted, I think.
-        self.console = logging.getLogger('') 
+        self.console = logging.getLogger('')
         self.console.setLevel(int(self.config.get('logging','baseLevel')))
- 
+
         self.logger = logging.getLogger('actor')
-        self.logger.setLevel(int(self.config.get('logging','baseLevel')))
+        self.logger.setLevel(int(self.config.get('logging', 'baseLevel')))
         self.logger.propagate = True
         self.logger.info('(re-)configured root and actor logs')
 
         self.cmdLog = logging.getLogger('cmds')
-        self.cmdLog.setLevel(int(self.config.get('logging','cmdLevel')))
+        self.cmdLog.setLevel(int(self.config.get('logging', 'cmdLevel')))
         self.cmdLog.propagate = True
         self.cmdLog.info('(re-)configured cmds log')
-        
+
         if cmd:
             cmd.inform('text="reconfigured logs"')
-            
+
     def versionString(self, cmd):
-        """ Return the version key value. 
+        """ Return the version key value.
 
         If you simply want to generate the keyword, call .sendVersionKey().
         """
@@ -182,7 +182,7 @@ class Actor(object):
             cmd.warn("text='pathetic version string: %s'" % (versionString))
 
         return versionString
-        
+
     def sendVersionKey(self, cmd):
         """ Generate the version keyword in response to cmd. """
 
@@ -221,13 +221,13 @@ class Actor(object):
 
         actorString = " ".join(self.modelNames)
         self.bcast.warn('%s is asking the hub to send us updates from %s' % (self.name, self.modelNames))
-        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
                                                                     cmdStr='listen clearActors',
                                                                     timeLim=5.0))
-        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub', 
+        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
                                                                     cmdStr='listen addActors %s' % (actorString),
                                                                     timeLim=5.0))
-                        
+
     def _connectionMade(self):
         """ twisted arranges to call this when self.cmdr has been established. """
 
@@ -235,7 +235,7 @@ class Actor(object):
 
         # Tell the hub to keep us updated with keys from the models we are interested in.
         self.updateHubInterest()
-        
+
         # Request that tron connect to us.
         self.triggerHubConnection()
         self.connectionMade()
@@ -251,35 +251,36 @@ class Actor(object):
     def attachCmdSet(self, cname, path=None):
         """ (Re-)load and attach a named set of commands. """
 
-        if path == None:
+        if path is None:
             path = [os.path.join(self.product_dir, 'python', self.productName, 'Commands')]
 
         self.logger.info("attaching command set %s from path %s", cname, path)
-               
+
         file = None
         try:
             file, filename, description = imp.find_module(cname, path)
             self.logger.debug("command set file=%s filename=%s from path %s",
                               file, filename, path)
-            mod = imp.load_module(cname, file, filename, description)
+            imp.load_module(cname, file, filename, description)
         except ImportError, e:
             raise RuntimeError('Import of %s failed: %s' % (cname, e))
         finally:
             if file:
                 file.close()
 
-        # Instantiate and save a new command handler. 
+        # Instantiate and save a new command handler.
+        cmdSet = {}             # Quiet flymake down a bit.
         exec('cmdSet = mod.%s(self)' % (cname))
 
         # pdb.set_trace()
-        
+
         # Check any new commands before finishing with the load. This
         # is a bit messy, as the commands might depend on a valid
         # keyword dictionary, which also comes from the module
         # file.
         #
         # BAD problem here: the Keys define a single namespace. We need
-        # to check for conflicts and allow unloading. Right now we unilaterally 
+        # to check for conflicts and allow unloading. Right now we unilaterally
         # load the Keys and do not unload them if the validation fails.
         if hasattr(cmdSet, 'keys') and cmdSet.keys:
             keys.CmdKey.addKeys(cmdSet.keys)
@@ -307,15 +308,15 @@ class Actor(object):
         self.handler.addConsumers(*cmdSet.validatedCmds)
 
         self.logger.warn("handler verbs: %s" % (self.handler.consumers.keys()))
-        
+
     def attachAllCmdSets(self, path=None):
         """ (Re-)load all command classes -- files in ./Command which end with Cmd.py.
         """
 
-        if path == None:
-            self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ICS_MHS_ACTORCORE_DIR'), 
+        if path is None:
+            self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ICS_MHS_ACTORCORE_DIR'),
                                                     'python','actorcore','Commands'))
-            self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python', 
+            self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python',
                                                     self.productName, 'Commands'))
             return
 
@@ -335,14 +336,14 @@ class Actor(object):
         where = tbList[-1]
 
         return "%r at %s:%d" % (eValue, where[0], where[1])
-                
-    
+
+
     def runActorCmd(self, cmd):
         try:
             cmdStr = cmd.rawCmd
             if self.cmdLog.level <= logging.DEBUG:
                 self.cmdLog.debug('raw cmd: %s' % (cmdStr))
-            
+
             try:
                 validatedCmd, cmdFuncs = self.handler.match(cmdStr)
             except Exception, e:
@@ -354,7 +355,7 @@ class Actor(object):
             if not validatedCmd:
                 cmd.fail('text=%s' % (qstr("Unrecognized command: %s" % (cmdStr))))
                 return
-                
+
             self.cmdLog.debug('< %s:%d %s' % (cmd.cmdr, cmd.mid, validatedCmd))
             if len(cmdFuncs) > 1:
                 cmd.warn('text=%s' % (qstr("command has more than one callback (%s): %s" %
@@ -368,7 +369,7 @@ class Actor(object):
                 cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
                 #tback('newCmd', e)
                 return
-                
+
         except Exception, e:
             cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
                                        (e))))
@@ -377,13 +378,13 @@ class Actor(object):
             except:
                 pass
 
-        
+
     def actor_loop(self):
         """ Check the command queue and dispatch commands."""
 
         while True:
             try:
-                cmd = self.commandQueue.get(block = True,timeout = 3)
+                cmd = self.commandQueue.get(block=True,timeout=3)
             except Queue.Empty:
                 if self.shuttingDown:
                     return
@@ -394,7 +395,7 @@ class Actor(object):
     def commandFailed(self, cmd):
         """ Gets called when a command has failed. """
         pass
-    
+
     def newCmd(self, cmd):
         """ Dispatch a newly received command. """
 
@@ -403,8 +404,8 @@ class Actor(object):
         else:
             dcmd = cmd.rawCmd if len(cmd.rawCmd) < 80 else cmd.rawCmd[:80] + "..."
             self.cmdLog.info('new cmd: %s' % (dcmd))
-        
-        # Empty cmds are OK; send an empty response... 
+
+        # Empty cmds are OK; send an empty response...
         if len(cmd.rawCmd) == 0:
             cmd.finish('')
             return None
@@ -415,7 +416,7 @@ class Actor(object):
             self.commandQueue.put(cmd)
 
         return self
-    
+
     def callCommand(self, cmdStr):
         """ Send ourselves a command. """
 
@@ -423,17 +424,17 @@ class Actor(object):
                                cid=self.selfCID, mid=self.synthMID, rawCmd=cmdStr)
         self.synthMID += 1
         self.newCmd(cmd)
-                                                            
+
     def _shutdown(self):
         self.shuttingDown = True
-        
+
     def run(self, doReactor=True):
         """ Actually run the twisted reactor. """
         try:
             self.runInReactorThread = self.config.getboolean(self.name, 'runInReactorThread')
         except:
             self.runInReactorThread = False
-            
+
         self.logger.info("starting reactor (in own thread=%s)...." % (not self.runInReactorThread))
         try:
             if not self.runInReactorThread:

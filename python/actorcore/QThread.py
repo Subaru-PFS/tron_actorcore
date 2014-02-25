@@ -34,8 +34,8 @@ class QMsg(object):
         """
 
         priority = None
-        self.priority = priority if (priority != None) else QMsg.DEFAULT_PRIORITY
-        if priority == None:
+        self.priority = priority if (priority is not None) else QMsg.DEFAULT_PRIORITY
+        if priority is None:
             self.priority = priority
         self.method = functools.partial(method, *argl, **argd)
 
@@ -111,7 +111,7 @@ class QThread(threading.Thread):
                     
                 qlen = self.queue.qsize()
                 if qlen > 0:
-                    self._realCmd(cmd).debug("%s thread has %d items after a .get()" % (self.name, qlen))
+                    self._realCmd(None).debug("%s thread has %d items after a .get()" % (self.name, qlen))
 
                 try:
                     method = getattr(msg, 'method')
@@ -119,11 +119,11 @@ class QThread(threading.Thread):
                     raise AttributeError("thread %s received a message without a method to call: %s" % (self.name, msg))
 
                 try:
-                    ret = method()
+                    method()
                 except SystemExit:
                     return
                 except Exception as e:
-                    self._realCmd(cmd).warn('text="%s: uncaught exception running %s: %s"' % 
+                    self._realCmd(None).warn('text="%s: uncaught exception running %s: %s"' % 
                                             (self.name, method, e))
 
             except Queue.Empty:
