@@ -261,7 +261,7 @@ class Actor(object):
             file, filename, description = imp.find_module(cname, path)
             self.logger.debug("command set file=%s filename=%s from path %s",
                               file, filename, path)
-            imp.load_module(cname, file, filename, description)
+            mod = imp.load_module(cname, file, filename, description)
         except ImportError, e:
             raise RuntimeError('Import of %s failed: %s' % (cname, e))
         finally:
@@ -269,7 +269,7 @@ class Actor(object):
                 file.close()
 
         # Instantiate and save a new command handler.
-        cmdSet = {}             # Quiet flymake down a bit.
+        cmdSet = mod             # Quiet flymake down a bit.
         exec('cmdSet = mod.%s(self)' % (cname))
 
         # pdb.set_trace()
