@@ -7,9 +7,11 @@ except:
 import logging
 
 class FakeCommand(object):
-    def __init__(self):
-        self.logger = logging.getLogger()
+    def __init__(self, logger=None):
+        self.logger = logger if logger else logging.getLogger()
         
+    def respond(self, s):
+        self.logger.info("fake.inform: %s" % (s))
     def inform(self, s):
         self.logger.info("fake.inform: %s" % (s))
     def diag(self, s):
@@ -25,10 +27,11 @@ class FakeActor(object):
     """ A minimal object to stand in for a proper Actor. """
 
     def __init__(self):
-        logging.setLevel(logging.DEBUG)
-        logging.debug("FakeActor starting up")
+        self.logger = logging.getLogger()
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.debug("FakeActor starting up")
         self.models = {}
-        self.bcast = FakeCommand()
+        self.bcast = FakeCommand(self.logger)
         self.cmdr = None
 
-        self.bcast.info("FakeActor started")
+        self.bcast.inform("FakeActor started")
