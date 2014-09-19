@@ -7,15 +7,23 @@ from opscore.utility.tback import tback
 """
 Usage:
 
+Given a QThread found with, say:
    tq = self.actor.devices[deviceName]
-   msg = QMsg(tq.pingMsg, cmd=cmd)
-   tq.queue.put(msg)
+
+Asynchronous calls:
+
+   tq.callMsgLater(10.0, tq.pingMsg, cmd=cmd)
 
  or:
 
    tq = self.actor.devices[deviceName]
-   tq.putMsg(tq.pingMsg, cmd=cmd)
-   tq.callMsgLater(10.0, tq.pingMsg, cmd=cmd)
+   ret = tq.call(tq.statusMsg, cmd=cmd)
+
+
+   msg = QMsg(tq.pingMsg, cmd=cmd)
+   tq.queue.put(msg)
+
+ or:
 
 """
 
@@ -72,6 +80,39 @@ class QThread(threading.Thread):
         qmsg = QMsg(method, *argl, **argd)
         self.queue.put(qmsg)
         
+    def call(self, method, *argl, **argd):
+        """ send ourself a new message, then wait for and return a single response. 
+
+        Arguments
+        ---------
+        method: a function or bound method to call
+        *argl, **argd" the arguments to the method.
+
+        We steal argd['callTimeout'], if found.
+        We add argd['returnQueue'], and require that it does not exist.
+
+        Notes
+        -----
+        It is entirely up to the called method to behave correctly and to always .put()
+        a single element on the queue.
+
+        Throws
+        ------
+        RuntimeError if out mechanism has name conflicts with argd.
+        """
+        
+        if 'returnQueue' in argd:
+            raise RuntimeError("call method keyword arguments (%s) already contain a 'returnQueue' -- too tricky." % (argd))
+        returnQueue = Queue.Queue()
+        argd['returnQueue'] = returnQueue
+
+        callTimeout = argd.get_default('callTimeout', None)
+
+        self.putMsg(method, argl, argd)
+        ret = returnQueue.get(timeout=callTimeout)
+
+        return ret
+
     def sendLater(self, msg, deltaTime, priority=1):
         """ Send ourself a QMsg after deltaTime seconds. """
 
