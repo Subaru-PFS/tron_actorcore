@@ -1,5 +1,4 @@
 import functools
-import logging
 import Queue
 import threading
 from opscore.utility.tback import tback
@@ -41,10 +40,8 @@ class QMsg(object):
         
         """
 
-        priority = None
-        self.priority = priority if (priority is not None) else QMsg.DEFAULT_PRIORITY
-        if priority is None:
-            self.priority = priority
+        self.priority = argd.get('msgPriority', QMsg.DEFAULT_PRIORITY)
+        self.returnQueue = argd.get('returnQueue')
         self.method = functools.partial(method, *argl, **argd)
 
     def __lt__(self, other):
@@ -58,6 +55,9 @@ class QThread(threading.Thread):
 
         threading.Thread.__init__(self, name=name)
         self.setDaemon(isDaemon)
+        if actor is None:
+            import FakeActor
+            actor = FakeActor.FakeActor()
         self.actor = actor
         self.timeout = timeout
         self.exitASAP = False
@@ -154,18 +154,23 @@ class QThread(threading.Thread):
                 if qlen > 0:
                     self._realCmd(None).debug("%s thread has %d items after a .get()" % (self.name, qlen))
 
+                # I envision accepting other types .
+                if isinstance(msg, QMsg):
+                    method = msg.method
+                    returnQueue = msg.returnQueue
+                else:
+                    raise AttributeError("thread %s received a message of an unhanded type(s): %s" % 
+                                         (self.name, type(msg), msg))
                 try:
-                    method = getattr(msg, 'method')
-                except AttributeError as e:
-                    raise AttributeError("thread %s received a message without a method to call: %s" % (self.name, msg))
-
-                try:
-                    method()
+                    ret = method()
                 except SystemExit:
                     return
                 except Exception as e:
                     self._realCmd(None).warn('text="%s: uncaught exception running %s: %s"' % 
-                                            (self.name, method, e))
+                                             (self.name, method, e))
+                finally:
+                    if returnQueue:
+                        returnQueue.push(ret)
 
             except Queue.Empty:
                 self.handleTimeout()
