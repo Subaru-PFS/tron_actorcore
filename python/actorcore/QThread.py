@@ -101,17 +101,24 @@ class QThread(threading.Thread):
         RuntimeError if out mechanism has name conflicts with argd.
         """
         
-        if 'returnQueue' in argd:
-            raise RuntimeError("call method keyword arguments (%s) already contain a 'returnQueue' -- too tricky." % (argd))
+        if threading.currentThread() == self:
+            raise RuntimeError("cannot .call() a QThread from its own thread of control.")
+
         returnQueue = Queue.Queue()
-        argd['returnQueue'] = returnQueue
+        
+        qmsg = QMsg(method, returnQueue=returnQueue, **argd)
+        self.queue.put(qmsg)
 
-        callTimeout = argd.get_default('callTimeout', None)
+        try:
+            ret = returnQueue.get(timeout=callTimeout)
+        except Queue.Empty:
+            # Annotate with _something_ informative.
+            raise Queue.Empty("empty return from %s in %s" % (qmsg, self))
 
-        self.putMsg(method, argl, argd)
-        ret = returnQueue.get(timeout=callTimeout)
-
-        return ret
+        if isinstance(ret, Exception):
+            raise ret
+        else:
+            return ret
 
     def sendLater(self, msg, deltaTime, priority=1):
         """ Send ourself a QMsg after deltaTime seconds. """
@@ -153,13 +160,14 @@ class QThread(threading.Thread):
     def run(self):
         """ Main run loop for this thread. """
 
+        self._realCmd(None).diag("%s thread has started .run()" % (self.name))
         while True:
             try:
                 msg = self.queue.get(timeout=self.timeout)
                     
                 qlen = self.queue.qsize()
                 if qlen > 0:
-                    self._realCmd(None).debug("%s thread has %d items after a .get()" % (self.name, qlen))
+                    self._realCmd(None).diag("%s thread has %d items after a .get()" % (self.name, qlen))
 
                 # I envision accepting other types .
                 if isinstance(msg, QMsg):
