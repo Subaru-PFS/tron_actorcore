@@ -29,7 +29,7 @@ Asynchronous calls:
 class QMsg(object):
     DEFAULT_PRIORITY = 5
 
-    def __init__(self, method, *argl, **argd):
+    def __init__(self, method, returnQueue=None, msgPriority=None, **argd):
         """ Create a new QMsg, which will resolve to method(*argl, **argd). 
 
         d = {}
@@ -40,9 +40,9 @@ class QMsg(object):
         
         """
 
-        self.priority = argd.get('msgPriority', QMsg.DEFAULT_PRIORITY)
-        self.returnQueue = argd.get('returnQueue')
-        self.method = functools.partial(method, *argl, **argd)
+        self.priority = msgPriority if msgPriority else QMsg.DEFAULT_PRIORITY
+        self.returnQueue = returnQueue
+        self.method = functools.partial(method, **argd)
 
     def __lt__(self, other):
         """ Support sorting of QMsg instances, based on the .priority. Used by PriorityQueue. """
@@ -69,27 +69,27 @@ class QThread(threading.Thread):
 
         return cmd if cmd else self.actor.bcast
 
-    def putMsg(self, method, *argl, **argd):
+    def putMsg(self, method, **argd):
         """ send ourself a new message. 
 
         Args:
             method: a function or bound method to call
-            *argl, **argd" the arguments to the method.
+            **argd: the arguments to the method.
         """
 
-        qmsg = QMsg(method, *argl, **argd)
+        qmsg = QMsg(method, **argd)
         self.queue.put(qmsg)
         
-    def call(self, method, *argl, **argd):
+    def call(self, method, callTimeout=None, **argd):
         """ send ourself a new message, then wait for and return a single response. 
 
         Arguments
         ---------
         method: a function or bound method to call
-        *argl, **argd" the arguments to the method.
+        **argd" the arguments to the method.
 
         We steal argd['callTimeout'], if found.
-        We add argd['returnQueue'], and require that it does not exist.
+        We add argd['__returnQueue'], and require that it does not exist.
 
         Notes
         -----
