@@ -96,6 +96,14 @@ class QThread(threading.Thread):
 
         return cmd if cmd else self.actor.bcast
 
+    def startUp(self):
+        self.start()
+        for i in range(10):
+            if self.isAlive():
+                return
+            time.sleep(0.1)
+        raise RuntimeError("failed to start thread %s")
+
     def putMsg(self, method, **argd):
         """ send ourself a new message. 
 
