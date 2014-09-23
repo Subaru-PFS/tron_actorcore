@@ -161,6 +161,7 @@ class QThread(threading.Thread):
                 else:
                     raise AttributeError("thread %s received a message of an unhanded type(s): %s" % 
                                          (self.name, type(msg), msg))
+                ret = None
                 try:
                     ret = method()
                 except SystemExit:
@@ -168,9 +169,11 @@ class QThread(threading.Thread):
                 except Exception as e:
                     self._realCmd(None).warn('text="%s: uncaught exception running %s: %s"' % 
                                              (self.name, method, e))
+                    ret = e
                 finally:
                     if returnQueue:
-                        returnQueue.push(ret)
+                        returnQueue.put(ret)
+                    self._realCmd(None).diag("returnQueue=%s ret=%s" % (returnQueue, ret))
 
             except Queue.Empty:
                 self.handleTimeout()
