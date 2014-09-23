@@ -104,6 +104,7 @@ class QThread(threading.Thread):
             **argd: the arguments to the method.
         """
 
+        print("putMsg(%s, %s) %d", method, argd, self.queue.qsize())
         qmsg = QMsg(method, **argd)
         self.queue.put(qmsg)
         
@@ -143,6 +144,8 @@ class QThread(threading.Thread):
             raise Queue.Empty("empty return from %s in %s" % (qmsg, self))
 
         if isinstance(ret, Exception):
+            self._realCmd(None).diag('text="%s thead call() raising %s "' % 
+                                     (self.name, ret))
             raise ret
         else:
             return ret
@@ -161,7 +164,8 @@ class QThread(threading.Thread):
     def handleTimeout(self):
         """ Called when the .get() times out. Intended to be overridden. """
 
-        self._realCmd(None).diag('text="%s thead is alive (exiting=%s)"' % (self.name, self.exitASAP))
+        self._realCmd(None).diag('text="%s thead is alive (timeout=%0.5f, queue=%s, exiting=%s)"' % 
+                                 (self.name, self.timeout, self.queue, self.exitASAP))
         if self.exitASAP:
             raise SystemExit()
 
@@ -175,14 +179,13 @@ class QThread(threading.Thread):
     def exitMsg(self, cmd=None):
         """ handler for the "exit" message. Spits out a message and arranges for the .run() method to exit.  """
 
-        print('in %s exitMsg' % (self.name))
+        self._realCmd(None).diag("text='in %s exitMsg'" % (self.name))
         raise SystemExit()
 
     def pingMsg(self, cmd=None):
         """ handler for the 'ping' message. """
 
         self._realCmd(cmd).inform('text="thread %s is alive!"' % (self.name))
-
     
     def run(self):
         """ Main run loop for this thread. """
@@ -202,7 +205,7 @@ class QThread(threading.Thread):
                     returnQueue = msg.returnQueue
                 else:
                     raise AttributeError("thread %s received a message of an unhanded type(s): %s" % 
-                                         (self.name, type(msg), msg))
+                                         (self, type(msg), msg))
                 ret = None
                 try:
                     ret = method()
@@ -210,7 +213,7 @@ class QThread(threading.Thread):
                     return
                 except Exception as e:
                     self._realCmd(None).warn('text="%s: uncaught exception running %s: %s"' % 
-                                             (self.name, method, e))
+                                             (self, method, e))
                     ret = e
                 finally:
                     if returnQueue:
