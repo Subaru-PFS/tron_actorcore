@@ -131,6 +131,13 @@ class QThread(threading.Thread):
         if self.exitASAP:
             raise SystemExit()
 
+
+    def exit(self):
+        """ Signal our thread in .run() that it should exit. """
+
+        self.exitASAP = True
+        self.putMsg(self.exitMsg)
+
     def exitMsg(self, cmd=None):
         """ handler for the "exit" message. Spits out a message and arranges for the .run() method to exit.  """
 
