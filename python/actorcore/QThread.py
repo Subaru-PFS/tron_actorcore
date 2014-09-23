@@ -1,6 +1,8 @@
 import functools
 import Queue
 import threading
+import time
+
 from opscore.utility.tback import tback
 
 """
@@ -27,9 +29,7 @@ Asynchronous calls:
 """
 
 class QMsg(object):
-    DEFAULT_PRIORITY = 5
-
-    def __init__(self, method, returnQueue=None, msgPriority=None, **argd):
+    def __init__(self, method, returnQueue=None, **argd):
         """ Create a new QMsg, which will resolve to method(*argl, **argd). 
 
         d = {}
@@ -40,17 +40,40 @@ class QMsg(object):
         
         """
 
-        self.priority = msgPriority if msgPriority else QMsg.DEFAULT_PRIORITY
         self.returnQueue = returnQueue
         self.method = functools.partial(method, **argd)
 
-    def __lt__(self, other):
-        """ Support sorting of QMsg instances, based on the .priority. Used by PriorityQueue. """
+class PriorityOverrideQueue(Queue.PriorityQueue):
+    def __init__(self):
+        Queue.PriorityQueue.__init__(self)
+        self.counter = 1
+        self.urgentCounter = -1
+        self.lock = threading.Lock()
 
-        return self.priority < other.priority
+    def __str__(self):
+        return ("POQ(size=%d, locked=%s)" % 
+                (self.qsize(), self.lock.locked()))
+
+    def put(self, item):
+        print("in put(%s) of %s" % (item, self))
+        with self.lock:
+            counter = self.counter
+            Queue.PriorityQueue.put(self, (counter, item))
+            self.counter += 1
+        print("lv put(%s) of %s" % (item, self))
+        
+    def putUrgent(self, item):
+        with self.lock:
+            counter = self.urgentCounter
+            Queue.PriorityQueue.put(self, (counter, item))
+            self.urgentCounter -= 1
+        
+    def get(self, *args, **kwargs):
+        _, item = Queue.PriorityQueue.get(self, *args, **kwargs)
+        return item
 
 class QThread(threading.Thread):
-    def __init__(self, actor, name, timeout=10.0, isDaemon=True, queueClass=Queue.PriorityQueue):
+    def __init__(self, actor, name, timeout=10.0, isDaemon=True):
         """ A thread with a queue. The thread's .run() method pops items off its public .queue and executes them. """
 
         threading.Thread.__init__(self, name=name)
@@ -62,7 +85,11 @@ class QThread(threading.Thread):
         self.timeout = timeout
         self.exitASAP = False
 
-        self.queue = queueClass()
+        self.queue = PriorityOverrideQueue()
+
+    def __str__(self):
+        return ("%s(thread=%s; queue=%s" % (self.__class__.__name__, threading.Thread.__str__(self),
+                                            self.queue))
 
     def _realCmd(self, cmd=None):
         """ Returns a callable cmd instance. If the passed in cmd is None, return the actor's bcast cmd. """
