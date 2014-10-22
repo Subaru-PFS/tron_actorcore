@@ -34,8 +34,13 @@ class CommandLinkManager(Factory):
         self.activeConnections = []
         self.connID = 1
 
-        self.listeningPort = reactor.listenTCP(port, self, interface=interface)
-        
+        try:
+            self.listeningPort = reactor.listenTCP(port, self, interface=interface)
+        except Exception, e:
+            logging.error("Cannot listen for hub connections: %s", e)
+            logging.error("Check that the host and port in the configuration file is not used by another program:")
+            raise
+
     def fetchCid(self):
         """ Return the next available connection ID. """
 
