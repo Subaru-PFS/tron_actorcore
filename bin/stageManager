@@ -47,7 +47,8 @@ done
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 ACTOR=$1; shift
-PRODUCT=${ACTOR}Actor
+FULLACTOR=${ACTOR}Actor
+PRODUCT=ics_${FULLACTOR}
 
 if test -z "$ACTOR"; then
     echo "Please specify a product to control" >&2
@@ -98,7 +99,7 @@ get_pid() {
     print=$1
 
     PID=""
-    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python\/${PRODUCT}\/main.py/ {print \$1}")
+    pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python\/${FULLACTOR}\/main.py/ {print \$1}")
     PID=$pid
 
     if [ "$print" = 1 -o $verbose != 0 ]; then
@@ -125,7 +126,7 @@ do_start() {
 
     stdioLog=$LOG_DIR/stdio-`now`.log
     cd $PRODUCT_DIR
-    python python/$PRODUCT/main.py >$stdioLog 2>&1 &
+    python python/$FULLACTOR/main.py >$stdioLog 2>&1 &
 
     # Check that it really started...
     #

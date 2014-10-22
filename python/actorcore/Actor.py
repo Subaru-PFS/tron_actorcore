@@ -49,12 +49,11 @@ class Actor(object):
         # configuration file.
         self.name = name
         self.productName = productName if productName else self.name
-        product_dir_name = '$%s%s_DIR' % (productPrefix.upper(), self.productName.upper())
-        self.product_dir = os.path.expandvars(product_dir_name)
 
-        if not self.product_dir:
-            raise RuntimeError('environment variable %s must be defined' % (product_dir_name))
-
+        # This requires that the actor be started from its root directory. Not great,
+        # but it removed dependance on another environment variable. Could import eups and
+        # ask that object.
+        self.product_dir = os.getcwd()
         self.configFile = configFile if configFile else \
             os.path.expandvars(os.path.join(self.product_dir, 'etc', '%s.cfg' % (self.name)))
 
