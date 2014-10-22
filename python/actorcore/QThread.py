@@ -44,6 +44,8 @@ class QMsg(object):
         self.method = functools.partial(method, **argd)
 
 class PriorityOverrideQueue(Queue.PriorityQueue):
+    """ A limited Priority Queue, allowing urgent messages to be pushed to the front of the queue. """
+
     def __init__(self):
         Queue.PriorityQueue.__init__(self)
         self.counter = 1
@@ -54,8 +56,12 @@ class PriorityOverrideQueue(Queue.PriorityQueue):
         return ("POQ(size=%d, locked=%s)" % 
                 (self.qsize(), self.lock.locked()))
 
-    def put(self, item):
-        print("in put(%s) of %s" % (item, self))
+    def put(self, item, urgent=False):
+        """ Put a regular messages on our queue. """
+
+        if urgent:
+            return self.putUrgent(item)
+
         with self.lock:
             counter = self.counter
             Queue.PriorityQueue.put(self, (counter, item))
@@ -63,6 +69,8 @@ class PriorityOverrideQueue(Queue.PriorityQueue):
         print("lv put(%s) of %s" % (item, self))
         
     def putUrgent(self, item):
+        """ Put an urgent message at the front of our queue. """
+
         with self.lock:
             counter = self.urgentCounter
             Queue.PriorityQueue.put(self, (counter, item))
@@ -104,7 +112,7 @@ class QThread(threading.Thread):
             time.sleep(0.1)
         raise RuntimeError("failed to start thread %s")
 
-    def putMsg(self, method, **argd):
+    def putMsg(self, method, urgent=False, **argd):
         """ send ourself a new message. 
 
         Args:
@@ -114,9 +122,9 @@ class QThread(threading.Thread):
 
         print("putMsg(%s, %s) %d", method, argd, self.queue.qsize())
         qmsg = QMsg(method, **argd)
-        self.queue.put(qmsg)
+        self.queue.put(qmsg, urgent=urgent)
         
-    def call(self, method, callTimeout=None, **argd):
+    def call(self, method, callTimeout=None, urgent=False, **argd):
         """ send ourself a new message, then wait for and return a single response. 
 
         Arguments
@@ -143,7 +151,7 @@ class QThread(threading.Thread):
         returnQueue = Queue.Queue()
         
         qmsg = QMsg(method, returnQueue=returnQueue, **argd)
-        self.queue.put(qmsg)
+        self.queue.put(qmsg, urgent=urgent)
 
         try:
             ret = returnQueue.get(timeout=callTimeout)

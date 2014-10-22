@@ -1,6 +1,5 @@
 import time
 import unittest
-import Queue
 
 import actorcore.QThread
 
@@ -17,9 +16,10 @@ class TestLogic(object):
     def raiseMesg(self):
         raise TestException('kaboom')
 
-    def pushMsg(self, item=None):
+    def pushMsg(self, item=None, pause=None):
         self.stack.append(item)
-        print("pushed %s onto %s" % (item, self.stack))
+        if pause is not None:
+            time.sleep(pause)
         
     def clearMsg(self):
         ret = self.stack
@@ -59,6 +59,18 @@ class TestQThread(unittest.TestCase):
 
         self.assertEqual(ret2, range(2))
 
+    def test_urgent(self):
+        for i in range(8):
+            self.testQ.putMsg(self.testLogic.pushMsg, item=i, pause=0.25)
+
+        # Force urgent readout of first 4 items.
+        time.sleep(0.85)
+        ret1 = self.testQ.call(self.testLogic.clearMsg, urgent=True)
+        self.assertEqual(ret1, range(4))
+
+        ret2 = self.testQ.call(self.testLogic.clearMsg)
+        self.assertEqual(ret1+ret2, range(8))
+
 def main(args=None):
     if isinstance(args, basestring):
         import shlex
@@ -68,4 +80,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-
