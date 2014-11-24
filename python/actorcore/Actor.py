@@ -313,7 +313,7 @@ class Actor(object):
         """
 
         if path is None:
-            self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$ICS_MHS_ACTORCORE_DIR'),
+            self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$TRON_ACTORCORE_DIR'),
                                                     'python','actorcore','Commands'))
             self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python',
                                                     self.productName, 'Commands'))
