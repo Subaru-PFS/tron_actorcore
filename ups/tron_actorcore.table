@@ -1,7 +1,7 @@
-setupRequired("ics_mhs_config")
+setupRequired("ics_config")
 
 # Just for stageManager bits
-setupOptional("ics_mhs_tron")
+setupOptional("tron_tron")
 
 pathPrepend(PATH, ${PRODUCT_DIR}/bin)
 pathPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
