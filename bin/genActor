@@ -18,7 +18,7 @@ if test -e "$productDir"; then
     exit 2
 fi
 
-templateDir="$ICS_MHS_ACTORCORE_DIR/templateActor"
+templateDir="$TRON_ACTORCORE_DIR/templateActor"
 if test ! -d "$templateDir"; then 
     echo "template directory $templateDir does not exist!"
     exit 3
