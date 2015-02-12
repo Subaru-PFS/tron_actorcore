@@ -437,7 +437,8 @@ class Actor(object):
         self.logger.info("starting reactor (in own thread=%s)...." % (not self.runInReactorThread))
         try:
             if not self.runInReactorThread:
-                threading.Thread(target=self.actor_loop).start()
+                threading.Thread(target=self.actor_loop,
+                                 name='%s_main' % (self.name)).start()
             if doReactor:
                 reactor.run()
         except Exception, e:
