@@ -16,9 +16,12 @@ Options:
    -h, --help		Provide this paltry help
    -l, --log DIR	Directory to write log files
    -v, --verbose	Be chatty
+   --name               Added to actor args.
 EOF
     exit 1
 }
+
+ACTORARGS=""
 
 while [ ! -z $1 ]; do
     case $1 in
@@ -34,7 +37,11 @@ while [ ! -z $1 ]; do
 	    fi
 	    shift;;
       -v|--verbose)
-	    verbose=1;;
+	  verbose=1;;
+      --name)
+          ACTORARGS="$ACTORARGS --name=$2"
+          shift;;
+                  
       -*)
 	    echo "Unknown option: $1" >&2
 	    exit 1;;
@@ -126,7 +133,7 @@ do_start() {
 
     stdioLog=$LOG_DIR/stdio-`now`.log
     cd $PRODUCT_DIR
-    python python/$FULLACTOR/main.py >$stdioLog 2>&1 &
+    python python/$FULLACTOR/main.py $ACTORARGS >$stdioLog 2>&1 &
 
     # Check that it really started...
     #
