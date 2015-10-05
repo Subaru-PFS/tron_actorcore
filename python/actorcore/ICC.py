@@ -5,13 +5,12 @@ import logging
 import imp
 import os
 import sys
-import threading
 
 import actorcore.Actor as coreActor
 
 class ICC(coreActor.Actor):
-    def __init__(self, name, configFile, productName=None):
-        coreActor.Actor.__init__(self, name, configFile=configFile, productName=productName)
+    def __init__(self, name, **kwargs):
+        coreActor.Actor.__init__(self, name, **kwargs)
         
         # Create a separate logger for controller io
         opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "io"), 'io')
@@ -19,14 +18,17 @@ class ICC(coreActor.Actor):
         self.iolog.setLevel(int(self.config.get('logging','ioLevel')))
         self.iolog.propagate = False
 
-    def attachController(self, name, path=None, cmd=None):
+        self.controllers = dict()
+
+    def attachController(self, name, instanceName=None, path=None, cmd=None):
         """ (Re-)load and attach a named set of commands. """
 
-        if path == None:
-            path = ['./Controllers']
+        if path is None:
+            path = [os.path.join(self.product_dir, 'python', self.productName, 'Controllers')]
 
-        # import pdb; pdb.set_trace()
-        self.logger.info("attaching controller %s from path %s", name, path)
+        if instanceName is None:
+            instanceName = name
+        self.logger.info("attaching controller %s/%s from path %s", instanceName, name, path)
         file = None
         try:
             file, filename, description = imp.find_module(name, path)
@@ -34,7 +36,7 @@ class ICC(coreActor.Actor):
                               file, filename, path)
             mod = imp.load_module(name, file, filename, description)
             self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
-                         name, file, filename, description, id(mod))
+                              name, file, filename, description, id(mod))
         except ImportError, e:
             raise RuntimeError('Import of %s failed: %s' % (name, e))
         finally:
@@ -43,44 +45,45 @@ class ICC(coreActor.Actor):
 
         # Instantiate and save a new controller. 
         self.logger.info('creating new %s (%08x)', name, id(mod))
-        exec('conn = mod.%s(self, "%s")' % (name, name))
+        exec('conn = mod.%s(self, "%s")' % (name, instanceName))
 
         # If we loaded the module and the controller is already running, cleanly stop the old one. 
-        if name in self.controllers:
-            self.logger.info('stopping %s controller', name)
-            self.controllers[name].stop()
-            del self.controllers[name]
+        if instanceName in self.controllers:
+            self.logger.info('stopping %s controller', instanceName)
+            self.controllers[instanceName].stop()
+            del self.controllers[instanceName]
 
-        self.logger.info('starting %s controller', name)
+        self.logger.info('starting %s controller', instanceName)
         try:
             conn.start()
         except Exception, e:
             print sys.exc_info()
-            self.logger.error('Could not connect to %s', name)
+            self.logger.error('Could not connect to %s/%s: %s', instanceName, name, e)
             return False
-        self.controllers[name] = conn
+        self.controllers[instanceName] = conn
         return True
 
     def attachAllControllers(self, path=None):
         """ (Re-)load and (re-)connect to the hardware controllers listed in config:tron.controllers. 
         """
 
-        clist = eval(self.config.get(self.name, 'controllers'))
-        self.logger.info("All controllers = %s",clist)
-        for c in clist:
-            if c not in self.allControllers:
-                self.bcast.warn('text=%s' % (qstr('cannot attach unknown controller %s' % (c))))
-                continue
+        for c in self.allControllers:
             if not self.attachController(c, path):
                 self.bcast.warn('text="Could not connect to controller %s."' % (c))
 
+
+    def detachController(self, controllerName):
+        controller = self.controllers.get(controllerName)
+        if controller:
+            controller.stop()
+            del self.controllers[controllerName]
+        
     def stopAllControllers(self):
         for c in self.controllers.keys():
-            controller = self.controllers[c]
-            controller.stop()
+            self.detachController(c)
 
     def shutdown(self):
-        actorCore.Actor.shutdown(self)
+        coreActor.shutdown(self)
         
         self.stopAllControllers()
 

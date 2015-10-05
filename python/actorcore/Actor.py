@@ -288,7 +288,7 @@ class Actor(object):
             try:
                 verb, args, func = v
             except ValueError, e:
-                raise RuntimeError("vocabulary word needs three parts: %s" % (v))
+                raise RuntimeError("vocabulary word needs three parts: %s" % (repr(v)))
 
             # Check that the function exists and get its help.
             #
@@ -437,7 +437,8 @@ class Actor(object):
         self.logger.info("starting reactor (in own thread=%s)...." % (not self.runInReactorThread))
         try:
             if not self.runInReactorThread:
-                threading.Thread(target=self.actor_loop).start()
+                actorThread = threading.Thread(target=self.actor_loop)
+                actorThread.start()
             if doReactor:
                 reactor.run()
         except Exception, e:
