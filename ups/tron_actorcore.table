@@ -1,6 +1,8 @@
 setupOptional("python")
 setupRequired("ics_config")
 
+setupRequired("ics_actorkeys")
+
 # Just for stageManager bits
 setupOptional("tron_tron")
 
