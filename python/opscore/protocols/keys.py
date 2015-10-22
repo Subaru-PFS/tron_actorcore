@@ -423,7 +423,15 @@ class KeysDictionary(object):
             raise KeysDictionaryError('no actorkeys package found')
         try:
             # open the file corresponding to the requested keys dictionary
-            (dictfile,name,description) = imp.find_module(dictname,keyspath)
+            try:
+                (dictfile,name,description) = imp.find_module(dictname,keyspath)
+            except:
+                parts = dictname.split('_', 1)
+                if len(parts) == 1:
+                    raise
+                dictname = parts[0]
+                (dictfile,name,description) = imp.find_module(dictname,keyspath)
+                
             # create a global symbol table for evaluating the keys dictionary expression
             symbols = {
                 '__builtins__': __builtins__,
