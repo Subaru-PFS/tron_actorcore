@@ -447,7 +447,7 @@ class KeysDictionary(object):
             filedata = dictfile.read()
             kdict = eval(filedata,symbols)
             # check that the dictionary filename and name match
-            if not dictname == kdict.name:
+            if not dictname.startswith(kdict.name):
                 raise KeysDictionaryError(
                     'dictionary filename and name are different: %s, %s'
                     % (dictname,kdict.name))
