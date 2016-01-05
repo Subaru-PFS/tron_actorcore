@@ -147,8 +147,14 @@ class InternationalAtomicTime(CoordinatedUniversalTime):
         elif dt.year < 2009:
             # leap second added 31 Dec 2005
             return int(+33)
-        else:
+        elif dt.year < 2011 or dt.month < 7:
             # leap second added 31 Dec 2008
             return int(+34)
+        elif dt.year < 2014 or dt.month < 7:
+            # leap second added 30 Jun 2012
+            return int(+35)
+        else:
+            # leap second added 30 Jun 2015
+            return int(+36)
 
 TAI = InternationalAtomicTime()
