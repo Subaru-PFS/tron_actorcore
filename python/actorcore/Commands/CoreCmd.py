@@ -27,8 +27,12 @@ class CoreCmd(object):
         #
         # Set the keyword dictionary
         #
-        self.keys = keys.KeysDictionary("actorcore_core", (1, 1),
+        self.keys = keys.KeysDictionary("actorcore_core", (1, 2),
                                         keys.Key("cmd", types.String(), help="A command name"),
+                                        keys.Key("controller", types.String(),
+                                                 help='the names a controller.'),
+                                        keys.Key("name", types.String(),
+                                                 help='an optional name to assign to a controller instance'),
                                         keys.Key("cmds", types.String()*(1,None),
                                                  help="A list of command modules."),
                                         keys.Key("html", help="Generate HTML"),
@@ -41,12 +45,57 @@ class CoreCmd(object):
             ('help', '[(full)] [<cmds>] [<pageWidth>] [(html)]', self.cmdHelp),
             ('reload', '[<cmds>]', self.reloadCommands),
             ('reloadConfiguration', '', self.reloadConfiguration),
+            ('connect', '<controller> [<name>]', self.connect),
+            ('disconnect', '<controller>', self.disconnect),
             ('version', '', self.version),
             ('exitexit', '', self.exitCmd),
             ('ipdb', '', self.ipdbCmd),
             ('ipython', '', self.ipythonCmd),
         )
 
+    def controllerKey(self):
+        """ Return formatted keyword listing all loaded controllers. """
+        
+        controllerNames = self.actor.controllers.keys()
+        key = 'controllers=%s' % (','.join([c for c in controllerNames]))
+
+        return key
+        
+    def connect(self, cmd, doFinish=True):
+        """ Reload controller objects. 
+
+        If the controllers argument is not passed in, all controllers are reloaded.
+        """
+
+        controller = cmd.cmd.keywords['controller'].values[0]
+        try:
+            instanceName = cmd.cmd.keywords['name'].values[0]
+        except:
+            instanceName = controller
+
+        try:
+            self.actor.attachController(controller,
+                                        instanceName=instanceName)
+        except Exception as e:
+                cmd.fail('text="failed to connect controller %s: %s"' % (instanceName,
+                                                                         e))
+                return
+
+        if doFinish:
+            cmd.finish(self.controllerKey())
+        
+    def disconnect(self, cmd, doFinish=True):
+        """ Disconnect the given, or all, controller objects. """
+
+        controller = cmd.cmd.keywords['controller'].values[0]
+
+        try:
+            self.actor.detachController(controller)
+        except Exception as e:
+            cmd.fail('text="failed to disconnect controller %s: %s"' % (controller, e))
+            return
+        cmd.finish(self.controllerKey())
+        
     def cmdHelp(self, cmd):
         """ Return a summary of all commands, or the complete help string for the specified commands.
 
