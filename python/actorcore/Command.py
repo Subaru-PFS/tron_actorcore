@@ -80,7 +80,7 @@ class Command(object):
     def respond(self, response):
         """ Return intermediate response. """
 
-        self.__respond('i', response)
+        self.inform(response)
 
     def inform(self, response):
         """ Return intermediate response. """
@@ -88,6 +88,11 @@ class Command(object):
         self.__respond('i', response)
 
     def diag(self, response):
+        """ Return diagnostic output. """
+
+        self.debug(response)
+        
+    def debug(self, response):
         """ Return diagnostic output. """
 
         self.__respond('d', response)
