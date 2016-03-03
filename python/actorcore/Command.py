@@ -107,11 +107,20 @@ class Command(object):
 
         self.__respond('e', response)
         
-    def finish(self, response=None):
-        """ Return successful command finish. """
+    def finish(self, response='', fail=False):
+        """ Return (usually) successful command finish. 
 
-        if response is None:
-            response = ''
+        Args
+        ---
+        response : str
+           A preformatted string, of keywords. No validity checking is done.
+        fail : bool
+           Syntactic sugar: if True, then finish with a failure.
+
+        """
+
+        if fail:
+            return self.fail(response)
             
         if self.immortal:
             self.__respond('i', response)
