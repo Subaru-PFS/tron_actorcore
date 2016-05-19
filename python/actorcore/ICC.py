@@ -45,21 +45,31 @@ class ICC(coreActor.Actor):
 
         # Instantiate and save a new controller. 
         self.logger.info('creating new %s (%08x)', name, id(mod))
-        exec('conn = mod.%s(self, "%s")' % (name, instanceName))
-
+        try:
+            controllerClass = getattr(mod, name)
+        except AttributeError:
+            self.logger.warn('text="controller module %s does not contain %s"',
+                             fname, name)
+            return False
+        
+        try:
+            conn = controllerClass(self, instanceName)
+        except Exception as e:
+            self.logger.warn('text="controller %s(%s) could not be created: %s"',
+                             name, instanceName, e)
+            return False
+        
         # If we loaded the module and the controller is already running, cleanly stop the old one. 
-        if instanceName in self.controllers:
-            self.logger.info('stopping %s controller', instanceName)
-            self.controllers[instanceName].stop()
-            del self.controllers[instanceName]
+        self.detachController(instanceName)
 
         self.logger.info('starting %s controller', instanceName)
         try:
             conn.start()
         except Exception, e:
             print sys.exc_info()
-            self.logger.error('Could not connect to %s/%s: %s', instanceName, name, e)
+            self.logger.error('Could not start controller %s/%s: %s', instanceName, name, e)
             return False
+        
         self.controllers[instanceName] = conn
         return True
 
@@ -71,12 +81,16 @@ class ICC(coreActor.Actor):
             if not self.attachController(c, path):
                 self.bcast.warn('text="Could not connect to controller %s."' % (c))
 
-
     def detachController(self, controllerName):
         controller = self.controllers.get(controllerName)
+
         if controller:
-            controller.stop()
+            self.logger.info('stopping existing %s controller', controllerName)
+
+            c = self.controllers[controllerName]
             del self.controllers[controllerName]
+
+            c.stop()
         
     def stopAllControllers(self):
         for c in self.controllers.keys():
