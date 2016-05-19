@@ -110,7 +110,7 @@ class Actor(object):
             self.cmdr = None
 
     def _reloadConfiguration(self, cmd=None):
-        logging.warn("reading config file %s", self.configFile)
+        logging.info("reading config file %s", self.configFile)
 
         try:
             newConfig = ConfigParser.ConfigParser()
@@ -319,7 +319,12 @@ class Actor(object):
                                                     self.productName, 'Commands'))
             return
 
-        dirlist = os.listdir(path)
+        try:
+            dirlist = os.listdir(path)
+        except OSError, e:
+            self.logger.warn("no Cmd path %s" % (path))
+            return
+        
         dirlist.sort()
         self.logger.warn("loading %s" % (dirlist))
 
