@@ -210,7 +210,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             self.connection.addStateCallback(self.updConnState)
         else:
             self.connection = NullConnection()
-        self._isConnected = self.connection.isConnected()
+        self._isConnected = self.connection.isConnected
         self.userCmdIDGen = RO.Alg.IDGen(1, _CmdNumWrap)
         self.refreshCmdIDGen = RO.Alg.IDGen(_CmdNumWrap + 1, 2 * _CmdNumWrap)
         
@@ -494,7 +494,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         """If connection state changes, update refresh variables.
         """
         wasConnected = self._isConnected
-        self._isConnected = conn.isConnected()
+        self._isConnected = conn.isConnected
 #         print "updConnState; wasConnected=%s, isConnected=%s" % (wasConnected, self._isConnected)
 
         if wasConnected != self._isConnected:
