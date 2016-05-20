@@ -19,6 +19,9 @@ class OurActor(actorcore.Actor.Actor):
                  modelNames=(),
                  debugLevel=40):
 
+        if configFile is None:
+            configFile = os.path.expandvars(os.path.join('$TRON_ACTORCORE_DIR', 'etc', 'oneCmd.cfg'))
+            
         self.cmdActor = cmdActor
         self.cmdStr = cmdStr
         self.timelim = timelim
