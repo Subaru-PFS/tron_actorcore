@@ -37,7 +37,6 @@ class Command(object):
         
         self.alive = True
         self.immortal = immortal
-        self.debug = debug
  
         cmdLogger.debug("New Command: %s" % (self))
         
@@ -153,83 +152,3 @@ class Command(object):
                                      (self.cmdr, self.mid, self.rawCmd))
         self.source.sendResponse(self, flag, response)
         # self.actor.bcast.warn('text="sent a response to an already finished command: %s"' % (self))
-        
-    def coverArgs(self, requiredArgs, optionalArgs=None, ignoreFirst=None):
-        """ getopt, sort of.
-
-        Args:
-           requiredArgs     - list of words which must be matched.
-           optionalArgs     - list of optional words to match
-           ignoreFirst      - if set, skip the first cmd word.
-
-        Returns:
-           - a dictionary of requiredArgs matches
-           - a list of the requiredArgs words which were NOT matched.
-           - a dictionary of optionalArgs matches
-           - a list of command args not covered by requiredArgs or optionalArgs
-
-        Notes:
-           Does not return list of unmatched optionalArgs.
-           Pretty much ignores argument order, for better or worse.
-        
-        command = 'jump height=14 over=cow before=6pm backwards 3 5 5'
-        coverArgs(('height', 'backwards', 'withPole'), ('before', 'after')) ->
-            {'height':14, 'backwards':None},
-            ('withPole'),
-            {'before':'6pm'},
-            ('over=cow', '3', '5', '5')
-
-        """
-
-        if self.debug > 4:
-            CPL.log("MCCommand.coverArgs",
-                    "requiredArgs=%r optionalArgs=%r ignoreFirst=%r argDict=%r" 
-                    % (requiredArgs, optionalArgs, ignoreFirst, self.argDict))
-
-        # Start with a copy of the command args, which we consume as we copy to
-        # the matched_args dict.
-        #
-        # Match requireArgs before optionalArgs
-        #
-        if requiredArgs:
-            requiredArgs = list(requiredArgs)
-        else:
-            requiredArgs = []
-        if optionalArgs:
-            optionalArgs = list(optionalArgs)
-        else:
-            optionalArgs = []
-        
-        requiredMatches = {}
-        optionalMatches = {}
-        leftovers = []
-
-        # Walk down the argument list and categorize the arguments.
-        #
-        if ignoreFirst:
-            assert 0==1, "ignoreFirst not implemented yet."
-
-        for k, v in self.argDict.iteritems():
-            if k in requiredArgs:
-                requiredMatches[k] = v
-                requiredArgs.remove(k)
-            elif k in optionalArgs:
-                optionalMatches[k] = v
-                optionalArgs.remove(k)
-            else:
-                leftovers.append((k,v))
-
-        if self.debug > 3:
-            CPL.log("Command.coverArgs",
-                    "raw=%r requiredMatches=%r optionalMatches=%r unmatched=%r leftovers=%r" \
-                    % (argDict, requiredMatches, optionalMatches, requiredArgs, leftovers))
-                
-        return requiredMatches, requiredArgs, optionalMatches, leftovers
-
-if __name__ == "__main__":
-    c = Command(1, 2, None, "tcmd arg1=v1 arg2=v2 arg3 arg4 arg5='v5' 3 3 5 acb=99", None)
-
-    requiredMatches, requiredArgs, optionalMatches, leftovers = \
-                     c.coverArgs(('arg1', 'xxx', 'arg4'), ('arg3', 'arg5', 'noarg'))
-    requiredMatches, requiredArgs, optionalMatches, leftovers = \
-                     c.coverArgs(None, None, 'tcmd')
