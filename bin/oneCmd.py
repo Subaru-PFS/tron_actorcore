@@ -91,6 +91,9 @@ def main(argv=None):
     parser.add_argument('-l', '--level',
                         choices={'d','i','w','e'}, default='i',
                         help='lower reply level [d(ebug),i(nfo),w(arn),f(ail)]. Default=i')
+    parser.add_argument('--timeout', type=float, default=60,
+                        help='command timeout, seconds')
+    
     parser.add_argument('cmdArgs', nargs='+')
     args = parser.parse_args(argv)
     
@@ -103,6 +106,7 @@ def main(argv=None):
     theActor = OurActor('oneCmd', productName='tron_actorcore',
                         cmdActor=actorName,
                         cmdStr=' '.join(actorArgs),
+                        timelim=args.timeout,
                         printLevel=args.level.upper())
     theActor.run()
 
