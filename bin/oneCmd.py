@@ -40,12 +40,6 @@ class OurActor(actorcore.Actor.Actor):
                                        modelNames=modelNames)
         self.logger.setLevel(debugLevel)
                                     
-    def callAndDribble(self):
-        q = self.cmdr.cmdq(cmdStr=self.cmdStr,
-                           actor=self.cmdActor,
-                           timeLim=self.timelim,
-                           callCodes=AllCodes)
-
     def printResponse(self, resp):
         reply = resp.replyList[-1]
         code = resp.lastCode
