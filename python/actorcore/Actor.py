@@ -29,7 +29,9 @@ import CmdrConnection
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None,
-                 makeCmdrConnection=True, productPrefix="",
+                 makeCmdrConnection=True,
+                 acceptCmdrs=True,
+                 productPrefix="",
                  modelNames=()):
         """ Build an Actor.
 
@@ -41,6 +43,7 @@ class Actor(object):
             makeCmdrConnection
                          - establish self.cmdr as a command connection to the hub.
                            This needs to be True if we send commands or listen to keys.
+            acceptCmdrs  - allow incoming commander connections. 
             modelNames   - a list of actor names, whose key dictionaries we want to
                            listen to and have in our .models[]
         """
@@ -64,6 +67,8 @@ class Actor(object):
         self.logger.info('%s starting up....' % (name))
         self.parser = CommandParser()
 
+        self.acceptCmdrs = acceptCmdrs
+        
         self.modelNames = modelNames
         self.models = {}
         if self.modelNames and not makeCmdrConnection:
@@ -72,32 +77,38 @@ class Actor(object):
 
         # The list of all connected sources.
         listenInterface = self.config.get(self.name, 'interface')
+        if listenInterface == 'None':
+            listenInterface = None
         listenPort = self.config.getint(self.name, 'port')
+
+        # Allow for a passive actor which does not accept external commands.
+        if not self.acceptCmdrs:
+            listenInterface = None
         self.commandSources = cmdLinkManager.CommandLinkManager(self,
                                                                 port=listenPort,
                                                                 interface=listenInterface)
-        # The Command which we send uncommanded output to.
-        self.bcast = actorCmd.Command(self.commandSources,
-                                      'self.0', 0, 0, None, immortal=True)
-
         # IDs to send commands to ourself.
         self.selfCID = self.commandSources.fetchCid()
         self.synthMID = 1
+
+        # The Command which we send uncommanded output to.
+        self.bcast = actorCmd.Command(self.commandSources,
+                                      'self.0', 0, 0, None, immortal=True)
 
         # commandSets are the command handler packages. Each handles
         # a vocabulary, which it registers when loaded.
         # We gather them in one place mainly so that "meta-commands" (init, status)
         # can find the others.
         self.commandSets = {}
+        if acceptCmdrs:
+            self.logger.info("Creating validation handler...")
+            self.handler = validation.CommandHandler()
 
-        self.logger.info("Creating validation handler...")
-        self.handler = validation.CommandHandler()
+            self.logger.info("Attaching actor command sets...")
+            self.attachAllCmdSets()
+            self.logger.info("All command sets attached...")
 
-        self.logger.info("Attaching actor command sets...")
-        self.attachAllCmdSets()
-        self.logger.info("All command sets attached...")
-
-        self.commandQueue = Queue.Queue()
+            self.commandQueue = Queue.Queue()
         self.shuttingDown = False
 
         if makeCmdrConnection:
@@ -195,6 +206,10 @@ class Actor(object):
             self.bcast.warn('text="CANNOT ask hub to connect to us, since we do not have a connection to it yet!"')
             return
 
+        if not self.acceptCmdrs:
+            self.logger.warn('not triggering hub callback.')
+            return
+        
         ourAddr = self.commandSources.listeningPort.getHost()
         ourPort = ourAddr.port
         ourHost = ourAddr.host
