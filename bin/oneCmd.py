@@ -37,6 +37,7 @@ class OurActor(actorcore.Actor.Actor):
         actorcore.Actor.Actor.__init__(self, name, 
                                        productName=productName, 
                                        configFile=configFile,
+                                       acceptCmdrs=False,
                                        modelNames=modelNames)
         self.logger.setLevel(debugLevel)
                                     
