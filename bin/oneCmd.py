@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
-import argparse
 import os
-import sys
+import threading
 
 from twisted.internet import reactor
 
@@ -37,15 +36,10 @@ class OurActor(actorcore.Actor.Actor):
         actorcore.Actor.Actor.__init__(self, name, 
                                        productName=productName, 
                                        configFile=configFile,
+                                       acceptCmdrs=False,
                                        modelNames=modelNames)
         self.logger.setLevel(debugLevel)
                                     
-    def callAndDribble(self):
-        q = self.cmdr.cmdq(cmdStr=self.cmdStr,
-                           actor=self.cmdActor,
-                           timeLim=self.timelim,
-                           callCodes=AllCodes)
-
     def printResponse(self, resp):
         reply = resp.replyList[-1]
         code = resp.lastCode
@@ -53,10 +47,11 @@ class OurActor(actorcore.Actor.Actor):
         if self.printLevels[code] >= self.printLevel:
             print("%s %s %s" % (reply.header.actor, reply.header.code.lower(),
                                 reply.keywords.canonical(delimiter=';')))
+            
         if code in DoneCodes:
             self._shutdown()
             reactor.stop()
-            
+
     def callAndPrint(self):
         cmdvar = opsKeyvar.CmdVar(cmdStr=self.cmdStr,
                                   actor=self.cmdActor,
@@ -64,50 +59,54 @@ class OurActor(actorcore.Actor.Actor):
                                   callFunc=self.printResponse,
                                   callCodes=AllCodes)
 
-        reactor.callFromThread(self.cmdr.dispatcher.executeCmd, cmdvar)
+        reactor.callLater(0, self.cmdr.dispatcher.executeCmd, cmdvar)
         
     def _connectionMade(self):
-        """ twisted arranges to call this when self.cmdr has been established. """
+        """twisted arranges to call this when self.cmdr has been established. 
+
+        Usually, the Actor starts up by sending a command to the hub
+        to connect back to us. We want to skip this step.
+
+        """
 
         self.bcast.inform('%s is connected to the hub.' % (self.name))
-
         self.callAndPrint()
 
 #
 # To work
 def main(argv=None):
+    import argparse
+    import sys
+    
     if argv is None:
         argv = sys.argv[1:]
-    if isinstance(argv, basestring):
+    elif isinstance(argv, basestring):
         import shlex
         argv = shlex.split(argv)
 
-    if os.path.basename(sys.argv[0]) == 'oneCmd.py':
-        actorName = None
-    else:
-        actorName = os.path.basename(sys.argv[0])
+    actorName = os.path.basename(sys.argv[1])
+    argv = argv[1:]
     
-    parser = argparse.ArgumentParser(description="send a single actor command")
-    parser.add_argument('-l', '--level',
-                        choices={'d','i','w','e'}, default='i',
-                        help='lower reply level [d(ebug),i(nfo),w(arn),f(ail)]. Default=i')
-    parser.add_argument('--timeout', type=float, default=60,
-                        help='command timeout, seconds')
-    
-    parser.add_argument('cmdArgs', nargs='+')
-    args = parser.parse_args(argv)
-    
-    if actorName is None:
-        actorName = args.cmdArgs[0]
-        actorArgs = args.cmdArgs[1:]
-    else:
-        actorArgs = args.cmdArgs
+    parser = argparse.ArgumentParser(prog=actorName,
+                                     description="Send a single actor command")
+    parser.add_argument('--level', 
+                        choices={'d','i','w','f'},
+                        default='i',
+                        help='minimum reply level [d(ebug),i(nfo),w(arn),f(ail)]. Default=i')
+    parser.add_argument('--timelim', default=0.0,
+                        help='how long to wait for command completion. 0=forever')
+    parser.add_argument('commandArgs', nargs=argparse.REMAINDER)
+    opts = parser.parse_args(argv)
+    actorArgs = opts.commandArgs
+
+    # print('rawOpts="%s' % (opts))
+    # print('actorname=%s level=%s args=%s' % (actorName, opts.level, actorArgs))
 
     theActor = OurActor('oneCmd', productName='tron_actorcore',
                         cmdActor=actorName,
+                        timelim=opts.timelim,
                         cmdStr=' '.join(actorArgs),
-                        timelim=args.timeout,
-                        printLevel=args.level.upper())
+                        printLevel=opts.level.upper())
     theActor.run()
 
 if __name__ == '__main__':
