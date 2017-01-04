@@ -139,22 +139,33 @@ class InternationalAtomicTime(CoordinatedUniversalTime):
     def tzname(self,dt):
         return 'TAI'
     def leapseconds(self,dt):
-        if dt.year < 1999:
-            raise AstroTimeException("Leap seconds not tabulated before 1999")
-        elif dt.year < 2006:
-            # leap second added 31 Dec 1999
-            return int(+32)
-        elif dt.year < 2009:
-            # leap second added 31 Dec 2005
-            return int(+33)
-        elif dt.year < 2011 or dt.month < 7:
-            # leap second added 31 Dec 2008
-            return int(+34)
-        elif dt.year < 2014 or dt.month < 7:
-            # leap second added 30 Jun 2012
-            return int(+35)
+        """Apply leap second conversion to a UTC time.
+
+        This should be read from some IERS/USNO data file, but we are
+        hand coding the last few entries, as of 2017-01-04:
+
+        1999 JAN  1 =JD 2451179.5  TAI-UTC=  32.0       S + (MJD - 41317.) X 0.0      S
+        2006 JAN  1 =JD 2453736.5  TAI-UTC=  33.0       S + (MJD - 41317.) X 0.0      S
+        2009 JAN  1 =JD 2454832.5  TAI-UTC=  34.0       S + (MJD - 41317.) X 0.0      S
+        2012 JUL  1 =JD 2456109.5  TAI-UTC=  35.0       S + (MJD - 41317.) X 0.0      S
+        2015 JUL  1 =JD 2457204.5  TAI-UTC=  36.0       S + (MJD - 41317.) X 0.0      S
+        2017 JAN  1 =JD 2457754.5  TAI-UTC=  37.0       S + (MJD - 41317.) X 0.0      S
+
+        """
+        
+        if dt.year >= 2017:
+            return 37
+        elif dt.year > 2015 or dt.year == 2015 and dt.month >= 7:
+            return 36
+        elif dt.year > 2012 or dt.year == 2012 and dt.month >= 7:
+            return 35
+        elif dt.year >= 2009:
+            return 34
+        elif dt.year >= 2006:
+            return 33
+        elif dt.year >= 1999:
+            return 32
         else:
-            # leap second added 30 Jun 2015
-            return int(+36)
+            raise AstroTimeException("Leap seconds not tabulated before 1999")
 
 TAI = InternationalAtomicTime()
