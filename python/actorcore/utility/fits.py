@@ -1,5 +1,6 @@
 from opscore.utility.qstr import qstr
-import pyfits
+import astropy.io.fits as pyfits
+
 import numpy
 
 def extendHeader(cmd, header, cards):
@@ -33,7 +34,7 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
         return makeCard(cmd, cardName, onFail, errStr)
 
     try:
-        if idx != None:
+        if idx is not None:
             val = val[idx]
         else:
             val = val.getValue()
@@ -43,7 +44,7 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
         cmd.warn('text=%s' % (qstr(errStr)))
         return makeCard(cmd, cardName, onFail, errStr)
 
-    if cnv != None:
+    if cnv is not None:
         try:
             val = cnv(val)
         except Exception, e:
@@ -277,4 +278,4 @@ def _cnvPVTVelCard(pvt):
     try:
         return pvt.getVel()
     except:
-         return numpy.nan
+        return numpy.nan
