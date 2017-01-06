@@ -75,7 +75,8 @@ class CoreCmd(object):
 
         try:
             self.actor.attachController(controller,
-                                        instanceName=instanceName)
+                                        instanceName=instanceName,
+                                        cmd=cmd)
         except Exception as e:
                 cmd.fail('text="failed to connect controller %s: %s"' % (instanceName,
                                                                          e))

@@ -49,7 +49,7 @@ class ICC(coreActor.Actor):
             controllerClass = getattr(mod, name)
         except AttributeError:
             self.logger.warn('text="controller module %s does not contain %s"',
-                             fname, name)
+                             name, name)
             return False
         
         try:
