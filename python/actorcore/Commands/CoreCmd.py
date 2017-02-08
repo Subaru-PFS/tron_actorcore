@@ -182,9 +182,12 @@ class CoreCmd(object):
         
         cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
         try:
-            self.actor._reloadConfiguration(self, cmd)
-        except:
-            cmd.finish('text="reloaded configuration file')
+            self.actor._reloadConfiguration(cmd)
+        except Exception as e:
+            cmd.fail('text="failed to reload configuration file: %s', e)
+            return
+        
+        cmd.finish('text="configuration file reloaded"')
     
     def exitCmd(self, cmd):
         """ Brutal exit when all else has failed. """
