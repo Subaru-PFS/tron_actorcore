@@ -167,7 +167,7 @@ class Cmdr(object):
 
         The arguments are passed right through to the keyvar.CmdVar. If the callCodes is
         set to keyvar.AllCodes, this function generates all the individual response lines, 
-        otherwise it returns all the linesa at once.
+        otherwise it returns all the lines at once.
         """
 
         q = self.cmdq(**argv)
