@@ -242,10 +242,60 @@ class Actor(object):
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
                                                                     cmdStr='listen clearActors',
                                                                     timeLim=5.0))
-        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
-                                                                    cmdStr='listen addActors %s' % (actorString),
-                                                                    timeLim=5.0))
+        if modelNames:
+            self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
+                                                                        cmdStr='listen addActors %s' % (actorString),
+                                                                        timeLim=5.0))
 
+    def addModels(self, newModelNames):
+        """ Add new models/actors to get and keep keyword updates from. 
+
+        Args
+        ====
+        newModelNames : list-like or string
+           names of actors to start listening to.
+        """
+        
+        if isinstance(newModelNames, str):
+            newModelNames = [newModelNames]
+
+        for n in newModelNames:
+            if n in self.models:
+                self.bcast.warn('text="model %s is already being tracked"' % (n))
+            else:
+                try:
+                    self.models[n] = opscore.actor.model.Model(n)
+                    self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
+                                                                                cmdStr='listen addActors %s' % (n),
+                                                                                timeLim=5.0))
+                except Exception as e:
+                    self.bcast.warn('text="failed to add model %s: %s"' % (n, e))
+                
+    def dropModels(self, dropModelNames):
+        """ Add new models/actors to get and keep keyword updates from. 
+
+        Args
+        ====
+        dropModelNames : list-like or string
+           names of actors to start listening to.
+        """
+        
+        if isinstance(dropModelNames, str):
+            dropModelNames = [dropModelNames]
+
+        for n in dropModelNames:
+            if n not in self.models:
+                self.bcast.warn('text="model %s is not currently being tracked"' % (n))
+            else:
+                try:
+                    del self.models[n]
+                    self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
+                                                                                cmdStr='listen delActors %s' % (n),
+                                                                                timeLim=5.0))
+                except Exception as e:
+                    self.bcast.warn('text="failed to drop model %s: %s"' % (n, e))
+                    
+                
     def _connectionMade(self):
         """ twisted arranges to call this when self.cmdr has been established. """
 
