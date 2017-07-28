@@ -69,9 +69,8 @@ class Actor(object):
 
         self.acceptCmdrs = acceptCmdrs
         
-        self.modelNames = modelNames
         self.models = {}
-        if self.modelNames and not makeCmdrConnection:
+        if modelNames and not makeCmdrConnection:
             self.logger.warn("modelNames were requested but makeCmdrConnection is False. Forcing that to True.")
             makeCmdrConnection = True
 
@@ -116,7 +115,7 @@ class Actor(object):
             self.cmdr.connectionMade = self._connectionMade
             self.cmdr.connectionLost = self.connectionLost
             self.cmdr.connect()
-            self.updateHubModels()
+            self._initializeHubModels(modelNames)
         else:
             self.cmdr = None
 
@@ -220,35 +219,90 @@ class Actor(object):
                                                                     cmdStr=cmdStr,
                                                                     timeLim=5.0))
 
-    def updateHubModels(self):
-        """ Send the hub commands to update which model we want updates from. """
+    def _initializeHubModels(self, modelNames):
+        """ Initialize the dictionary of models we want to track. """
 
-        if self.modelNames and not self.models:
-            for n in self.modelNames:
-                self.models[n] = opscore.actor.model.Model(n)
+        if isinstance(modelNames, str):
+            modelNames = [modelNames]
+            
+        for n in modelNames:
+            self.models[n] = opscore.actor.model.Model(n)
 
 
-    def updateHubInterest(self):
+    def _initializeHubInterest(self):
+        """ Tell the hub which actors we want updates from. """
+
         if not self.cmdr:
             self.bcast.warn('text="CANNOT ask hub to connect to us, since we do not have a connection to it yet!"')
             return
 
-        actorString = " ".join(self.modelNames)
-        self.bcast.warn('%s is asking the hub to send us updates from %s' % (self.name, self.modelNames))
+        modelNames = self.models.keys()
+        actorString = " ".join(modelNames)
+        self.bcast.warn('%s is asking the hub to send us updates from %s' % (self.name, modelNames))
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
                                                                     cmdStr='listen clearActors',
                                                                     timeLim=5.0))
-        self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
-                                                                    cmdStr='listen addActors %s' % (actorString),
-                                                                    timeLim=5.0))
+        if modelNames:
+            self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
+                                                                        cmdStr='listen addActors %s' % (actorString),
+                                                                        timeLim=5.0))
 
+    def addModels(self, newModelNames):
+        """ Add new models/actors to get and keep keyword updates from. 
+
+        Args
+        ====
+        newModelNames : list-like or string
+           names of actors to start listening to.
+        """
+        
+        if isinstance(newModelNames, str):
+            newModelNames = [newModelNames]
+
+        for n in newModelNames:
+            if n in self.models:
+                self.bcast.warn('text="model %s is already being tracked"' % (n))
+            else:
+                try:
+                    self.models[n] = opscore.actor.model.Model(n)
+                    self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
+                                                                                cmdStr='listen addActors %s' % (n),
+                                                                                timeLim=5.0))
+                except Exception as e:
+                    self.bcast.warn('text="failed to add model %s: %s"' % (n, e))
+                
+    def dropModels(self, dropModelNames):
+        """ Add new models/actors to get and keep keyword updates from. 
+
+        Args
+        ====
+        dropModelNames : list-like or string
+           names of actors to start listening to.
+        """
+        
+        if isinstance(dropModelNames, str):
+            dropModelNames = [dropModelNames]
+
+        for n in dropModelNames:
+            if n not in self.models:
+                self.bcast.warn('text="model %s is not currently being tracked"' % (n))
+            else:
+                try:
+                    del self.models[n]
+                    self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
+                                                                                cmdStr='listen delActors %s' % (n),
+                                                                                timeLim=5.0))
+                except Exception as e:
+                    self.bcast.warn('text="failed to drop model %s: %s"' % (n, e))
+                    
+                
     def _connectionMade(self):
         """ twisted arranges to call this when self.cmdr has been established. """
 
         self.bcast.warn('%s is connected to the hub.' % (self.name))
 
         # Tell the hub to keep us updated with keys from the models we are interested in.
-        self.updateHubInterest()
+        self._initializeHubInterest()
 
         # Request that tron connect to us.
         self.triggerHubConnection()
