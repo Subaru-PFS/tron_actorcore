@@ -8,8 +8,8 @@ Refer to https://trac.sdss3.org/wiki/Ops/Validation for details.
 
 from opscore.protocols.keys import Consumer,Key,CmdKey,RawKey
 
-import external.ply.lex as lex
-import external.ply.yacc as yacc
+import ply.lex as lex
+import ply.yacc as yacc
 
 class KeysFormatParseError(Exception):
     pass

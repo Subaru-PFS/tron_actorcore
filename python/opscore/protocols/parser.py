@@ -19,8 +19,8 @@ name_pattern = re.compile('[A-Za-z][A-Za-z0-9_.]*$')
 
 from opscore.protocols.messages import Keyword,RawKeyword,ReplyHeader,Reply,Command,MessageError
 
-import external.ply.lex as lex
-import external.ply.yacc as yacc
+import ply.lex as lex
+import ply.yacc as yacc
 
 class ParseError(Exception):
     pass
