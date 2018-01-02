@@ -28,7 +28,7 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
 
     try:
         val = keyDict[keyName]
-    except KeyError, e:
+    except KeyError as e:
         errStr = "failed to fetch %s" % (keyName)
         cmd.warn('text=%s' % (qstr(errStr)))
         return makeCard(cmd, cardName, onFail, errStr)
@@ -38,7 +38,7 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
             val = val[idx]
         else:
             val = val.getValue()
-    except Exception, e:
+    except Exception as e:
         errStr = "failed to index %s by %s from %s for %s: %s" % \
             (val, idx, keyName, cardName, e)
         cmd.warn('text=%s' % (qstr(errStr)))
@@ -47,7 +47,7 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
     if cnv is not None:
         try:
             val = cnv(val)
-        except Exception, e:
+        except Exception as e:
             errStr = "failed to convert %s from %s for %s using %s: %s" % \
                 (val, keyName, cardName, cnv, e)
             cmd.warn('text=%s' % (qstr(errStr)))
@@ -126,7 +126,7 @@ def tccCards(models, cmd=None):
         objSys = tccDict['objSys']
         objSysName = str(objSys[0])
         objSysDate = float(objSys[1])
-    except Exception, e:
+    except Exception as e:
         objSysName = 'unknown'
         objSysDate = 0.0
         if cmd:
@@ -213,7 +213,7 @@ def tccCards(models, cmd=None):
         orientNames = ('piston','xtilt','ytilt','xtran', 'ytran')
         for i in range(len(orientNames)):
             cards.append(makeCard(cmd, 'M2'+orientNames[i], float(secOrient[i]), 'TCC SecOrient'))
-    except Exception, e:
+    except Exception as e:
         cmd.warn("failed to generate the SecOrient cards: %s" % (e))
 
     try:
@@ -221,7 +221,7 @@ def tccCards(models, cmd=None):
         orientNames = ('piston','xtilt','ytilt','xtran', 'ytran')
         for i in range(len(orientNames)):
             cards.append(makeCard(cmd, 'M1'+orientNames[i], float(primOrient[i]), 'TCC PrimOrient'))
-    except Exception, e:
+    except Exception as e:
         cmd.warn("failed to generate the PrimOrient cards: %s" % (e))
 
     cards.append(makeCardFromKey(cmd, tccDict, 'scaleFac', 'SCALE',

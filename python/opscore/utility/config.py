@@ -3,6 +3,7 @@ Performs runtime configration based on command-line options and INI files
 
 Refer to https://trac.sdss3.org/wiki/Ops/Config for details.
 """
+from __future__ import print_function
 
 # Created 8-Apr-2009 by David Kirkby (dkirkby@uci.edu)
 
@@ -49,7 +50,7 @@ class ProductConfig(ConfigParser.SafeConfigParser):
             getter = getattr(self,'get' + (getType or ''),self.get)
             return getter(self.sectionName,optionName)
         except (ConfigParser.NoOptionError,ConfigParser.NoSectionError):
-            raise ConfigError
+            raise ConfigError()
 
 class ConfigOptionGroup(optparse.OptionGroup):
     """
@@ -160,7 +161,7 @@ class ConfigOptionParser(optparse.OptionParser):
                 from Crypto.Hash import MD5 as hasher
                 from Crypto.Cipher import AES as cipher
             except ImportError:
-                raise 'secret options require the Crypto package'
+                raise ImportError('secret options require the Crypto package')
             if not passphrase:
                 passphrase = getpass.getpass(prompt)
             key = hasher.new(passphrase).digest()
@@ -197,7 +198,7 @@ class ConfigOptionParser(optparse.OptionParser):
         Appends config info to the standard OptionParser help
         """
         retval = optparse.OptionParser.print_help(self,*args,**kwargs)
-        print '\n' + self.get_config_info()
+        print('\n' + self.get_config_info())
         return retval
     
     @staticmethod    

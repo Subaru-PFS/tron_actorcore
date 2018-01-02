@@ -3,6 +3,7 @@ Validation of SDSS-3 command and reply protocols
 
 Refer to https://trac.sdss3.org/wiki/Ops/Validation for details.
 """
+from __future__ import print_function
 
 # Created 7-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
@@ -227,7 +228,7 @@ class CommandHandler(HandlerBase):
                 raise KeyError('no consumers found for %s' % (name))
             try:
                 self.consumers[name].remove(consumer)
-            except ValueError, e:
+            except ValueError as e:
                 raise ValueError('no %s consumer found for %s' % (name, consumer))
             if self.consumers[name] == []:
                 del self.consumers[name]
@@ -303,6 +304,6 @@ class Trace(object):
     
     def __call__(self,message):
         if self.label:
-            print '%s: %s' % (self.label,message.canonical())
+            print('%s: %s' % (self.label,message.canonical()))
         else:
-            print message.canonical()
+            print(message.canonical())

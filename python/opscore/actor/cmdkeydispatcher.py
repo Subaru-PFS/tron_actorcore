@@ -108,6 +108,8 @@ History:
                     Changed to log cmdID when issuing a command.
 2011-07-28 ROwen    Modified to not log commands as they are sent; use cmds actor data instead.
 """
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import time
 import traceback
@@ -120,8 +122,8 @@ from opscore.utility.timer import Timer
 import opscore.protocols.keys as protoKeys
 import opscore.protocols.parser as protoParse
 import opscore.protocols.messages as protoMess
-import keydispatcher
-import keyvar
+from . import keydispatcher
+from . import keyvar
 
 __all__ = ["CmdKeyVarDispatcher"]
 
@@ -220,7 +222,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         
         try:
             self.makeReply(dataStr="TestName")
-        except Exception, e:
+        except Exception as e:
             raise ValueError("Invalid name=%s cannot be parsed as an actor name; error: %s" % \
                 (name, RO.StringUtil.strFromException(e)))
         
@@ -344,10 +346,10 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         
         while True:
             if cmdVar.isRefresh:
-                cmdID = self.refreshCmdIDGen.next()
+                cmdID = next(self.refreshCmdIDGen)
             else:
-                cmdID = self.userCmdIDGen.next()
-            if not self.cmdDict.has_key(cmdID):
+                cmdID = next(self.userCmdIDGen)
+            if cmdID not in self.cmdDict:
                 break
         self.cmdDict[cmdID] = cmdVar
         cmdVar._setStartInfo(self, cmdID)
@@ -370,7 +372,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 #                 cmdID = cmdVar.cmdID,
 #             )
             # print >> sys.stderr, "executing:", fullCmdStr
-        except Exception, e:
+        except Exception as e:
             errReply = self.makeReply(
                 cmdID = cmdVar.cmdID,
                 dataStr = "WriteFailed; Actor=%r; Cmd=%r; Text=%r" % (
@@ -575,7 +577,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         - keyVarListIter: iterator over values in self.keyVarListDict
         """
         try:
-            keyVarList = keyVarListIter.next()
+            keyVarList = next(keyVarListIter)
         except StopIteration:
             return
         for keyVar in keyVarList:
@@ -604,7 +606,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 (refreshCmd.actor, refreshCmd.cmdStr, keyVarNamesStr)
             self.logMsg(errMsg, severity=RO.Constants.sevWarning)
         elif keyVarSet:
-            aKeyVar = iter(keyVarSet).next()
+            aKeyVar = next(iter(keyVarSet))
             actor = aKeyVar.actor
             missingKeyVarNamesStr = ", ".join(sorted([kv.name for kv in keyVarSet if not kv.isCurrent]))
             if missingKeyVarNamesStr:
@@ -661,7 +663,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             refreshCmdItemIter = self.refreshCmdDict.iteritems()
 
         try:
-            refreshCmdInfo, keyVarSet = refreshCmdItemIter.next()
+            refreshCmdInfo, keyVarSet = next(refreshCmdItemIter)
         except StopIteration:
             self._allRefreshCmdsSent = True
             return
@@ -714,7 +716,7 @@ class NullConnection(object):
     
 
 if __name__ == "__main__":
-    print "\nTesting opscore.actor.CmdKeyVarDispatcher\n"
+    print("\nTesting opscore.actor.CmdKeyVarDispatcher\n")
     import opscore.protocols.types as protoTypes
     import twisted.internet.tksupport
     import Tkinter
@@ -724,7 +726,7 @@ if __name__ == "__main__":
     kvd = CmdKeyVarDispatcher()
 
     def showVal(keyVar):
-        print "keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent)
+        print("keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent))
 
     # scalars
     keyList = (
@@ -741,8 +743,8 @@ if __name__ == "__main__":
     
     # command callback
     def cmdCall(cmdVar):
-        print "command callback for actor=%s, cmdID=%d, cmdStr=%r, isDone=%s" % \
-            (cmdVar.actor, cmdVar.cmdID, cmdVar.cmdStr, cmdVar.isDone)
+        print("command callback for actor=%s, cmdID=%d, cmdStr=%r, isDone=%s" % \
+            (cmdVar.actor, cmdVar.cmdID, cmdVar.cmdStr, cmdVar.isDone))
     
     # command
     cmdVar = keyvar.CmdVar(
@@ -771,7 +773,7 @@ if __name__ == "__main__":
         msgCode = ":",
         dataStr = dataStr,
     )
-    print "\nDispatching message with wrong cmdID; only KeyVar callbacks should called:"
+    print("\nDispatching message with wrong cmdID; only KeyVar callbacks should called:")
     kvd.dispatchReply(reply)
 
     reply = kvd.makeReply(
@@ -780,7 +782,7 @@ if __name__ == "__main__":
         msgCode = ":",
         dataStr = dataStr,
     )
-    print "\nDispatching message with wrong actor; only CmdVar callbacks should be called:"
+    print("\nDispatching message with wrong actor; only CmdVar callbacks should be called:")
     kvd.dispatchReply(reply)
 
     reply = kvd.makeReply(
@@ -789,8 +791,8 @@ if __name__ == "__main__":
         msgCode = ":",
         dataStr = dataStr,
     )
-    print "\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:"
+    print("\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:")
     kvd.dispatchReply(reply)
     
-    print "\nTesting keyVar refresh"
+    print("\nTesting keyVar refresh")
     kvd.refreshAllVar()

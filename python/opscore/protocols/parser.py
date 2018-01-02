@@ -277,7 +277,7 @@ class ParserBase(object):
         try:
             body = self.unwrap()
             return self.engine.parse(body,lexer=self.lexer,debug=self.debug)
-        except MessageError,e:
+        except MessageError as e:
             raise ParseError(str(e))
 
 

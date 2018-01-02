@@ -7,12 +7,13 @@ History:
 2009-07-18 ROwen    Added keyVarDict property.
 2010-06-28 ROwen    Removed many unused imports (thanks to pychecker).
 """
+from __future__ import absolute_import
 import RO.Comm.HubConnection
 import RO.Constants
 import RO.StringUtil
 
 import opscore.protocols.keys as protoKeys
-import keyvar
+from . import keyvar
 
 __all__ = ["Model"]
 

@@ -3,6 +3,7 @@ Type declarations for SDSS-3 keyword values
 
 Refer to https://trac.sdss3.org/wiki/Ops/Types
 """
+from __future__ import print_function
 
 # Created 30-Oct-2008 by David Kirkby (dkirkby@uci.edu)
 
@@ -423,7 +424,7 @@ class Bool(ValueType):
                 return self.falseValue
         dct['__str__'] = doStr
         if dct['strFmt']:
-            print 'Bool: ignoring strFmt metadata'
+            print('Bool: ignoring strFmt metadata')
     
     def new(cls,value):
         """
@@ -498,7 +499,7 @@ class Bits(UInt):
         dct['bitsString'] = bitsString
         #dct['__str__'] = doStr
         if dct['strFmt']:
-            print 'Bits: ignoring strFmt metadata'
+            print('Bits: ignoring strFmt metadata')
         
     def addDescriptors(cls):
         for index,(name,width) in enumerate(cls.fieldSpecs):

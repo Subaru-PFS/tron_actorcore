@@ -18,11 +18,13 @@ History:
                     Added setKeyVarsFromReply which is called by dispatchReply.
 2011-06-13 ROwen    API change: added cmdID to the logging function argument list.
 """
+from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import traceback
 import opscore.protocols.parser
 import opscore.protocols.messages
-import keyvar
+from . import keyvar
 
 import RO.Constants
 import RO.StringUtil
@@ -31,7 +33,7 @@ __all__ = ["logToStdOut", "KeyVarDispatcher"]
 
 
 def logToStdOut(msgStr, *dumArgs, **dumKeyArgs):
-    print msgStr
+    print(msgStr)
 
 
 class KeyVarDispatcher(object):
@@ -105,7 +107,7 @@ class KeyVarDispatcher(object):
         # parse message; if that fails, log it as an error
         try:
             reply = self.parser.parse(replyStr)
-        except Exception, e:
+        except Exception as e:
             self.logMsg(
                 msgStr = "CouldNotParse; Reply=%r; Text=%r" % (replyStr, RO.StringUtil.strFromException(e)),
                 severity = RO.Constants.sevError,
@@ -115,7 +117,7 @@ class KeyVarDispatcher(object):
         # dispatch message
         try:
             self.dispatchReply(reply)
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Could not dispatch replyStr=%r\n    which was parsed as reply=%r\n" % \
                 (replyStr, reply))
             traceback.print_exc(file=sys.stderr)
@@ -189,7 +191,7 @@ class KeyVarDispatcher(object):
                 cmdID = cmdID,
                 keywords = keywords,
             )
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Could not log msgStr=%r; severity=%r; actor=%r; cmdr=%r; keywords=%r\n    error: %s\n" % \
                 (msgStr, severity, actor, cmdr, keywords, RO.StringUtil.strFromException(e)))
             traceback.print_exc(file=sys.stderr)
@@ -220,7 +222,7 @@ class KeyVarDispatcher(object):
                 cmdID = reply.header.commandId,
                 fallbackToStdOut = fallbackToStdOut,
             )
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Could not log reply=%r\n    error=%s\n" % \
                 (reply, RO.StringUtil.strFromException(e)))
             traceback.print_exc(file=sys.stderr)
@@ -276,7 +278,7 @@ class KeyVarDispatcher(object):
                         fallbackToStdOut = True,
                     )
                 except:
-                    print "Failed to set %s to %s:" % (keyVar, keyword.values)
+                    print("Failed to set %s to %s:" % (keyVar, keyword.values))
                     traceback.print_exc(file=sys.stderr)
 
     def setLogFunc(self, logFunc=None):
@@ -294,7 +296,7 @@ class KeyVarDispatcher(object):
         return (actor.lower(), keyName.lower())
 
 if __name__ == "__main__":
-    print "\nDemonstrating KeyVarDispatcher\n"
+    print("\nDemonstrating KeyVarDispatcher\n")
     import time
     import opscore.protocols.types as protoTypes
     import opscore.protocols.keys as protoKeys
@@ -303,7 +305,7 @@ if __name__ == "__main__":
     kvd = KeyVarDispatcher()
 
     def showVal(keyVar):
-        print "keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent)
+        print("keyVar %s.%s = %r, isCurrent = %s" % (keyVar.actor, keyVar.name, keyVar.valueList, keyVar.isCurrent))
 
     # scalars
     keyList = (
@@ -329,7 +331,7 @@ if __name__ == "__main__":
     dataStr = "; ".join(dataList)
 
     replyStr = "myprog.me 11 test : " + dataStr
-    print "\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:"
+    print("\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:")
     kvd.dispatchReplyStr(replyStr)
     
     twisted.internet.reactor.run()

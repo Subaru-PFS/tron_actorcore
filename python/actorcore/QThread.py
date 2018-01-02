@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import absolute_import
 import functools
 import Queue
 import threading
@@ -87,7 +89,7 @@ class QThread(threading.Thread):
         threading.Thread.__init__(self, name=name)
         self.setDaemon(isDaemon)
         if actor is None:
-            import FakeActor
+            from . import FakeActor
             actor = FakeActor.FakeActor()
         self.actor = actor
         self.timeout = timeout
@@ -120,7 +122,7 @@ class QThread(threading.Thread):
             **argd: the arguments to the method.
         """
 
-        print("putMsg(%s, %s) %d", method, argd, self.queue.qsize())
+        print(("putMsg(%s, %s) %d", method, argd, self.queue.qsize()))
         qmsg = QMsg(method, **argd)
         self.queue.put(qmsg, urgent=urgent)
         
@@ -238,11 +240,11 @@ class QThread(threading.Thread):
 
             except Queue.Empty:
                 self.handleTimeout()
-            except Exception, e:
+            except Exception as e:
                 try:
                     emsg = 'text="%s thread got unexpected exception: %s"' % (self.name, e)
                     self._realCmd().diag(emsg)
                     tback("DeviceThread", e)
                 except:
-                    print emsg
+                    print(emsg)
                     tback("DeviceThread", e)

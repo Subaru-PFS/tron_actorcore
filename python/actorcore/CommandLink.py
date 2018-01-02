@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from __future__ import absolute_import
 
 __all__ = ['CommandLink']
 
@@ -15,7 +16,7 @@ from opscore.utility.qstr import qstr
 from opscore.utility.tback import tback
 from twisted.protocols.basic import LineReceiver
 
-from Command import Command
+from .Command import Command
 
 class CommandLink(LineReceiver):
 
@@ -80,7 +81,7 @@ class CommandLink(LineReceiver):
         else:    
             try:
                 mid = int(rawMid)
-            except Exception, e:
+            except Exception as e:
                 self.brains.bcast.warn('text=%s' % (qstr("command ignored: MID is not an integer in %s" % cmdString)))
                 cmdLogger.critical('MID must be an integer: %s' % (rawMid))
                 return
@@ -95,7 +96,7 @@ class CommandLink(LineReceiver):
         try:
             cmd = Command(self.factory, cmdrName, self.connID, mid, cmdDict['cmdString'])
             self.brains.newCmd(cmd)
-        except Exception, e:
+        except Exception as e:
             self.brains.bcast.fail('text=%s' % (qstr("cannot process command: %s (exception=%s)" % 
                                                      (cmdDict['cmdString'], e))))
             cmdLogger.warn(tback('lineReceived', e))

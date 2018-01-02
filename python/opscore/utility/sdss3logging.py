@@ -26,6 +26,7 @@ Todo:
      whether to set up a root logger, whether to entirely wrap the logging.py
      functions, etc.
 """
+from __future__ import print_function
 
 import logging
 import os
@@ -169,8 +170,8 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         filename = self.basename + timeString + ".log"
 
         try:
-            os.makedirs(self.dirname, 0755)
-        except OSError, e:
+            os.makedirs(self.dirname, 0o755)
+        except OSError as e:
             pass
             
         path = os.path.join(self.dirname, filename)
@@ -182,7 +183,7 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         oldStream = self.stream
         try:
             self.stream = open(path, 'a+')
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Failed to rollover to new logfile %s: %s\n" % (path, e))
             return
             
@@ -200,8 +201,8 @@ class OpsRotatingFileHandler(logging.StreamHandler):
             pass
         try:
             os.symlink(filename, linkname)
-        except Exception, e:
-            print "Failed to create current.log symlink to %s" % (filename)
+        except Exception as e:
+            print("Failed to create current.log symlink to %s" % (filename))
 
            
 def makeOpsFileHandler(dirname, basename='', propagate=True):

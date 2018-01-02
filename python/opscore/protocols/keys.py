@@ -3,6 +3,7 @@ Core classes for SDSS-3 keyword validation
 
 Refer to https://trac.sdss3.org/wiki/Ops/Validation for details.
 """
+from __future__ import print_function
 
 # Created 18-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
@@ -31,19 +32,19 @@ class Consumer(object):
 
     def trace(self,what):
         if self.debug:
-            print '%s%r << %r' % (' '*Consumer.indent,self,what)
+            print('%s%r << %r' % (' '*Consumer.indent,self,what))
             Consumer.indent += 1
             
     def passed(self,what):
         if self.debug:
             Consumer.indent -= 1
-            print '%sPASS >> %r' % (' '*Consumer.indent,what)
+            print('%sPASS >> %r' % (' '*Consumer.indent,what))
         return True
 
     def failed(self,reason):
         if self.debug:
             Consumer.indent -= 1
-            print '%sFAIL: %s' % (' '*Consumer.indent,reason)
+            print('%sFAIL: %s' % (' '*Consumer.indent,reason))
         return False
 
     def consume(self,what):
@@ -454,10 +455,10 @@ class KeysDictionary(object):
             # do a checksum so that we can detect changes independently of versioning
             kdict.checksum = hashlib.md5(filedata).hexdigest()
             return kdict
-        except ImportError,e:
+        except ImportError as e:
             raise KeysDictionaryError('no keys dictionary found for %s: %s'
                 % (dictname,str(e)))
-        except Exception,e:
+        except Exception as e:
             indent = '\n >> '
             description = indent + indent.join(str(e).split('\n'))
             raise KeysDictionaryError('badly formatted keys dictionary in %s:%s'

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import imp
 import re
 import inspect
@@ -23,9 +24,9 @@ from opscore.utility.tback import tback
 import opscore.protocols.keys as keys
 import opscore.protocols.validation as validation
 
-import CommandLinkManager as cmdLinkManager
-import Command as actorCmd
-import CmdrConnection
+from . import CommandLinkManager as cmdLinkManager
+from . import Command as actorCmd
+from . import CmdrConnection
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None,
@@ -125,7 +126,7 @@ class Actor(object):
         try:
             newConfig = ConfigParser.ConfigParser()
             newConfig.read(self.configFile)
-        except Exception, e:
+        except Exception as e:
             if cmd:
                 cmd.fail('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
             raise
@@ -330,7 +331,7 @@ class Actor(object):
             self.logger.debug("command set file=%s filename=%s from path %s",
                               file, filename, path)
             mod = imp.load_module(cname, file, filename, description)
-        except ImportError, e:
+        except ImportError as e:
             raise RuntimeError('Import of %s failed: %s' % (cname, e))
         finally:
             if file:
@@ -356,7 +357,7 @@ class Actor(object):
         for v in cmdSet.vocab:
             try:
                 verb, args, func = v
-            except ValueError, e:
+            except ValueError as e:
                 raise RuntimeError("vocabulary word needs three parts: %s" % (repr(v)))
 
             # Check that the function exists and get its help.
@@ -390,7 +391,7 @@ class Actor(object):
 
         try:
             dirlist = os.listdir(path)
-        except OSError, e:
+        except OSError as e:
             self.logger.warn("no Cmd path %s" % (path))
             return
         
@@ -419,7 +420,7 @@ class Actor(object):
 
             try:
                 validatedCmd, cmdFuncs = self.handler.match(cmdStr)
-            except Exception, e:
+            except Exception as e:
                 cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
                                            (cmdStr, e))))
                     #tback('actor_loop', e)
@@ -437,13 +438,13 @@ class Actor(object):
                 cmd.cmd = validatedCmd
                 for func in cmdFuncs:
                     func(cmd)
-            except Exception, e:
+            except Exception as e:
                 oneLiner = self.cmdTraceback(e)
                 cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
                 #tback('newCmd', e)
                 return
 
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
                                        (e))))
             try:
@@ -515,7 +516,7 @@ class Actor(object):
                 actorThread.start()
             if doReactor:
                 reactor.run()
-        except Exception, e:
+        except Exception as e:
             tback('run', e)
 
         if doReactor:

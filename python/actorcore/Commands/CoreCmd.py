@@ -127,7 +127,7 @@ class CoreCmd(object):
                     try:
                         helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html,
                                             fullHelp=fullHelp)
-                    except Exception, e:
+                    except Exception as e:
                         helpStr = "something went wrong when building help for %s: %s" % (cmdName, e)
                         cmd.warn('text=%s' % (qstr(helpStr)))
                     helpList.append(helpStr)
@@ -204,14 +204,14 @@ class CoreCmd(object):
             debug_here = iPdb.Tracer()
             cmd.warn('text="starting ipdb on console..."')
             debugFunction = debug_here
-        except Exception, e:
+        except Exception as e:
             import pdb
             cmd.warn('text="starting pdb on console..."')
             debugFunction = pdb.set_trace
             
         try:
             debugFunction()
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="debugger blammo: %s"' % (e))
             return
         
@@ -223,14 +223,14 @@ class CoreCmd(object):
         
         try:
             from IPython import embed
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="failed to start ipython: %s"' % (e))
             return
 
         cmd.warn('text="starting ipython on console..."')
         try:
             embed() # this call anywhere in your program will start IPython
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="ipython blammo: %s"' % (e))
             return
         
@@ -242,14 +242,14 @@ class CoreCmd(object):
         
         try:
             import twistedloop
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="failed to import twistedloop: %s"' % (e))
             return
 
         cmd.warn('text="starting ipython kernel ..."')
         try:
             twistedloop.startloop()
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="ipython blammo: %s"' % (e))
             return
         

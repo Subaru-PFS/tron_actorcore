@@ -28,6 +28,7 @@ y.writefile('filename')
 
 
 """
+from __future__ import print_function
 
 import logging
 import numpy as np
@@ -36,6 +37,7 @@ import re
 import time
 
 import pdb
+from functools import reduce
 
 __version__ = '2.2'
 __all__ = ['YPF', 'readOneStruct']
@@ -153,7 +155,7 @@ class YPFVar(object):
             self.comment = comment
 
         if debug > 5:
-            print "Parsed YPFVar %s -> %s" % (s, self)
+            print("Parsed YPFVar %s -> %s" % (s, self))
         
 class YPFEnum(object):
     """ A Yanny par file enumerated data type.  
@@ -231,7 +233,7 @@ class YPFEnum(object):
 
             # Finished with this line, fetch the next one.
             if l == '' or l.startswith('#'):
-                l = lines.next()
+                l = next(lines)
                 continue
 
             # Look for the ending enum name.
@@ -311,7 +313,7 @@ class YPFStruct(object):
 
             # Finished with this line, fetch the next one.
             if l == '' or l.startswith('#'):
-                l = lines.next()
+                l = next(lines)
                 continue
 
             # Look for the ending struct name.
@@ -373,7 +375,7 @@ class YPFStruct(object):
             # pdb.set_trace()
             try:
                 slen, flen = flen
-            except TypeError,e:
+            except TypeError as e:
                 slen = flen
                 flen = 1
 
@@ -408,7 +410,7 @@ class YPFStruct(object):
                 cnv = self.qstring
                 try:
                     slen, flen = flen
-                except TypeError,e:
+                except TypeError as e:
                     slen = flen
                     flen = 1
 
@@ -464,7 +466,7 @@ class YPFStruct(object):
             if ftype == 'char':
                 try:
                     slen, flen = flen
-                except TypeError,e:
+                except TypeError as e:
                     slen = flen
                     flen = 1
                 nptype = '%s%d' % (nptype, slen)
