@@ -16,9 +16,9 @@ History
 """
 __all__ = ["ListDict", "SetDict"]
 
-import UserDict
+from collections import UserDict
 
-class ListDict(UserDict.UserDict):
+class ListDict(UserDict):
     """A dictionary whose values are a list of items.
     """
     def __setitem__(self, key, val):
