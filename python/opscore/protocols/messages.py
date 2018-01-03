@@ -6,6 +6,9 @@ Refer to https://trac.sdss3.org/wiki/Ops/Messages for details.
 
 # Created 10-Oct-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import bytes, str
+from past.builtins import basestring
+from builtins import object
 import re
 import opscore.protocols.types as types
 
@@ -28,7 +31,9 @@ class Canonized(object):
         return isinstance(other,Canonized) and self.canonical() == other.canonical()
     def __ne__(self,other):
         return not isinstance(other,Canonized) or self.canonical() != other.canonical()
-
+    def __hash__(self):
+        return self.canonical()
+    
 class Values(list,Canonized):
     """
     Represents the values associated with a command or keyword
@@ -60,8 +65,9 @@ class Values(list,Canonized):
                 # a lone value must be quoted so it is not confused with a keyword name
                 result += value
             else:
-                # only double quotes need to be escaped             
-                result += '"%s"' % value.decode('string_escape').replace('"','\\"')
+                # only double quotes need to be escaped
+                bstring = bytes(value, 'latin-1')
+                result += '"%s"' % bstring.decode('unicode_escape').replace('"','\\"')
         return result
         
     def tokenized(self):
