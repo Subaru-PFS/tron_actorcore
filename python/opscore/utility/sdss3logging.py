@@ -99,10 +99,13 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         self.startTime = now
 
         # Get local midnight for the day.
-        t = list(time.localtime(now))
-        t[3] = t[4] = t[5] = 0
-        self.rolloverAt = time.mktime(t) + self.rolloverTime
-        
+        t = time.localtime(now)
+        try:
+            t[3] = t[4] = t[5] = 0
+            self.rolloverAt = time.mktime(t) + self.rolloverTime
+        except:
+            self.rolloverAt = time.mktime((t.tm_year, t.tm_mon, t.tm_mday, 0, 0, 0, t.tm_wday, t.tm_yday, t.tm_isdst)) + self.rolloverTime
+
         # Add a day if we are past today's rolloverTime.
         if now >= self.rolloverAt:
             self.rolloverAt += 24*3600
