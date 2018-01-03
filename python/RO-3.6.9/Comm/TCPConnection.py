@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import str
+from builtins import object
 """Reconnectable versions of TCPSocket.
 
 All permit disconnection and reconnection and the base class offers support for
@@ -411,8 +416,8 @@ class TCPConnection(object):
 if __name__ == "__main__":
     """Demo using a simple echo server.
     """
-    import Tkinter
-    root = Tkinter.Tk()
+    import tkinter
+    root = tkinter.Tk()
     root.withdraw()
     from RO.Comm.Generic import TCPServer
     from RO.TkUtil import Timer

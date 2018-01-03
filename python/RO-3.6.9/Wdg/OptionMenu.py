@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 """A variant of Tkinter.OptionMenu that adds many features.
 
 Extra features include: help, default handling, the ability to change menu items
@@ -105,17 +110,18 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ['OptionMenu']
 
-import Tkinter
+import tkinter
 import RO.AddCallback
 import RO.Alg
 import RO.SeqUtil
-from IsCurrentMixin import AutoIsCurrentMixin, IsCurrentActiveMixin
-from SeverityMixin import SeverityActiveMixin
-from Menubutton import Menubutton
+from .IsCurrentMixin import AutoIsCurrentMixin, IsCurrentActiveMixin
+from .SeverityMixin import SeverityActiveMixin
+from .Menubutton import Menubutton
 
-class _DoItem:
+class _DoItem(object):
     def __init__(self, var, value):
         self.var = var
         self.value = value
@@ -190,7 +196,7 @@ class OptionMenu(Menubutton, RO.AddCallback.TkVarMixin,
     **kargs):
         showDefault = not (var and defValue is None)
         if var is None:
-            var = Tkinter.StringVar()
+            var = tkinter.StringVar()
         self._tempValue = None
         self._items = []
         self.defValue = None
@@ -224,7 +230,7 @@ class OptionMenu(Menubutton, RO.AddCallback.TkVarMixin,
             wdgKArgs["textvariable"] = var
         self.label = label
         Menubutton.__init__(self, master = master, helpURL = helpURL, **wdgKArgs)
-        self._menu = Tkinter.Menu(self, tearoff = False, postcommand = postCommand)
+        self._menu = tkinter.Menu(self, tearoff = False, postcommand = postCommand)
         self["menu"] = self._menu
 
         RO.AddCallback.TkVarMixin.__init__(self, var)
@@ -544,9 +550,9 @@ class OptionMenu(Menubutton, RO.AddCallback.TkVarMixin,
 
 
 if __name__ == "__main__":
-    import Label
-    import PythonTk
-    import StatusBar
+    from . import Label
+    from . import PythonTk
+    from . import StatusBar
     root = PythonTk.PythonTk()
     
     def callFunc(wdg):

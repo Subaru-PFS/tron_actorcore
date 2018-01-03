@@ -1,4 +1,7 @@
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 """Simple sound players.
 
 All sound players are based on Tkinter and some will use
@@ -18,7 +21,7 @@ __all__ = ['bell', 'BellPlay', 'SoundPlayer', 'NoPlay']
 
 import os
 import sys
-import Tkinter
+import tkinter
 import RO.StringUtil
 try:
     import pygame.mixer
@@ -43,7 +46,7 @@ def bell(num=1, delay=100):
     """
     global _TkWdg
     if not _TkWdg:
-        _TkWdg = Tkinter.Frame()
+        _TkWdg = tkinter.Frame()
     _TkWdg.bell()
     if num > 1:
         _TkWdg.after(int(delay), bell, int(num)-1, int(delay))

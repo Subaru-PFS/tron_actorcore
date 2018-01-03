@@ -9,6 +9,7 @@ while the script runs (a very good idea when offering widgets).
 History:
 2004-06-30 Rowen
 """
+from builtins import str
 import RO.Wdg
 
 def init(sr):

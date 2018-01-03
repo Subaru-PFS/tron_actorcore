@@ -24,9 +24,10 @@ History:
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 2015-11-05 ROwen    Changed ==/!= True/False to is/is not True/False to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ['StatusConfigGridder']
 
-import Gridder
+from . import Gridder
 
 ConfigCat = "config"
 

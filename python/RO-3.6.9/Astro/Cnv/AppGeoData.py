@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, division, print_function
+from builtins import object
 """
 History:
 2004-05-18 ROwen    Stop importing RO.PhysConst; it wasn't used.

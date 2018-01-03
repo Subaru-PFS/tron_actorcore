@@ -6,12 +6,13 @@ History:
 2004-05-18 ROwen    Stopped importing math; it wasn't used.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
+from __future__ import absolute_import
 __all__ = ["topoFromGeo"]
 
 import numpy
 import RO.MathUtil
 from RO.Astro import llv
-from AzAltFromHADec import azAltFromHADec
+from .AzAltFromHADec import azAltFromHADec
 
 def topoFromGeo(appGeoP, last, obsData):
     """
@@ -62,7 +63,7 @@ def topoFromGeo(appGeoP, last, obsData):
 
 if __name__ == "__main__":
     import RO.SeqUtil
-    from ObserverData import ObserverData
+    from .ObserverData import ObserverData
     print("testing topoFromGeo")
     # test data is formatted as follows:
     # a list of entries, each consisting of:

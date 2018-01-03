@@ -9,10 +9,11 @@ returning a dictionary.
                     Modified test code to use astr instead of str.
 2011-06-17 ROwen    Changed "type" to "msgType" in parsed message dictionaries to avoid conflict with builtin.
 """
+from __future__ import absolute_import
 __all__ = ["parseHubMsg"]
 
-from GetHeader import getHubHeader
-from ParseData import parseKeyValueData
+from .GetHeader import getHubHeader
+from .ParseData import parseKeyValueData
 
 def parseHubMsg(astr):
     """Parses one message of the form:

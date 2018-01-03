@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from __future__ import absolute_import
 
 __all__ = ["scFromCCPVOff"]
 
-from AngSideAng import angSideAng
-from SCFromCCPV import scFromCCPV
-from SCFromCC import scFromCC
+from .AngSideAng import angSideAng
+from .SCFromCCPV import scFromCCPV
+from .SCFromCC import scFromCC
 
 def scFromCCPVOff(p, v, offP):
     """

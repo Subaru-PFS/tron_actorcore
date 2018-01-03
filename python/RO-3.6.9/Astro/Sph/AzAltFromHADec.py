@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from __future__ import absolute_import
 
 __all__ = ["azAltFromHADec"]
 
-from DCFromSC import dcFromSC
-from SCFromDC import scFromDC
+from .DCFromSC import dcFromSC
+from .SCFromDC import scFromDC
 from RO.Astro import Cnv
 
 def azAltFromHADec(haDec, lat):
@@ -39,7 +40,7 @@ def azAltFromHADec(haDec, lat):
 
 
 if __name__ == "__main__":
-    from AngSep import angSep
+    from .AngSep import angSep
     MaxErrArcSec = 1e-6 # max error on sky, in arc seconds
     print("testing azAltFromHADec")
     # test data is formatted as follows:

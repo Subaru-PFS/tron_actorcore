@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from builtins import zip
+from builtins import str
+from builtins import object
 r"""
 Interface for viewing images with the ds9 image viewer.
 Loosely based on XPA, by Andrew Williams.
@@ -512,7 +515,7 @@ def _formatOptions(kargs):
     """Returns a string: "key1=val1,key2=val2,..."
     (where keyx and valx are string representations)
     """
-    arglist = ["%s=%s" % keyVal for keyVal in kargs.iteritems()]
+    arglist = ["%s=%s" % keyVal for keyVal in kargs.items()]
     return "%s" % (",".join(arglist))
 
 
@@ -530,7 +533,7 @@ def _splitDict(inDict, keys):
     return outDict  
 
 
-class DS9Win:
+class DS9Win(object):
     """An object that talks to a particular window on ds9
     
     Inputs:
@@ -656,7 +659,7 @@ class DS9Win:
             dataFunc = arr.tofile,
         )
         
-        for keyValue in kargs.iteritems():
+        for keyValue in kargs.items():
             self.xpaset(cmd=" ".join(keyValue))
     
     def showFITSFile(self, fname, **kargs):
@@ -674,9 +677,9 @@ class DS9Win:
         # remove array info keywords from kargs; we compute all that
         arrKeys = _splitDict(kargs, _ArrayKeys)
         if arrKeys:
-            raise RuntimeError("Array info not allowed; rejected keywords: %s" % arrKeys.keys())
+            raise RuntimeError("Array info not allowed; rejected keywords: %s" % list(arrKeys.keys()))
         
-        for keyValue in kargs.iteritems():
+        for keyValue in kargs.items():
             self.xpaset(cmd=" ".join(keyValue))
 
     def xpaget(self, cmd):

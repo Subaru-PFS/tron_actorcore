@@ -1,4 +1,7 @@
 from __future__ import absolute_import, division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 """Retrieve a remote file via ftp to a local file.
 
 The retrieval occurs in a background thread.
@@ -43,13 +46,13 @@ __all__ = ['FTPGet']
 
 import os
 import sys
-import urlparse
+import urllib.parse
 import threading
 import ftplib
 
 _Debug = False
 
-class FTPGet:
+class FTPGet(object):
     """Retrieves the specified url to a file.
     
     Inputs:
@@ -117,7 +120,7 @@ class FTPGet:
         self.password = password or "abc@def.org"
         
         if dispStr is None:
-            self.dispStr = urlparse.urljoin("ftp://" + self.host, self.fromPath)
+            self.dispStr = urllib.parse.urljoin("ftp://" + self.host, self.fromPath)
         else:
             self.dispStr = dispStr
 

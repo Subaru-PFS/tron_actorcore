@@ -6,10 +6,11 @@ P.T.Wallace   Starlink   10 July 1994
 2002-07-08 ROwen    Converted to Python.
 2007-04-24 ROwen    Converted from Numeric to numpy (in test code).
 """
+from __future__ import absolute_import
 __all__ = ["prec"]
 
 import RO.PhysConst
-from euler import euler
+from .euler import euler
 
 def prec(begEpoch, endEpoch):
     """

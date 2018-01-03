@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from builtins import object
 """Generate a series of ID numbers.
 
 Note: this would be a bit simpler as a generator instead of a class,
@@ -39,7 +40,7 @@ class IDGen(object):
     def __iter__(self):
         return self
     
-    def next(self):
+    def __next__(self):
         """Return the next ID number."""
         newID = self.startVal + (self.ind * self.incr)
         self.ind += 1

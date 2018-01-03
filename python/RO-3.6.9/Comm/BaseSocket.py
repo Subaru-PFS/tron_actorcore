@@ -1,4 +1,6 @@
 from __future__ import absolute_import, division, print_function
+from builtins import str
+from builtins import object
 """Base class for sockets using event-driven programming.
 
 The intention is to work with TCPConnection and all the infrastructure that uses it.

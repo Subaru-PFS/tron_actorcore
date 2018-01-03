@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 """RO.Wdg.Toplevel wdigets are windows with some enhanced functionality, including:
 - Remembers last geometry if closed or iconified
 - Can record geometry, visibility and widget state in a file
@@ -69,7 +73,7 @@ import json
 import os.path
 import sys
 import traceback
-import Tkinter
+import tkinter
 import RO.CnvUtil
 import RO.OS
 import RO.SeqUtil
@@ -81,7 +85,7 @@ tl_CloseDestroys = 0
 tl_CloseWithdraws = 1
 tl_CloseDisabled = 2
 
-class Toplevel(Tkinter.Toplevel):
+class Toplevel(tkinter.Toplevel):
     def __init__(self,
         master=None,
         geometry="",
@@ -123,7 +127,7 @@ class Toplevel(Tkinter.Toplevel):
         An alternative solution is to create a variant of GenericCallback that
         is specialized for Tk widgets or at least puts unnamed dynamic arguments first.
         """
-        Tkinter.Toplevel.__init__(self, master)
+        tkinter.Toplevel.__init__(self, master)
         self.wm_withdraw()
         
         resizable = RO.SeqUtil.oneOrNAsList(resizable, 2, valDescr = "resizable")
@@ -378,7 +382,7 @@ class ToplevelSet(object):
         self.defGeomDict = {}
         self.defVisDict = {}
         if defGeomVisDict:
-            for name, geomVis in defGeomVisDict.iteritems():
+            for name, geomVis in defGeomVisDict.items():
                 geom, vis = geomVis
                 if geom:
                     self.defGeomDict[name] = geom
@@ -498,7 +502,7 @@ class ToplevelSet(object):
         The names are in alphabetical order, ignoring case.
         The list includes toplevels that have been destroyed.
         """
-        nameList = self.tlDict.keys()
+        nameList = list(self.tlDict.keys())
         nameList.sort(key=lambda s: s.lower())
         if not prefix:
             return nameList
@@ -509,7 +513,7 @@ class ToplevelSet(object):
         (or all names if prefix omitted). The names are in alphabetical order
         (though someday that may change to the order in which windows are added).
         """
-        nameList = sorted(self.fileGeomDict.iterkeys())
+        nameList = sorted(self.fileGeomDict.keys())
         if not prefix:
             return nameList
         return [name for name in nameList if name.startswith(prefix)]
@@ -679,7 +683,7 @@ if __name__ == "__main__":
         resizable=(False, True),
         geometry = "40x40+150+50"
     )
-    l = Tkinter.Label(testWin, text="This is a label")
+    l = tkinter.Label(testWin, text="This is a label")
     l.pack()
     
     def printInfo():
@@ -689,7 +693,7 @@ if __name__ == "__main__":
         print("req width, req height = %r, %r" % (testWin.winfo_reqwidth(), testWin.winfo_reqheight()))
         print("")
     
-    b = Tkinter.Button(root, text="Window Info", command=printInfo)
+    b = tkinter.Button(root, text="Window Info", command=printInfo)
     b.pack()
             
     root.mainloop()

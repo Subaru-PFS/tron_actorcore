@@ -7,6 +7,7 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
 from __future__ import absolute_import, division, print_function
+from builtins import range
 import sys
 
 __all__ = ["getString"]

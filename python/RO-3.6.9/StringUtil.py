@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from builtins import str
+from builtins import range
+from past.builtins import basestring
 """String utilities, with an emphasis on support for sexagesimal numbers
 (e.g. degrees:minutes:seconds).
 
@@ -334,7 +337,7 @@ def prettyDict(aDict, entrySepStr = "\n", keyValSepStr = ": "):
     
     Returns a string containing the pretty-printed dictionary
     """
-    sortedKeys = aDict.keys()
+    sortedKeys = list(aDict.keys())
     sortedKeys.sort()
     eltList = []
     for aKey in sortedKeys:
@@ -446,7 +449,7 @@ def strFromException(exc):
         return str(exc)
     except Exception:
         try:
-            return ",".join([unicode(s) for s in exc.args])
+            return ",".join([str(s) for s in exc.args])
         except Exception:
             # in case exc is some unexpected type
             return repr(exc)

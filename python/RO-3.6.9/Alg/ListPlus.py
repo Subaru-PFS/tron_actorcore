@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from builtins import range
 """A ListPlus adds a few methods to a standard list
 to make it more consistent with dict.
 
@@ -23,17 +24,17 @@ class ListPlus (list):
             return False
     
     def iteritems(self):
-        for key in self.iterkeys():
+        for key in self.keys():
             yield (key, self[key])
 
     def iterkeys(self):
-        return iter(xrange(len(self)))
+        return iter(range(len(self)))
 
     def itervalues(self):
         return iter(self)
 
     def keys(self):
-        return range(len(self))
+        return list(range(len(self)))
     
     def values(self):
         return self[:]

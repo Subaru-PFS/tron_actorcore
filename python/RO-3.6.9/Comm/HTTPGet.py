@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 """Retrieve a remote file via http to a local file.
 
 Note: at exit attempts to abort all outstanding transfers and delete the output files.
@@ -46,7 +50,7 @@ import atexit
 import os
 import sys
 import time
-import Tkinter
+import tkinter
 import RO.AddCallback
 import RO.StringUtil
 import RO.TkUtil
@@ -56,7 +60,7 @@ _DebugExit = False
 
 _ProgressInterval = 0.1 # minimum time between progress callbacks (sec)
 
-class _ExitClass:
+class _ExitClass(object):
     """Class to keep track of outstanding nework transfers
     and abort them at exit.
     """
@@ -94,7 +98,7 @@ class _ExitClass:
         if not self.transferDict:
             return
 
-        transferList = self.transferDict.keys()
+        transferList = list(self.transferDict.keys())
         for xfer in transferList:
             if _DebugExit:
                 print("HTTGet._Exit: aborting %s" % (xfer,))
@@ -180,7 +184,7 @@ class HTTPGet(RO.AddCallback.BaseMixin):
         timeLim = None,
     ):
         if self._tkApp is None:
-            self._tkApp = Tkinter.Frame().tk
+            self._tkApp = tkinter.Frame().tk
         self.fromURL = fromURL
         self.toPath = toPath
         self.isBinary = isBinary
@@ -259,7 +263,7 @@ class HTTPGet(RO.AddCallback.BaseMixin):
                 self._createdFile = True
                 if self.isBinary:
                     self._tkApp.call('fconfigure', self._tclFile, "-encoding", "binary", "-translation", "binary")
-            except Tkinter.TclError as e:
+            except tkinter.TclError as e:
                 raise RuntimeError("Could not open %r: %s" % (self.toPath, e))
             
             # start http transfer
@@ -510,7 +514,7 @@ class HTTPGet(RO.AddCallback.BaseMixin):
                 raise RuntimeError("%r is a file, not a directory" % (toDir,))
 
 if __name__ == "__main__":
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
 
     testURL = "http://www.astro.washington.edu/"
     outFile = "httpget_test.html"

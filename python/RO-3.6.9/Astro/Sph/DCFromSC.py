@@ -5,9 +5,10 @@ History:
 2002-07-23 R Owen.
 2007-04-24 ROwen    Changed Numeric to numpy in a doc string.
 """
+from __future__ import absolute_import
 __all__ = ["dcFromSC"]
 
-from CCFromSC import ccFromSC
+from .CCFromSC import ccFromSC
 
 def dcFromSC(pos):
     """Convert spherical coordinates to direction cosines, i.e. a unit vector.

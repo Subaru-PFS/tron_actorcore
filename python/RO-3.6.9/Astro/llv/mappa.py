@@ -6,13 +6,14 @@ P.T.Wallace Starlink    21 July 1994
 2002-07-11 ROwen    Converted to Python.
 2007-04-24 ROwen    Removed unused import of Numeric
 """
+from __future__ import absolute_import
 __all__ = ["mappa"]
 
 from math import sqrt
-from vn import vn
-from evp import evp
-from prenut import prenut
-from epj import epj
+from .vn import vn
+from .evp import evp
+from .prenut import prenut
+from .epj import epj
 
 # Constants
 # Light time for 1 au (sec)

@@ -33,13 +33,14 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-05 ROwen    Changed ==/!= True/False to is/is not True/False to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ['OptionButtons']
 
 import RO.InputCont
-import Button
-import Checkbutton
-import InputContFrame
-import Label
+from . import Button
+from . import Checkbutton
+from . import InputContFrame
+from . import Label
 
 class OptionButtons(InputContFrame.InputContFrame):
     def __init__ (self,
@@ -178,7 +179,7 @@ class OptionButtons(InputContFrame.InputContFrame):
             wdg.pack(side="top", anchor="nw")
     
 if __name__ == "__main__":
-    import PythonTk
+    from . import PythonTk
     root = PythonTk.PythonTk()
 
     def doPrint():

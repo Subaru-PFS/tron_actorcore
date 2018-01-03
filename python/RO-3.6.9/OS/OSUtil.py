@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from builtins import object
 """Operating system utilities
 
 History:
@@ -289,7 +290,7 @@ def openUniv(path):
         openMode = 'r'
     return open(path, openMode)
 
-class _Inf:
+class _Inf(object):
     def __gt__(self, other):
         return True
     def __ge__(self, other):

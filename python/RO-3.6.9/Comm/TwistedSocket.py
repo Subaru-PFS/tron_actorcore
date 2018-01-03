@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from builtins import next
+from builtins import str
 """BasicSocket wrapper that works with the Twisted framework
 
 The intention is to work with TCPConnection and all the infrastructure that uses it.

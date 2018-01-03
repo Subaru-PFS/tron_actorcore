@@ -7,11 +7,12 @@ P.T.Wallace Starlink    30 December 1992
 2004-05-18 ROwen    Removed import of Numeric from test code.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
+from __future__ import absolute_import
 __all__ = ["prebn"]
 
 import numpy
 import RO.PhysConst
-from euler import euler
+from .euler import euler
 
 def prebn(bep0, bep1):
     """

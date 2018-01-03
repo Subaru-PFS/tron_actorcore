@@ -1,4 +1,6 @@
 from __future__ import absolute_import, division, print_function
+from future import standard_library
+standard_library.install_aliases()
 """Open a URL in the user's default browser.
 
 The URL is opened in a background thread.
@@ -10,7 +12,7 @@ History:
 __all__ = ["browseURL"]
 
 import threading
-import urlparse
+import urllib.parse
 import webbrowser
 
 class _BrowseURLThread(threading.Thread):
@@ -29,10 +31,10 @@ class _BrowseURLThread(threading.Thread):
 
         # failed! if this is a file URL with an anchor,
         # try again without the anchor
-        urlTuple = urlparse.urlparse(url)
+        urlTuple = urllib.parse.urlparse(url)
         if urlTuple[0] == "file" and urlTuple[-1] != '':
             urlTuple = urlTuple[0:-1] + ('',)
-            url = urlparse.urlunparse(urlTuple)
+            url = urllib.parse.urlunparse(urlTuple)
             if not url:
                 return
             try:

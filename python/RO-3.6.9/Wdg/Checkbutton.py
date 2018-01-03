@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 """A variant on Checkbutton that add help, default handling and other niceties
 including a command callback that is called in more cases.
 
@@ -70,18 +73,19 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ['Checkbutton']
 
-import Tkinter
+import tkinter
 import RO.AddCallback
 import RO.CnvUtil
 import RO.MathUtil
 import RO.TkUtil
-from CtxMenu import CtxMenuMixin
-from IsCurrentMixin import AutoIsCurrentMixin, IsCurrentCheckbuttonMixin
-from SeverityMixin import SeverityActiveMixin
+from .CtxMenu import CtxMenuMixin
+from .IsCurrentMixin import AutoIsCurrentMixin, IsCurrentCheckbuttonMixin
+from .SeverityMixin import SeverityActiveMixin
 
-class Checkbutton (Tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
+class Checkbutton (tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
     AutoIsCurrentMixin, IsCurrentCheckbuttonMixin, SeverityActiveMixin, CtxMenuMixin):
     """A Checkbutton with callback, help, isCurrent and severity support.
     
@@ -150,7 +154,7 @@ class Checkbutton (Tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
     **kargs):
         self._defBool = False # just create the field for now
         if var is None:
-            var = Tkinter.StringVar()
+            var = tkinter.StringVar()
         elif defValue is None:
             defValue = var.get()
         self._var = var
@@ -173,7 +177,7 @@ class Checkbutton (Tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
             kargs.setdefault("indicatoron", False)
             kargs["textvariable"] = self._var
         
-        Tkinter.Checkbutton.__init__(self,
+        tkinter.Checkbutton.__init__(self,
             master = master,
             variable = self._var,
         )
@@ -251,7 +255,7 @@ class Checkbutton (Tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
         
         Enabled is defined as the state is not "disabled" (thus "enabled" or "active").
         """
-        return self["state"] != Tkinter.DISABLED
+        return self["state"] != tkinter.DISABLED
     
     def getVar(self):
         return self._var
@@ -336,7 +340,7 @@ class Checkbutton (Tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
         
         # if disabled and defIfDisabled, update display (which also triggers a callback)
         # otherwise leave the display alone and explicitly trigger a callback
-        if restoreDef or (self._defIfDisabled and self["state"] == Tkinter.DISABLED):
+        if restoreDef or (self._defIfDisabled and self["state"] == tkinter.DISABLED):
             self.restoreDefault()
         else:
             self._doCallbacks()
@@ -371,7 +375,7 @@ class Checkbutton (Tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
                 hasBitmap = bool(kargs.get("bitmap", self["bitmap"])),
                 showIndicator = kargs.get("indicatoron", self["indicatoron"]),
             )
-        Tkinter.Checkbutton.configure(self, **kargs)
+        tkinter.Checkbutton.configure(self, **kargs)
     
     def _computeCorrectedWidth(self, width, hasBitmap, showIndicator):
         """Compute corrected width to overcome Tcl/Tk bugs
@@ -389,8 +393,8 @@ class Checkbutton (Tkinter.Checkbutton, RO.AddCallback.TkVarMixin,
 
 
 if __name__ == "__main__":
-    import PythonTk
-    from StatusBar import StatusBar
+    from . import PythonTk
+    from .StatusBar import StatusBar
     root = PythonTk.PythonTk()
     
     def btnCallback(btn):

@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, division, print_function
 
+from builtins import next
+from builtins import range
+from builtins import object
 __all__ = ["ConstrainedGaussianRandomWalk", "GaussianRandomWalk"]
 
 import random
@@ -26,7 +29,7 @@ class ConstrainedGaussianRandomWalk(object):
     def __iter__(self):
         return self
     
-    def next(self):
+    def __next__(self):
         """Randomly change the value and return the next value
         """
         rawDelta = random.gauss(0, self.sigma)
@@ -59,7 +62,7 @@ class GaussianRandomWalk(object):
     def __iter__(self):
         return self
     
-    def next(self):
+    def __next__(self):
         """Randomly change the value and return the new value
         """
         self.value += random.gauss(0, self.sigma)

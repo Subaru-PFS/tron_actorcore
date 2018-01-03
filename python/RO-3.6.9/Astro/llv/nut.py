@@ -6,10 +6,11 @@ P.T.Wallace Starlink    1 January 1993
 2002-07-11 ROwen    Converted to Python.
 2007-04-24 ROwen    Converted from Numeric to numpy (in test code).
 """
+from __future__ import absolute_import
 __all__ = ["nut"]
 
-from nutc import nutc
-from euler import euler
+from .nutc import nutc
+from .euler import euler
 
 def nut(tdb):
     """

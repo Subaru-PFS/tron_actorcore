@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from builtins import object
 """Convert astronomical positions between various coordinate systems.
 
 The CnvObj code is getting ugly enough (I had to add ICRS<->ICRS2000 cases
@@ -27,24 +28,25 @@ History:
 2007-04-24 ROwen    Converted from Numeric to numpy.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ["coordConv"]
 
 import numpy
 import RO.CoordSys
 from RO.Astro import Tm
-from AppGeoData import AppGeoData
-from FK4FromICRS import fk4FromICRS
-from FK5Prec import fk5Prec
-from GalFromICRS import galFromICRS
-from GeoFromICRS import geoFromICRS
-from GeoFromTopo import geoFromTopo
-from ICRSFromFK4 import icrsFromFK4
-from ICRSFromFixedFK4 import icrsFromFixedFK4
-from ICRSFromGal import icrsFromGal
-from ICRSFromGeo import icrsFromGeo
-from ObsFromTopo import obsFromTopo
-from TopoFromGeo import topoFromGeo
-from TopoFromObs import topoFromObs
+from .AppGeoData import AppGeoData
+from .FK4FromICRS import fk4FromICRS
+from .FK5Prec import fk5Prec
+from .GalFromICRS import galFromICRS
+from .GeoFromICRS import geoFromICRS
+from .GeoFromTopo import geoFromTopo
+from .ICRSFromFK4 import icrsFromFK4
+from .ICRSFromFixedFK4 import icrsFromFixedFK4
+from .ICRSFromGal import icrsFromGal
+from .ICRSFromGeo import icrsFromGeo
+from .ObsFromTopo import obsFromTopo
+from .TopoFromGeo import topoFromGeo
+from .TopoFromObs import topoFromObs
 
 _CSysList = (RO.CoordSys.ICRS, RO.CoordSys.FK5, RO.CoordSys.FK4, RO.CoordSys.Galactic,
     RO.CoordSys.Geocentric, RO.CoordSys.Topocentric, RO.CoordSys.Observed,

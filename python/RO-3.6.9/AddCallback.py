@@ -1,4 +1,6 @@
 from __future__ import absolute_import, division, print_function
+from builtins import str
+from builtins import object
 """Mixing class(es) for adding callback capabilities.
 
 History:
@@ -145,7 +147,7 @@ class BaseMixin(object):
             return
 
         if not callable(callFunc):
-            raise ValueError, "callFunc %r is not callable" % (callFunc,)
+            raise ValueError("callFunc %r is not callable" % (callFunc,))
         
         # add new function
         if callFunc not in self._callbacks:
@@ -264,7 +266,7 @@ class TkButtonMixin(BaseMixin):
 
         if command is not None:
             if not callable(command):
-                raise ValueError, "command %r is not callable" % (command,)
+                raise ValueError("command %r is not callable" % (command,))
             def doCommand(wdg):
                 return command()
             self.addCallback(doCommand)

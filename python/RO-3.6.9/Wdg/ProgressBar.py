@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
 """
 A basic widget for showing the progress being made in a task.
 Includes a countdown timer RemainingTime.
@@ -27,18 +29,19 @@ History:
                     Removed use of update_idletasks.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ['ProgressBar', 'TimeBar']
 
 import time
 import RO.SeqUtil
 from RO.TkUtil import Timer
-import Tkinter
-import Button
-import Entry
-import Gridder
-import Label
+import tkinter
+from . import Button
+from . import Entry
+from . import Gridder
+from . import Label
 
-class ProgressBar (Tkinter.Frame):
+class ProgressBar (tkinter.Frame):
     """A bar graph showing a value or fraction of a task performed.
     
     Contains three widgets:
@@ -94,7 +97,7 @@ class ProgressBar (Tkinter.Frame):
         helpURL = None,
     **kargs):
         # handle defaults for background, borderwidth and relief
-        e = Tkinter.Entry()
+        e = tkinter.Entry()
         for item in ("background", "borderwidth", "relief"):
             kargs.setdefault(item, e[item])
         
@@ -102,7 +105,7 @@ class ProgressBar (Tkinter.Frame):
         for item in ("selectborderwidth", "highlightthickness"):
             kargs.setdefault(item, 0)
 
-        Tkinter.Frame.__init__(self, master)
+        tkinter.Frame.__init__(self, master)
 
         # basics
         self.constrainValue = constrainValue
@@ -148,7 +151,7 @@ class ProgressBar (Tkinter.Frame):
             self.labelWdg.pack(side = packSide)
         
         # create canvas for bar graph
-        self.cnv = Tkinter.Canvas(self,
+        self.cnv = tkinter.Canvas(self,
             width = cnvWidth,
             height = cnvHeight,
         **kargs)
@@ -316,7 +319,7 @@ class ProgressBar (Tkinter.Frame):
         """
         if wdgInfo is None:
             return wdgInfo
-        elif isinstance(wdgInfo, Tkinter.Widget):
+        elif isinstance(wdgInfo, tkinter.Widget):
             # a widget; assume it's a Label widget of some kind
             return wdgInfo
         
@@ -324,7 +327,7 @@ class ProgressBar (Tkinter.Frame):
         # set up the keyword arguments
         kargs.setdefault("helpText", self.helpText)
         kargs.setdefault("helpURL", self.helpURL)
-        if isinstance(wdgInfo, Tkinter.Variable):
+        if isinstance(wdgInfo, tkinter.Variable):
             kargs["textvariable"] = wdgInfo
         else:
             kargs["text"] = wdgInfo
@@ -493,7 +496,7 @@ class TimeBar(ProgressBar):
         
 
 if __name__ == "__main__":
-    import PythonTk
+    from . import PythonTk
     root = PythonTk.PythonTk()
     
     # horizontal and vertical progress bars

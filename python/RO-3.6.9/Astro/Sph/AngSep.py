@@ -6,12 +6,13 @@ History:
 2002-07-24 ROwen    Simplified by using Numeric.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
+from __future__ import absolute_import
 __all__ = ["angSep"]
 
 import math
 import numpy
 import RO.MathUtil
-from DCFromSC import dcFromSC
+from .DCFromSC import dcFromSC
 
 def angSep(posA, posB):
     """Computes the angular separation between two points on a sphere.

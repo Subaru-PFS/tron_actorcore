@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
 """Widgets for selecting files and directories.
 
 To do:
@@ -23,17 +25,18 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ["DirWdg", "FileWdg"]
 
 import os
-import Tkinter
-import tkFileDialog
+import tkinter
+import tkinter.filedialog
 import RO.AddCallback
 import RO.Constants
-import CtxMenu
-from SeverityMixin import SeverityActiveMixin
+from . import CtxMenu
+from .SeverityMixin import SeverityActiveMixin
 
-class BasePathWdg (Tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixin,
+class BasePathWdg (tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixin,
     SeverityActiveMixin):
     def __init__(self,
         master,
@@ -71,7 +74,7 @@ class BasePathWdg (Tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixi
         self.leftChar = 0
         self.rightChar = (self.maxChar - self.leftChar) - 1
 
-        Tkinter.Button.__init__(self,
+        tkinter.Button.__init__(self,
             master = master,
             command = self._doChoose,
         **kargs)
@@ -123,16 +126,16 @@ class BasePathWdg (Tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixi
         Warning: if you want the state to be "active" you must set that explicitly.
         """
         if doEnable:
-            self["state"] = Tkinter.NORMAL
+            self["state"] = tkinter.NORMAL
         else:
-            self["state"] = Tkinter.DISABLED
+            self["state"] = tkinter.DISABLED
     
     def getEnable(self):
         """Return True if widget is enabled, False otherwise
 
         Enabled is defined as the state is not "disabled" (thus "enabled" or "active").
         """
-        return self["state"] != Tkinter.DISABLED
+        return self["state"] != tkinter.DISABLED
         
     def setPath(self, path):
         """Set self.path to normalized version of path.
@@ -222,7 +225,7 @@ class DirWdg(BasePathWdg):
         kargs = {}
         if self.fileTypes:
             kargs["filetypes"] = self.fileTypes
-        newPath = tkFileDialog.askdirectory(
+        newPath = tkinter.filedialog.askdirectory(
             initialdir = startDir,
             mustexist = True,
             title = self.helpText,
@@ -267,7 +270,7 @@ class FileWdg(BasePathWdg):
         kargs = {}
         if self.fileTypes:
             kargs["filetypes"] = self.fileTypes
-        newPath = tkFileDialog.askopenfilename(
+        newPath = tkinter.filedialog.askopenfilename(
             initialdir = startDir,
             initialfile = startFile,
             title = self.helpText,

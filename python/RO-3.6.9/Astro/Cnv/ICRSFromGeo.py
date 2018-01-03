@@ -6,6 +6,7 @@ History:
 2002-12-23 ROwen    Fixed "failed to converge" message; thanks to pychecker.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
+from __future__ import absolute_import
 __all__ = ["icrsFromGeo"]
 
 import numpy
@@ -96,7 +97,7 @@ def icrsFromGeo(appGeoP, agData):
 
 if __name__ == "__main__":
     import RO.SeqUtil
-    from AppGeoData import AppGeoData
+    from .AppGeoData import AppGeoData
     print("testing icrsFromGeo")
     # test data is formatted as follows:
     # a list of entries, each consisting of:

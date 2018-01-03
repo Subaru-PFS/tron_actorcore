@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
 """Widget to manage named presets of an input container list
 
 History:
@@ -9,17 +11,18 @@ History:
 2014-03-14 ROwen    Added helpText and helpURL arguments.
 2014-05-07 ROwen    Added autoUpdate argument and modified to use RO.Wdg.Menubutton
 """
+from __future__ import absolute_import
 __all__ = ["InputContPresetsWdg"]
 
 import functools
-import Tkinter
+import tkinter
 
 import RO.TkUtil
-import Entry
-import Label
-import InputDialog
-import OptionMenu
-import Menubutton
+from . import Entry
+from . import Label
+from . import InputDialog
+from . import OptionMenu
+from . import Menubutton
 
 class InputContPresetsWdg(Menubutton.Menubutton):
     """Widget to manage named presets for an input container list
@@ -83,9 +86,9 @@ class InputContPresetsWdg(Menubutton.Menubutton):
         }
         wdgKArgs.update(kwargs)
         Menubutton.Menubutton.__init__(self, master, helpText=helpText, helpURL=helpURL, **wdgKArgs)
-        self._menu = Tkinter.Menu(self, tearoff=False)
+        self._menu = tkinter.Menu(self, tearoff=False)
 
-        editMenu = Tkinter.Menu(
+        editMenu = tkinter.Menu(
             self._menu,
             tearoff = False,
         )
@@ -218,12 +221,12 @@ class InputContPresetsWdg(Menubutton.Menubutton):
                 if presetValDict and isSubDict(presetValDict, currValDict):
                     return currPresetName, isUserPreset
 
-        for presetName, presetValDict in self._userPresets.iteritems():
+        for presetName, presetValDict in self._userPresets.items():
             # user presets are always complete, so no need to look for incomplete entries
             if presetValDict and presetValDict == currValDict:
                 return presetName, True
 
-        for presetName, presetValDict in self._stdPresets.iteritems():
+        for presetName, presetValDict in self._stdPresets.items():
             # standard presets may be incomplete, so use isSubDict
             if isSubDict(presetValDict, currValDict):
                 return presetName, False
@@ -233,13 +236,13 @@ class InputContPresetsWdg(Menubutton.Menubutton):
     def _getStdPresetNames(self):
         """Get a sorted list of default preset names
         """
-        return sorted(self._stdPresets.iterkeys())
+        return sorted(self._stdPresets.keys())
 
     def _getUserPresetNames(self):
         """Get a sorted list of current preset names
         """
         preset = self._userPresetsDict.get(self._sysName, dict())
-        return sorted(preset.iterkeys())
+        return sorted(preset.keys())
 
     def _updateDisplayedName(self, dumArg=None):
         """Update the displayed name
@@ -379,10 +382,10 @@ class RestoreDefaultsDialog(InputDialog.ModalDialogBase):
 if __name__ == '__main__':
     from RO.Alg import SavedDict
     import RO.InputCont
-    import Gridder
-    import InputContFrame
+    from . import Gridder
+    from . import InputContFrame
 
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
     root.geometry("200x200")
     userPresetsDict = SavedDict("testPreset.json")
 

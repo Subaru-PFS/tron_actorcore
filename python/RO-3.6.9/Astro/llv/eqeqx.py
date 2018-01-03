@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from __future__ import absolute_import
 
 __all__ = ["eqeqx"]
 
 import math
 import RO.PhysConst
-from nutc import nutc
+from .nutc import nutc
 
 _ArcSecPerRev = RO.PhysConst.ArcSecPerDeg * 360.0
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 """Creates a set of Tkinter Radiobuttons that have help, default handling
 and other niceties. The set can be used in an RO.Wdg input container
 (and it implements just enough of the Tkinter standard widget interface
@@ -43,16 +47,17 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ['RadiobuttonSet']
 
-import Tkinter
+import tkinter
 import RO.AddCallback
 import RO.Alg
 import RO.SeqUtil
 import RO.StringUtil
 import RO.TkUtil
-import Button
-from IsCurrentMixin import AutoIsCurrentMixin, IsCurrentActiveMixin
+from . import Button
+from .IsCurrentMixin import AutoIsCurrentMixin, IsCurrentActiveMixin
 
 class RadiobuttonSet (RO.AddCallback.TkVarMixin,
     AutoIsCurrentMixin, IsCurrentActiveMixin):
@@ -145,7 +150,7 @@ class RadiobuttonSet (RO.AddCallback.TkVarMixin,
 
         self._valueList = valueList
         if var is None:
-            var = Tkinter.StringVar()
+            var = tkinter.StringVar()
         self._var = var
         self._defIfBlank = defIfBlank
 
@@ -311,11 +316,11 @@ class RadiobuttonSet (RO.AddCallback.TkVarMixin,
         return self.wdgSet[0].winfo_ismapped()
 
 if __name__ == "__main__":
-    import PythonTk
-    from StatusBar import StatusBar
+    from . import PythonTk
+    from .StatusBar import StatusBar
     root = PythonTk.PythonTk()
 
-    rbFrame1 = Tkinter.Frame()
+    rbFrame1 = tkinter.Frame()
     rbs1 = RadiobuttonSet(
         master = rbFrame1,
         textList = ("Foo", "Bar", "Baz"),
@@ -330,7 +335,7 @@ if __name__ == "__main__":
         wdg.pack(side="left")
     rbFrame1.pack(side="top")
 
-    rbFrame2 = Tkinter.Frame()
+    rbFrame2 = tkinter.Frame()
     rbs2 = RadiobuttonSet(
         master = rbFrame2,
         textList = ("MmmmmNnnnn A", "MmmmmNnnnn B", "MmmmmNnnnn C"),
@@ -344,7 +349,7 @@ if __name__ == "__main__":
         wdg.pack(side="left")
     rbFrame2.pack(side="top")
 
-    rbFrame3 = Tkinter.Frame()
+    rbFrame3 = tkinter.Frame()
     rbs3 = RadiobuttonSet(
         master = rbFrame3,
         textList = ("MmmmmNnnnn A", "MmmmmNnnnn B", "MmmmmNnnnn C"),
@@ -364,7 +369,7 @@ if __name__ == "__main__":
         print("2 value = %r; default = %r" % (rbs2.getString(), rbs2.getDefault()))
         print("3 value = %r; default = %r" % (rbs3.getString(), rbs3.getDefault()))
     
-    enableVar = Tkinter.IntVar()
+    enableVar = tkinter.IntVar()
     enableVar.set(True)
     def setEnable():
         rbs1.setEnable(enableVar.get())
@@ -373,9 +378,9 @@ if __name__ == "__main__":
 
     StatusBar(root).pack(side="top", fill="x", expand=True)
     
-    cmdFrame = Tkinter.Frame()
-    Tkinter.Button(cmdFrame, text="Print Value", command=doPrint).pack(side="left")
-    Tkinter.Checkbutton(cmdFrame, text="Enable", command=setEnable, variable=enableVar).pack(side="left")
+    cmdFrame = tkinter.Frame()
+    tkinter.Button(cmdFrame, text="Print Value", command=doPrint).pack(side="left")
+    tkinter.Checkbutton(cmdFrame, text="Enable", command=setEnable, variable=enableVar).pack(side="left")
     cmdFrame.pack(side="top")
 
     root.mainloop()

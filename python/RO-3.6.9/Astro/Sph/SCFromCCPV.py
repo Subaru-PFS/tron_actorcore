@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from __future__ import absolute_import
 
 __all__ = ["scFromCCPV"]
 
 import math
 import RO.PhysConst
-from SCFromCC import scFromCC
+from .SCFromCC import scFromCC
 
 # Constants
 _ASPerCy_Per_RadPerYear = 100.0 * RO.PhysConst.ArcSecPerDeg / RO.PhysConst.RadPerDeg

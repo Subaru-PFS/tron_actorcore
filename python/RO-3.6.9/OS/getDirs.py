@@ -77,6 +77,7 @@ History:
 2006-02-28 ROwen    Bug fix: getHomeDir did not work on Windows.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ["PlatformName", "getAppDirs", "getAppSuppDirs", "getDocsDir", "getHomeDir",
     "getPrefsDirs", "getPrefsPrefix"]
 
@@ -86,12 +87,12 @@ PlatformName = None
 
 try:
     # try Mac
-    from getMacDirs import getAppDirs, getAppSuppDirs, getDocsDir, getPrefsDirs
+    from .getMacDirs import getAppDirs, getAppSuppDirs, getDocsDir, getPrefsDirs
     PlatformName = 'mac'
 except ImportError:
     # try Windows
     try:
-        from getWinDirs import getAppDirs, getAppSuppDirs, getDocsDir, getPrefsDirs
+        from .getWinDirs import getAppDirs, getAppSuppDirs, getDocsDir, getPrefsDirs
         PlatformName = 'win'
     except ImportError:
         # assume Unix

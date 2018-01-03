@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 """Run a script as a droplet (an application onto which you drop file) with a log window
 
 Deprecated. use DropletApp instead.
@@ -57,16 +60,17 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ["DropletRunner"]
 
 import sys
 import os.path
 import subprocess
-import Tkinter
+import tkinter
 import RO.OS
 import RO.Constants
 from RO.TkUtil import Timer
-import LogWdg
+from . import LogWdg
 
 class DropletRunner(object):
     """Run a script as a droplet (an application onto which you drop file) with a log window.
@@ -91,7 +95,7 @@ class DropletRunner(object):
         if not os.path.isfile(scriptPath):
             raise RuntimeError("Cannot find script %r" % (self.scriptPath,))
 
-        self.tkRoot = Tkinter.Tk()
+        self.tkRoot = tkinter.Tk()
         self._timer = Timer()
         
         if title is None:
@@ -129,8 +133,8 @@ class DropletRunner(object):
         self.isRunning = True
         argList = [sys.executable, self.scriptPath] + list(filePathList)
         self.subProc = subprocess.Popen(argList, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        self.tkRoot.tk.createfilehandler(self.subProc.stderr, Tkinter.READABLE, self._readStdErr)
-        self.tkRoot.tk.createfilehandler(self.subProc.stdout, Tkinter.READABLE, self._readStdOut)
+        self.tkRoot.tk.createfilehandler(self.subProc.stderr, tkinter.READABLE, self._readStdErr)
+        self.tkRoot.tk.createfilehandler(self.subProc.stdout, tkinter.READABLE, self._readStdOut)
         self._poll()
 
     def _macOpenDocument(self, *filePathList):

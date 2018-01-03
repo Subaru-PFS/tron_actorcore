@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from past.builtins import cmp
 """Math utilities by Russell Owen
 
 History:

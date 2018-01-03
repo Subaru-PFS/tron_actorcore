@@ -7,6 +7,7 @@ History:
 2012-10-25 ROwen    Timer.start treats negative values as 0.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from builtins import object
 __all__ = ["Timer"]
 
 import twisted.internet.reactor

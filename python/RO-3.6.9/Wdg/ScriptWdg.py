@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 from __future__ import division
+from past.builtins import execfile
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 """Widgets to load and run RO.ScriptRunner scripts.
 
 ScriptModuleWdg loads a script from a specified module.
@@ -31,15 +35,16 @@ History:
                     (I'm not sure how, but I removed that import in this module to fix it).
 2015-11-05 ROwen    Stop using dangerous bare "except:".
 """
+from __future__ import absolute_import
 __all__ = ['BasicScriptWdg', 'ScriptModuleWdg', 'ScriptFileWdg']
 
 import os.path
-import Tkinter
+import tkinter
 import RO.Constants
 import RO.AddCallback
 import RO.ScriptRunner
-import Button
-import StatusBar
+from . import Button
+from . import StatusBar
 
 # compute _StateSevDict which contains
 # state:severity for non-normal severities
@@ -52,7 +57,7 @@ class _Blank(object):
     def __init__(self):
         object.__init__(self)
         
-class _FakeButton:
+class _FakeButton(object):
     def noop(self, *args, **kargs):
         return
     __init__ = noop
@@ -231,7 +236,7 @@ class BasicScriptWdg(RO.AddCallback.BaseMixin):
         self._basicDoCallbacks(self.scriptRunner)
 
 
-class _BaseUserScriptWdg(Tkinter.Frame, BasicScriptWdg):
+class _BaseUserScriptWdg(tkinter.Frame, BasicScriptWdg):
     """Base class widget that runs a function via a ScriptRunner.
     
     Subclasses must override _getScriptFuncs.
@@ -248,7 +253,7 @@ class _BaseUserScriptWdg(Tkinter.Frame, BasicScriptWdg):
         name,
         dispatcher = None,
     **kargs):
-        Tkinter.Frame.__init__(self, master, **kargs)
+        tkinter.Frame.__init__(self, master, **kargs)
 
         
         srArgs = self._getScriptFuncs(isFirst=True)
@@ -256,7 +261,7 @@ class _BaseUserScriptWdg(Tkinter.Frame, BasicScriptWdg):
 
         row = 0
         
-        self.scriptFrame = Tkinter.Frame(self)
+        self.scriptFrame = tkinter.Frame(self)
         self.scriptFrame.grid(row=row, column=0, sticky="news")
         self.scriptFrameRow = row
         self.rowconfigure(row, weight=1)
@@ -281,7 +286,7 @@ class _BaseUserScriptWdg(Tkinter.Frame, BasicScriptWdg):
         cmdStatusBar.grid(row=row, column=0, sticky="ew")
         row += 1
         
-        buttonFrame = Tkinter.Frame(self)
+        buttonFrame = tkinter.Frame(self)
         startButton = Button.Button(
             master = buttonFrame,
             text = "Start",
@@ -338,7 +343,7 @@ class _BaseUserScriptWdg(Tkinter.Frame, BasicScriptWdg):
             self.scriptFrame.destroy()
             self.scriptRunner = None
     
-            self.scriptFrame = Tkinter.Frame(self)
+            self.scriptFrame = tkinter.Frame(self)
             self.scriptFrame.grid(row=self.scriptFrameRow, column=0, sticky="news")
             self._makeScriptRunner(self.scriptFrame, **srArgs)
             self.scriptStatusBar.setMsg("Reloaded", RO.Constants.sevNormal)
@@ -540,8 +545,8 @@ class ScriptFileWdg(_BaseUserScriptWdg):
 
 if __name__ == "__main__":
     import RO.KeyDispatcher
-    import PythonTk
-    import TestScriptWdg
+    from . import PythonTk
+    from . import TestScriptWdg
     root = PythonTk.PythonTk()
     root.title('Script 1 (root)')
     
@@ -558,7 +563,7 @@ if __name__ == "__main__":
     testTL1.resizable(False, False)
 
     
-    testTL2 = Tkinter.Toplevel()
+    testTL2 = tkinter.Toplevel()
     sr2 = ScriptFileWdg(
         master = testTL2,
         filename = 'TestScriptWdg.py',

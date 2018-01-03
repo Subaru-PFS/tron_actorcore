@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
 """VMS telnet connection. May work with other operating systems.
 
 Note: not very well tested, since I no longer use it.
@@ -27,11 +30,12 @@ History:
 2005-01-12 ROwen    Modified for new RO.Wdg.ModalDialogBase.
 2014-09-18 ROwen    Bug fix: some states needed self. prefix.
 """
+from __future__ import absolute_import
 __all__ = ["VMSTelnet"]
 
 import sys
 import RO.Wdg
-from TCPConnection import TCPConnection
+from .TCPConnection import TCPConnection
 
 class VMSTelnet(TCPConnection):
     """A telnet connection that negotiates the telnet protocol
@@ -198,8 +202,8 @@ class NullConnection(TCPConnection):
 
 
 if __name__ == "__main__":
-    import Tkinter
-    root = Tkinter.Tk()
+    import tkinter
+    root = tkinter.Tk()
 
     host = "tccdev"
     username = "TCC"
@@ -220,16 +224,16 @@ if __name__ == "__main__":
         stateCallback = stateCallback,
     )
 
-    sendText = Tkinter.Entry(root)
-    sendText.pack(fill=Tkinter.X, expand=Tkinter.YES)
+    sendText = tkinter.Entry(root)
+    sendText.pack(fill=tkinter.X, expand=tkinter.YES)
     sendText.focus_set()
 
-    Tkinter.Button(root, text="Disconnect", command=myConn.disconnect).pack()   
+    tkinter.Button(root, text="Disconnect", command=myConn.disconnect).pack()   
 
     def sendCmd (evt):
         try:
             astr = sendText.get()
-            sendText.delete(0, Tkinter.END)
+            sendText.delete(0, tkinter.END)
             myConn.writeLine(astr)
         except Exception as e:
             sys.stderr.write ("Could not extract or send: %s\n" % (astr))

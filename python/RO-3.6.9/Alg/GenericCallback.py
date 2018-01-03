@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, print_function
+from builtins import object
 """From Scott David Daniels <http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/52549>.
 My changes include:
 - Used a name suggested by Eric Brunel
@@ -26,7 +27,7 @@ def GenericCallback(callback, *firstArgs, **firstKWArgs):
         return _GCNoKWArgs(callback, *firstArgs)
 
 
-class _GC:
+class _GC(object):
     """The most generic callback class."""
     def __init__(self, callback, *firstArgs, **firstKWArgs):
         self.__callback = callback
@@ -42,7 +43,7 @@ class _GC:
         return self.__callback (*(self.__firstArgs + args), **netKWArgs)
 
 
-class _GCNoKWArgs:
+class _GCNoKWArgs(object):
     """A callback class optimized for the case of no stored keyword args.
     This is a common case and should run faster than the more general case.
     """

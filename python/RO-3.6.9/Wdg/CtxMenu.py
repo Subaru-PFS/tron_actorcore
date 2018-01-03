@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 from __future__ import division, print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 """Add contextual menu to a Tkinter widget, including automatic
 support for help.
 
@@ -45,9 +48,10 @@ History:
                     will be accepted when the user chooses to leave the field.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
+from __future__ import absolute_import
 __all__ = ['CtxMenu', 'CtxMenuMixin', 'addCtxMenu']
 
-import Tkinter
+import tkinter
 import RO.Comm.BrowseURL
 import RO.Constants
 import RO.OS
@@ -126,7 +130,7 @@ class CtxMenu(object):
         Override to build your own menu from scratch.
         If you only want to add some entries, override ctxConfigMenu instead.
         """
-        menu = Tkinter.Menu(master=self.__getWdg(), tearoff=0)
+        menu = tkinter.Menu(master=self.__getWdg(), tearoff=0)
         if self.__configMenuFunc(menu):
             helpURL = self.getHelpURL()
             if helpURL:
@@ -207,15 +211,15 @@ def addCtxMenu(
 
 
 if __name__ == "__main__":
-    import Bindings
-    import PythonTk
+    from . import Bindings
+    from . import PythonTk
     root = PythonTk.PythonTk()
 
     # set up standard binding for <<CtxMenu>>   
     Bindings.stdBindings(root)
 
     # add help to a standard Tkinter widget
-    stdLabel = Tkinter.Label(text="Standard label")
+    stdLabel = tkinter.Label(text="Standard label")
     addCtxMenu(
         wdg = stdLabel,
         helpURL = "http://brokenURL.html",
@@ -223,9 +227,9 @@ if __name__ == "__main__":
     stdLabel.pack()
     
     # create a new label class that automatically has help:
-    class HelpLabel(Tkinter.Label, CtxMenuMixin):
+    class HelpLabel(tkinter.Label, CtxMenuMixin):
         def __init__(self, master, helpURL=None, **kargs):
-            Tkinter.Label.__init__(self, master=master, **kargs)
+            tkinter.Label.__init__(self, master=master, **kargs)
             CtxMenuMixin.__init__(self, helpURL)
 
     hLabel = HelpLabel(root,

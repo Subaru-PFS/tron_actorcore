@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, division, print_function
+from builtins import range
 """Handles the bits set in a word such as a status word
 """
 __all__ = ["getDescr"]
