@@ -16,7 +16,7 @@ class CmdrConnection(LineReceiver):
         """
 
         self.MAX_LENGTH = 64*1024
-        self.delimiter = '\n'
+        self.delimiter = b'\n'
         self.readCallback = readCallback
         self.brains = brains
         self.lock = threading.Lock()
@@ -41,7 +41,7 @@ class CmdrConnection(LineReceiver):
         
         with self.lock:
             self.logger.debug("transporting command %s" % (cmdStr))
-            self.transport.write(cmdStr)
+            self.transport.write(bytes(cmdStr, 'latin-1'))
 
     def lineReceived(self, replyStr):
         """ Incorporate an entire reply line.
@@ -49,7 +49,7 @@ class CmdrConnection(LineReceiver):
         Args:
            replyStr   - the new reply line.
         """
-
+        replyStr = replyStr.decode('latin-1')
         self.logger.debug('read: ' + replyStr)
         self.readCallback(self.transport, replyStr)
 

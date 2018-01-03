@@ -31,7 +31,7 @@ class CommandLink(LineReceiver):
     (?P<cmdString>.+)""",
                        re.IGNORECASE | re.VERBOSE)
 
-    def __init__(self, brains, connID, eol='\n'):
+    def __init__(self, brains, connID, eol=b'\n'):
         """ Receives what should be atomic commands, parses them, and passes them on.
         """
         # LineReceiver.__init__(self) # How can they live without?
@@ -56,7 +56,8 @@ class CommandLink(LineReceiver):
         
     def lineReceived(self, cmdString):
         """ Called when a complete line has been read from the hub. """
-        
+
+        cmdString = cmdString.decode('latin-1')
         # Telnet connections send back '\r\n'. Or worse, I fear. Try to make
         # those connections work just like properly formatted ones.
         if not self.delimiterChecked:
@@ -109,7 +110,7 @@ class CommandLink(LineReceiver):
             while len(self.outputQueue) > 0:
                 e = self.outputQueue.pop(0)
                 cmdLogger.debug('flushing queue line: %s' % (e[:-1]))
-                self.transport.write(e)
+                self.transport.write(bytes(e, 'latin-1'))
                 
     def sendResponse(self, cmd, flag, response):
         """ Ship a command off to the hub. """
