@@ -1,3 +1,4 @@
+from __future__ import print_function
 #
 # A simple python interface to svn, using os.popen
 #
@@ -16,7 +17,7 @@ def getInfo(file="."):
    """Return a dictionary of all the information returned by "svn info" for the specified file"""
 
    if not isSvnFile(file):
-       raise RuntimeError, "%s is not under svn control" % file
+       raise RuntimeError("%s is not under svn control" % file)
 
    infoList = os.popen("svn info %s" % file).readlines()
 
@@ -51,12 +52,12 @@ def revision(file=None, lastChanged=False):
            return info["Revision"]
 
    if lastChanged:
-       raise RuntimeError, "lastChanged makes no sense if file is None"
+       raise RuntimeError("lastChanged makes no sense if file is None")
 
    res = os.popen("svnversion . 2>&1").readline()
 
    if res == "exported\n":
-       raise RuntimeError, "No svn revision information is available"
+       raise RuntimeError("No svn revision information is available")
 
    versionRe = r"^(?P<oldest>\d+)(:(?P<youngest>\d+))?(?P<flags>[MS]*)"
    mat = re.search(versionRe, res)
@@ -74,7 +75,7 @@ def revision(file=None, lastChanged=False):
 
        return matches["oldest"], matches["youngest"], tuple(matches["flags"])
 
-   raise RuntimeError, ("svnversion returned unexpected result \"%s\"" % res[:-1])
+   raise RuntimeError("svnversion returned unexpected result \"%s\"" % res[:-1])
 
 #
 #-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
@@ -102,7 +103,7 @@ def guessVersionName(HeadURL, exitOnError=True):
    elif re.search(r"/tickets/(\d+).*$", HeadURL):
        versionName = "ticket_%s" % re.search(r"/tickets/(\d+).*$", HeadURL).group(1)
    else:
-       print >> sys.stderr, "Unable to guess versionName name from %s" % HeadURL
+       print("Unable to guess versionName name from %s" % HeadURL, file=sys.stderr)
        versionName = "unknown:%s" % (HeadURL)
 
    try:                    # Try to lookup the svn versionName
@@ -126,9 +127,9 @@ def guessVersionName(HeadURL, exitOnError=True):
 
        if not okVersion:
           if exitOnError:
-             raise RuntimeError, ("Problem with determining svn revision: %s" % msg)
+             raise RuntimeError("Problem with determining svn revision: %s" % msg)
           else:
-             print >> sys.stderr, "Problem with determining svn revision: %s" % msg
+             print("Problem with determining svn revision: %s" % msg, file=sys.stderr)
 
        # In the nasty case where a tagged version has modified files, we want to 
        # rub noses in the fact.
@@ -188,4 +189,4 @@ def simpleVersionName(HeadURL=None):
 
 
 if __name__ == "__main__":
-   print simpleVersionName()
+   print(simpleVersionName())

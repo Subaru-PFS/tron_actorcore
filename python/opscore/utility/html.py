@@ -4,6 +4,8 @@ Generates HTML files via python declarations
 
 # Created 28-Jun-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import str
+from builtins import object
 from time import ctime
 from getpass import getuser
 from socket import gethostname
@@ -17,7 +19,7 @@ class HTMLDocumentError(Exception):
     """
     pass
 
-class Head:
+class Head(object):
     """
     Declares the head element of an HTML document.
     """
@@ -88,7 +90,7 @@ class Text(str):
     """
     blockLevel = False
     def __new__(cls,obj,escapeMe=True):
-        code = unicode(obj).encode('utf-8')
+        code = str(obj).encode('utf-8')
         if escapeMe:
             # HTML does not require escaping single quotes but we do this so that
             # the string representation of a document (or document fragment) can
@@ -252,7 +254,7 @@ for tag in [
 ]:
     globals()[tag.capitalize()] = type(tag.capitalize(),(Element,),{ 'blockLevel':False })
 
-class HTMLDocument:
+class HTMLDocument(object):
     """
     Declares an (X)HTML document.
     """

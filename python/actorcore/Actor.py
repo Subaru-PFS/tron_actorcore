@@ -1,12 +1,16 @@
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import imp
 import re
 import inspect
 import traceback
 import sys
 import os
-import Queue
+import queue
 
-import ConfigParser
+import configparser
 import threading
 
 # import our routines before logging itself.
@@ -23,9 +27,9 @@ from opscore.utility.tback import tback
 import opscore.protocols.keys as keys
 import opscore.protocols.validation as validation
 
-import CommandLinkManager as cmdLinkManager
-import Command as actorCmd
-import CmdrConnection
+from . import CommandLinkManager as cmdLinkManager
+from . import Command as actorCmd
+from . import CmdrConnection
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None,
@@ -107,7 +111,7 @@ class Actor(object):
             self.attachAllCmdSets()
             self.logger.info("All command sets attached...")
 
-            self.commandQueue = Queue.Queue()
+            self.commandQueue = queue.Queue()
         self.shuttingDown = False
 
         if makeCmdrConnection:
@@ -123,9 +127,9 @@ class Actor(object):
         logging.info("reading config file %s", self.configFile)
 
         try:
-            newConfig = ConfigParser.ConfigParser()
+            newConfig = configparser.ConfigParser()
             newConfig.read(self.configFile)
-        except Exception, e:
+        except Exception as e:
             if cmd:
                 cmd.fail('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
             raise
@@ -236,7 +240,7 @@ class Actor(object):
             self.bcast.warn('text="CANNOT ask hub to connect to us, since we do not have a connection to it yet!"')
             return
 
-        modelNames = self.models.keys()
+        modelNames = list(self.models.keys())
         actorString = " ".join(modelNames)
         self.bcast.warn('%s is asking the hub to send us updates from %s' % (self.name, modelNames))
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
@@ -330,15 +334,15 @@ class Actor(object):
             self.logger.debug("command set file=%s filename=%s from path %s",
                               file, filename, path)
             mod = imp.load_module(cname, file, filename, description)
-        except ImportError, e:
+        except ImportError as e:
             raise RuntimeError('Import of %s failed: %s' % (cname, e))
         finally:
             if file:
                 file.close()
 
         # Instantiate and save a new command handler.
-        cmdSet = mod             # Quiet flymake down a bit.
-        exec('cmdSet = mod.%s(self)' % (cname))
+        cmdClass = getattr(mod, cname)
+        cmdSet = cmdClass(self)
 
         # pdb.set_trace()
 
@@ -356,7 +360,7 @@ class Actor(object):
         for v in cmdSet.vocab:
             try:
                 verb, args, func = v
-            except ValueError, e:
+            except ValueError as e:
                 raise RuntimeError("vocabulary word needs three parts: %s" % (repr(v)))
 
             # Check that the function exists and get its help.
@@ -375,7 +379,7 @@ class Actor(object):
             self.handler.removeConsumers(*oldCmdSet.validatedCmds)
         self.handler.addConsumers(*cmdSet.validatedCmds)
 
-        self.logger.warn("handler verbs: %s" % (self.handler.consumers.keys()))
+        self.logger.warn("handler verbs: %s" % (list(self.handler.consumers.keys())))
 
     def attachAllCmdSets(self, path=None):
         """ (Re-)load all command classes -- files in ./Command which end with Cmd.py.
@@ -390,7 +394,7 @@ class Actor(object):
 
         try:
             dirlist = os.listdir(path)
-        except OSError, e:
+        except OSError as e:
             self.logger.warn("no Cmd path %s" % (path))
             return
         
@@ -419,7 +423,7 @@ class Actor(object):
 
             try:
                 validatedCmd, cmdFuncs = self.handler.match(cmdStr)
-            except Exception, e:
+            except Exception as e:
                 cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
                                            (cmdStr, e))))
                     #tback('actor_loop', e)
@@ -437,13 +441,13 @@ class Actor(object):
                 cmd.cmd = validatedCmd
                 for func in cmdFuncs:
                     func(cmd)
-            except Exception, e:
+            except Exception as e:
                 oneLiner = self.cmdTraceback(e)
                 cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
                 #tback('newCmd', e)
                 return
 
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text=%s' % (qstr("completely unexpected exception when processing a new command: %s" %
                                        (e))))
             try:
@@ -458,7 +462,7 @@ class Actor(object):
         while True:
             try:
                 cmd = self.commandQueue.get(block=True,timeout=3)
-            except Queue.Empty:
+            except queue.Empty:
                 if self.shuttingDown:
                     return
                 else:
@@ -515,7 +519,7 @@ class Actor(object):
                 actorThread.start()
             if doReactor:
                 reactor.run()
-        except Exception, e:
+        except Exception as e:
             tback('run', e)
 
         if doReactor:

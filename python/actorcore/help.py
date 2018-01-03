@@ -1,3 +1,7 @@
+from __future__ import print_function
+from past.builtins import cmp
+from builtins import str
+from builtins import object
 import re
 import opscore.protocols.types as types
 
@@ -136,7 +140,7 @@ class Cmd(object):
                 elif isinstance(kt, types.String):
                     arg.values.append([kt, "\"SSS\""])
                 else:
-                    print "RHL", kt
+                    print("RHL", kt)
                     #import pdb; pdb.set_trace()
                     arg.values.append([kt, "???"])
 
@@ -144,7 +148,7 @@ class Cmd(object):
         if len(self.args) == 0:
             return ""
         elif len(self.args) > 1:
-            print "XXXXXXXXXXXXX self.args = ", " ".join([str(a) for a in self.args])
+            print("XXXXXXXXXXXXX self.args = ", " ".join([str(a) for a in self.args]))
 
         a = self.args[0]
         argVal = ""
@@ -184,7 +188,7 @@ class Cmd(object):
                 elif isinstance(kt, types.String):
                     argVal += "\"SSS\""
                 else:
-                    print "RHL", kt
+                    print("RHL", kt)
                     #import pdb; pdb.set_trace()
                     argVal += "???"
 

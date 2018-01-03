@@ -1,9 +1,11 @@
 """
 Enhancements to the standard datetime package for astronomical applications.
 """
+from __future__ import division
 
 # Created 29-Jul-2008 by David Kirkby (dkirkby@uci.edu)
 
+from past.utils import old_div
 from datetime import tzinfo,timedelta,datetime
 from math import floor
 
@@ -85,11 +87,11 @@ class AstroTime(datetime):
         if self.year <= 0:
             raise AstroTimeException("MJD calculations not supported for BC dates")
         (y,m,d) = (self.year,self.month,self.day)
-        jd = (367*y - floor(7*(y + floor((m+9)/12))/4) -
-            floor(3*(floor((y+(m-9)/7)/100)+1)/4) + floor(275*m/9) + d + 1721028.5)
+        jd = (367*y - floor(7*(y + floor(old_div((m+9),12)))/4) -
+            floor(3*(floor(old_div((y+old_div((m-9),7)),100))+1)/4) + floor(275*m/9) + d + 1721028.5)
         mjd = jd - 2400000.5
         (h,m,s,us) = (self.hour,self.minute,self.second,self.microsecond)
-        mjd += (h + (m + (s + us/1000000.)/60.)/60.)/24.
+        mjd += old_div((h + old_div((m + old_div((s + old_div(us,1000000.)),60.)),60.)),24.)
         return mjd
     @staticmethod
     def fromMJD(mjd,tz=None):

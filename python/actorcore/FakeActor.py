@@ -1,4 +1,5 @@
 # import our routines before logging itself. 
+from builtins import object
 try:
     import opscore.utility.sdss3logging as opsLogging
 except:

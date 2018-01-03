@@ -26,7 +26,9 @@ Todo:
      whether to set up a root logger, whether to entirely wrap the logging.py
      functions, etc.
 """
+from __future__ import print_function
 
+from builtins import range
 import logging
 import os
 import os.path
@@ -98,10 +100,13 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         self.startTime = now
 
         # Get local midnight for the day.
-        t = list(time.localtime(now))
-        t[3] = t[4] = t[5] = 0
-        self.rolloverAt = time.mktime(t) + self.rolloverTime
-        
+        t = time.localtime(now)
+        try:
+            t[3] = t[4] = t[5] = 0
+            self.rolloverAt = time.mktime(t) + self.rolloverTime
+        except:
+            self.rolloverAt = time.mktime((t.tm_year, t.tm_mon, t.tm_mday, 0, 0, 0, t.tm_wday, t.tm_yday, t.tm_isdst)) + self.rolloverTime
+
         # Add a day if we are past today's rolloverTime.
         if now >= self.rolloverAt:
             self.rolloverAt += 24*3600
@@ -169,8 +174,8 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         filename = self.basename + timeString + ".log"
 
         try:
-            os.makedirs(self.dirname, 0755)
-        except OSError, e:
+            os.makedirs(self.dirname, 0o755)
+        except OSError as e:
             pass
             
         path = os.path.join(self.dirname, filename)
@@ -182,7 +187,7 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         oldStream = self.stream
         try:
             self.stream = open(path, 'a+')
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("Failed to rollover to new logfile %s: %s\n" % (path, e))
             return
             
@@ -200,8 +205,8 @@ class OpsRotatingFileHandler(logging.StreamHandler):
             pass
         try:
             os.symlink(filename, linkname)
-        except Exception, e:
-            print "Failed to create current.log symlink to %s" % (filename)
+        except Exception as e:
+            print("Failed to create current.log symlink to %s" % (filename))
 
            
 def makeOpsFileHandler(dirname, basename='', propagate=True):

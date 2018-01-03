@@ -82,16 +82,25 @@ History:
                     Modified _WaitCmdVars to not try to register callbacks on commands that are finished,
                     and to not try to remove callbacks from CmdVars that are done.
 """
+from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import sys
 import threading
-import Queue
+import queue
 import traceback
 import RO.AddCallback
 import RO.Constants
 import RO.SeqUtil
 import RO.StringUtil
 from opscore.utility.timer import Timer
-import keyvar
+from . import keyvar
 
 _DebugState = False
 
@@ -255,9 +264,9 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
         if not self.debug:
             return
         try:
-            print msgStr
-        except (TypeError, ValueError), e:
-            print repr(msgStr)
+            print(msgStr)
+        except (TypeError, ValueError) as e:
+            print(repr(msgStr))
 
     @property
     def fullState(self):
@@ -436,7 +445,7 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
             self._statusBar.setMsg(msg, severity)
             self.debugPrint(msg)
         else:
-            print msg
+            print(msg)
     
     def startCmd(self,
         actor="",
@@ -728,7 +737,7 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
             
             self._printState("_continue: before iteration")
             self._state = self.Running
-            possIter = self._iterStack[-1].next()
+            possIter = next(self._iterStack[-1])
             if hasattr(possIter, "next"):
                 self._iterStack.append(possIter)
                 self._iterID = self._getNextID(addLevel = True)
@@ -751,9 +760,9 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
         except SystemExit:
             self.__del__()
             sys.exit(0)
-        except ScriptError, e:
+        except ScriptError as e:
             self._setState(self.Failed, RO.StringUtil.strFromException(e))
-        except Exception, e:
+        except Exception as e:
             traceback.print_exc(file=sys.stderr)
             self._setState(self.Failed, RO.StringUtil.strFromException(e))
     
@@ -762,8 +771,8 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
         Ignored unless _DebugState or self.debug true.
         """
         if _DebugState:
-            print "Script %s: %s: state=%s, iterID=%s, waiting=%s, iterStack depth=%s" % \
-                (self.name, prefix, self._state, self._iterID, self._waiting, len(self._iterStack))
+            print("Script %s: %s: state=%s, iterID=%s, waiting=%s, iterStack depth=%s" % \
+                (self.name, prefix, self._state, self._iterID, self._waiting, len(self._iterStack)))
 
     def _showCmdMsg(self, msg, severity=RO.Constants.sevNormal):
         """Display a message--on the command status bar, if available,
@@ -778,7 +787,7 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
         if self._cmdStatusBar:
             self._cmdStatusBar.setMsg(msg, severity)
         else:
-            print msg
+            print(msg)
     
     def __del__(self):
         """Called just before the object is deleted.
@@ -804,7 +813,7 @@ class ScriptRunner(RO.AddCallback.BaseMixin):
                 self._reason = "keyboard interrupt"
             except SystemExit:
                 raise
-            except Exception, e:
+            except Exception as e:
                 self._state = self.Failed
                 self._reason = "endFunc failed: %s" % (RO.StringUtil.strFromException(e),)
                 traceback.print_exc(file=sys.stderr)
@@ -913,7 +922,7 @@ class _WaitBase(object):
         except ValueError:
             raise RuntimeError("Cancel function missing; did you forgot the 'yield' when calling a ScriptRunner method?")
         if self.scriptRunner.debug and val != None:
-            print "wait returns %r" % (val,)
+            print("wait returns %r" % (val,))
         self.scriptRunner._continue(self._iterID, val)
 
 
@@ -921,7 +930,7 @@ class _WaitMS(_WaitBase):
     def __init__(self, scriptRunner, msec):
         self._waitTimer = Timer()
         _WaitBase.__init__(self, scriptRunner)
-        self._waitTimer.start(msec / 1000.0, self._continue)
+        self._waitTimer.start(old_div(msec, 1000.0), self._continue)
     
     def cancelWait(self):
         self._waitTimer.cancel()
@@ -1048,7 +1057,7 @@ class _WaitKeyVar(_WaitBase):
                 argList.append("defVal=%r" % (defVal,))
             if waitNext:
                 argList.append("waitNext=%r" % (waitNext,))
-            print "waitKeyVar(%s)" % ", ".join(argList)
+            print("waitKeyVar(%s)" % ", ".join(argList))
 
             # prevent the call from failing by using None instead of Exception
             if self.defVal == Exception:
@@ -1098,7 +1107,7 @@ class _WaitThread(_WaitBase):
         if not callable(func):
             raise ValueError("%r is not callable" % func)
 
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.func = func
 
         self.threadObj = threading.Thread(target=self.threadFunc, args=args, kwargs=kargs)
@@ -1128,7 +1137,7 @@ class _WaitThread(_WaitBase):
 
 
 if __name__ == "__main__":
-    import cmdkeydispatcher
+    from . import cmdkeydispatcher
     import time
     from twisted.internet import reactor
     
@@ -1138,11 +1147,11 @@ if __name__ == "__main__":
 
     def initFunc(sr):
         global scriptList
-        print "%s init function called" % (sr,)
+        print("%s init function called" % (sr,))
         scriptList.append(sr)
 
     def endFunc(sr):
-        print "%s end function called" % (sr,)
+        print("%s end function called" % (sr,))
     
     def script(sr):
         def threadFunc(nSec):

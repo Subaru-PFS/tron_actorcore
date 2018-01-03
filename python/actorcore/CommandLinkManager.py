@@ -1,5 +1,7 @@
 from __future__ import with_statement
+from __future__ import absolute_import
 
+from builtins import object
 __all__ = ['CommandLinkManager', 'listen']
 
 import logging
@@ -7,7 +9,7 @@ import logging
 from twisted.internet.protocol import Factory
 from twisted.internet import reactor
 
-from CommandLink import CommandLink
+from .CommandLink import CommandLink
 
 class CommandLinkManager(Factory):
     """ Launch an instance of the given Protocol when a new connection comes in. """
@@ -37,7 +39,7 @@ class CommandLinkManager(Factory):
         if interface is not None:
             try:
                 self.listeningPort = reactor.listenTCP(port, self, interface=interface)
-            except Exception, e:
+            except Exception as e:
                 logging.error("Cannot listen for hub connections: %s", e)
                 logging.error("Check that the host and port in the configuration file is not used by another program:")
                 raise
@@ -75,7 +77,7 @@ class CommandLinkManager(Factory):
 
         try:
             self.activeConnections.remove(c)
-        except ValueError, e:
+        except ValueError as e:
             raise                       # CPL
         
     def sendResponse(self, cmd, flag, response):
@@ -84,7 +86,7 @@ class CommandLinkManager(Factory):
         for c in self.activeConnections:
             try:
                 c.sendResponse(cmd, flag, response)
-            except Exception, e:
+            except Exception as e:
                 raise                   # CPL
         
 def listen(actor, port, interface=''):

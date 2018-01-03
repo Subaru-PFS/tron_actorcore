@@ -5,6 +5,7 @@ Requires a running twisted reactor.
 History:
 2010-07-21 ROwen    Timer(...) sec and callFunc arguments may now be specified by name.
 """
+from builtins import object
 import twisted.internet.reactor
 
 _reactor = twisted.internet.reactor

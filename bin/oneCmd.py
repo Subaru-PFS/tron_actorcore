@@ -41,7 +41,7 @@ class OurActor(actorcore.Actor.Actor):
                                        configFile=configFile,
                                        acceptCmdrs=False,
                                        modelNames=modelNames)
-        self.logger.setLevel(debugLevel)
+        self.logger.setLevel(self.printLevel * 10 + 5)
 
     def TS(self):
         now = time.time()
@@ -83,7 +83,7 @@ class OurActor(actorcore.Actor.Actor):
         to connect back to us. We want to skip this step.
 
         """
-
+        self.cmdr.logger.setLevel(self.printLevel * 10 + 5)
         self.bcast.inform('%s is connected to the hub.' % (self.name))
         self.callAndPrint()
 

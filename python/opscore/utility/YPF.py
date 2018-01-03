@@ -28,7 +28,13 @@ y.writefile('filename')
 
 
 """
+from __future__ import print_function
 
+from builtins import str
+from builtins import next
+from builtins import map
+from builtins import range
+from builtins import object
 import logging
 import numpy as np
 import os
@@ -36,6 +42,7 @@ import re
 import time
 
 import pdb
+from functools import reduce
 
 __version__ = '2.2'
 __all__ = ['YPF', 'readOneStruct']
@@ -153,7 +160,7 @@ class YPFVar(object):
             self.comment = comment
 
         if debug > 5:
-            print "Parsed YPFVar %s -> %s" % (s, self)
+            print("Parsed YPFVar %s -> %s" % (s, self))
         
 class YPFEnum(object):
     """ A Yanny par file enumerated data type.  
@@ -194,7 +201,7 @@ class YPFEnum(object):
     def maxlen(self):
         """ Return the longest tag name. """
         
-        return reduce(max, map(len, self.tags))
+        return reduce(max, list(map(len, self.tags)))
 
     def re(self):
         """ Return a regexp which would match us. """
@@ -231,7 +238,7 @@ class YPFEnum(object):
 
             # Finished with this line, fetch the next one.
             if l == '' or l.startswith('#'):
-                l = lines.next()
+                l = next(lines)
                 continue
 
             # Look for the ending enum name.
@@ -311,7 +318,7 @@ class YPFStruct(object):
 
             # Finished with this line, fetch the next one.
             if l == '' or l.startswith('#'):
-                l = lines.next()
+                l = next(lines)
                 continue
 
             # Look for the ending struct name.
@@ -373,7 +380,7 @@ class YPFStruct(object):
             # pdb.set_trace()
             try:
                 slen, flen = flen
-            except TypeError,e:
+            except TypeError as e:
                 slen = flen
                 flen = 1
 
@@ -408,7 +415,7 @@ class YPFStruct(object):
                 cnv = self.qstring
                 try:
                     slen, flen = flen
-                except TypeError,e:
+                except TypeError as e:
                     slen = flen
                     flen = 1
 
@@ -464,7 +471,7 @@ class YPFStruct(object):
             if ftype == 'char':
                 try:
                     slen, flen = flen
-                except TypeError,e:
+                except TypeError as e:
                     slen = flen
                     flen = 1
                 nptype = '%s%d' % (nptype, slen)
@@ -549,7 +556,7 @@ class YPFStruct(object):
             mtuple = tuple(mlist)
             
         # It actually pays to know the length of the longest string, for .seal()
-        strlens = map(len,mtuple)
+        strlens = list(map(len,mtuple))
         self.strlens = np.array([self.strlens, strlens]).max(axis=0)        
             
         self.records.append(mtuple)
@@ -824,16 +831,16 @@ class YPF(object):
         """
 
         res = []
-        for v in self.vars.values():
+        for v in list(self.vars.values()):
             res.append(v.asString())
         res.append('')
-        for e in self.enums.values():
+        for e in list(self.enums.values()):
             res.append(e.asString())
             res.append('')
-        for s in self.structs.values():
+        for s in list(self.structs.values()):
             res.append(s.defAsString())
             res.append('')
-        for s in self.structs.values():
+        for s in list(self.structs.values()):
             res.append(s.dataAsString())
 
         return '\n'.join(res)

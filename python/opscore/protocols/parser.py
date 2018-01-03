@@ -13,14 +13,16 @@ distribution.
 
 # Created 10-Oct-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import str
+from builtins import object
 import re
 
 name_pattern = re.compile('[A-Za-z][A-Za-z0-9_.]*$')
 
 from opscore.protocols.messages import Keyword,RawKeyword,ReplyHeader,Reply,Command,MessageError
 
-import external.ply.lex as lex
-import external.ply.yacc as yacc
+import ply.lex as lex
+import ply.yacc as yacc
 
 class ParseError(Exception):
     pass
@@ -277,7 +279,7 @@ class ParserBase(object):
         try:
             body = self.unwrap()
             return self.engine.parse(body,lexer=self.lexer,debug=self.debug)
-        except MessageError,e:
+        except MessageError as e:
             raise ParseError(str(e))
 
 

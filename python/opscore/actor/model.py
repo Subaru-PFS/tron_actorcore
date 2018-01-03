@@ -7,12 +7,15 @@ History:
 2009-07-18 ROwen    Added keyVarDict property.
 2010-06-28 ROwen    Removed many unused imports (thanks to pychecker).
 """
+from __future__ import absolute_import
+from builtins import range
+from builtins import object
 import RO.Comm.HubConnection
 import RO.Constants
 import RO.StringUtil
 
 import opscore.protocols.keys as protoKeys
-import keyvar
+from . import keyvar
 
 __all__ = ["Model"]
 
@@ -42,7 +45,7 @@ class Model(object):
 
         cachedKeyVars = []
         keysDict = protoKeys.KeysDictionary.load(actor)
-        for key in keysDict.keys.itervalues():
+        for key in keysDict.keys.values():
             keyVar = keyvar.KeyVar(actor, key)
             if key.doCache and not keyVar.hasRefreshCmd:
                 cachedKeyVars.append(keyVar)
@@ -66,7 +69,7 @@ class Model(object):
         """Return a dictionary of keyVar name:keyVar
         """
         retDict = dict()
-        for name, item in self.__dict__.iteritems():
+        for name, item in self.__dict__.items():
             if isinstance(item, keyvar.KeyVar):
                 retDict[name] = item
         return retDict

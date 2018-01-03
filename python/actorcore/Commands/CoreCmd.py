@@ -2,17 +2,26 @@
 
 """ Wrap top-level ACTOR functions. """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import pdb
 import logging
 import pprint
 import re
 import sys
-import ConfigParser
+import configparser
 
 import opscore.protocols.validation as validation
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 import actorcore.help as help
+
+try:
+    from importlib import reload
+except:
+    pass
+
 reload(help)
 
 from opscore.utility.qstr import qstr
@@ -56,7 +65,7 @@ class CoreCmd(object):
     def controllerKey(self):
         """ Return formatted keyword listing all loaded controllers. """
         
-        controllerNames = self.actor.controllers.keys()
+        controllerNames = list(self.actor.controllers.keys())
         key = 'controllers=%s' % (','.join([c for c in controllerNames]))
 
         return key
@@ -108,7 +117,7 @@ class CoreCmd(object):
             fullHelp = True
         else:
             cmds = []
-            for a, cSet in self.actor.commandSets.items():
+            for a, cSet in list(self.actor.commandSets.items()):
                 cmds += [c[0] for c in cSet.vocab]
             fullHelp = False
             cmds.sort()
@@ -122,12 +131,12 @@ class CoreCmd(object):
         first = True
         for cmdName in cmds:
             helpList = []
-            for csetName, cSet in self.actor.commandSets.items():
+            for csetName, cSet in list(self.actor.commandSets.items()):
                 if cmdName in [c[0] for c in cSet.vocab]:
                     try:
                         helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html,
                                             fullHelp=fullHelp)
-                    except Exception, e:
+                    except Exception as e:
                         helpStr = "something went wrong when building help for %s: %s" % (cmdName, e)
                         cmd.warn('text=%s' % (qstr(helpStr)))
                     helpList.append(helpStr)
@@ -204,14 +213,14 @@ class CoreCmd(object):
             debug_here = iPdb.Tracer()
             cmd.warn('text="starting ipdb on console..."')
             debugFunction = debug_here
-        except Exception, e:
+        except Exception as e:
             import pdb
             cmd.warn('text="starting pdb on console..."')
             debugFunction = pdb.set_trace
             
         try:
             debugFunction()
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="debugger blammo: %s"' % (e))
             return
         
@@ -223,14 +232,14 @@ class CoreCmd(object):
         
         try:
             from IPython import embed
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="failed to start ipython: %s"' % (e))
             return
 
         cmd.warn('text="starting ipython on console..."')
         try:
             embed() # this call anywhere in your program will start IPython
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="ipython blammo: %s"' % (e))
             return
         
@@ -242,14 +251,14 @@ class CoreCmd(object):
         
         try:
             import twistedloop
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="failed to import twistedloop: %s"' % (e))
             return
 
         cmd.warn('text="starting ipython kernel ..."')
         try:
             twistedloop.startloop()
-        except Exception, e:
+        except Exception as e:
             cmd.fail('text="ipython blammo: %s"' % (e))
             return
         

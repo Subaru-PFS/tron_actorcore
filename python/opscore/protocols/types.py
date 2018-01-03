@@ -3,9 +3,14 @@ Type declarations for SDSS-3 keyword values
 
 Refer to https://trac.sdss3.org/wiki/Ops/Types
 """
+from __future__ import print_function
 
 # Created 30-Oct-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import zip
+from builtins import range
+from past.builtins import basestring
+from builtins import object
 import re
 import textwrap
 
@@ -89,7 +94,7 @@ class ValueType(type,Descriptive):
                 return cls.baseType.__str__(self)
                 
         # check for any invalid metadata keys
-        for key in kwargs.iterkeys():
+        for key in kwargs.keys():
             if key not in ValueType._metaKeys and (
                 not hasattr(cls,'customKeys') or key not in cls.customKeys):
                 raise ValueTypeError('invalid metadata key "%s" for %s' % (key,cls.__name__))
@@ -293,22 +298,22 @@ class Int(ValueType):
     def new(cls,value):
         if isinstance(value,basestring):
             # base = 0 infers base from optional prefix (see PEP 3127)
-            lvalue = long(cls.validate(value),0)
+            lvalue = int(cls.validate(value),0)
         else:
-            lvalue = long(cls.validate(value))
+            lvalue = int(cls.validate(value))
         if lvalue < -0x7fffffff or lvalue > 0x7fffffff:
             raise OverflowError('Invalid literal for Int: %r' % value)
         return int.__new__(cls,lvalue)
 
 class Long(ValueType):
-    baseType = long
+    baseType = int
     storage = 'int8'
     def new(cls,value):
         if isinstance(value,basestring):
             # base = 0 infers base from optional prefix (see PEP 3127)
-            return long.__new__(cls,cls.validate(value),0)
+            return int.__new__(cls,cls.validate(value),0)
         else:
-            return long.__new__(cls,cls.validate(value))
+            return int.__new__(cls,cls.validate(value))
 
 class String(ValueType):
     baseType = str
@@ -317,20 +322,20 @@ class String(ValueType):
         return str.__new__(cls,cls.validate(value))
 
 class UInt(ValueType):
-    baseType = long
+    baseType = int
     storage = 'int4'
     def new(cls,value):
         if isinstance(value,basestring):
             # base = 0 infers base from optional prefix (see PEP 3127)
-            lvalue = long(cls.validate(value),0)
+            lvalue = int(cls.validate(value),0)
         else:
-            lvalue = long(cls.validate(value))
+            lvalue = int(cls.validate(value))
         if lvalue < -0x7fffffff or lvalue > 0xffffffff:
             raise OverflowError('Invalid literal for UInt: %r' % value)
         if lvalue < 0:
             # re-interpret a negative 32-bit value as its bit-equivalent unsigned value
             lvalue = 0x80000000 | (-lvalue)
-        return long.__new__(cls,lvalue)
+        return int.__new__(cls,lvalue)
 
 class Hex(UInt):
     """
@@ -339,7 +344,7 @@ class Hex(UInt):
     reprFmt = '0x%x'
     def new(cls,value):
         try:
-            return long.__new__(cls,cls.validate(value),16)
+            return int.__new__(cls,cls.validate(value),16)
         except TypeError:
             return UInt.new(cls,value)
 
@@ -356,9 +361,9 @@ class Enum(ValueType):
             raise ValueTypeError('missing enum labels in ctor')
         # force each label to be interpreted as a string so, for example,
         # False->'False', 1->'1', 0xff->'255'
-        strargs = [str(arg) for arg in args]
+        strargs = {str(arg) for arg in args}
         dct['enumLabels'] = strargs
-        dct['enumValues'] = dict(zip(args,range(len(strargs))))
+        dct['enumValues'] = dict(list(zip(args,list(range(len(strargs))))))
         # look for optional per-label help text
         labelHelp = kwargs.get('labelHelp',None)
         if labelHelp and not len(labelHelp) == len(strargs):
@@ -374,8 +379,11 @@ class Enum(ValueType):
             return str(other).lower() == self.lower()
         def neTest(self,other):
             return str(other).lower() != self.lower()
+        def hashTest(self):
+            return hash(str(self))
         dct['__eq__'] = eqTest
         dct['__ne__'] = neTest
+        dct['__hash__'] = hashTest
 
     def new(cls,value):
         """
@@ -423,7 +431,7 @@ class Bool(ValueType):
                 return self.falseValue
         dct['__str__'] = doStr
         if dct['strFmt']:
-            print 'Bool: ignoring strFmt metadata'
+            print('Bool: ignoring strFmt metadata')
     
     def new(cls,value):
         """
@@ -469,7 +477,7 @@ class Bits(UInt):
             width = int(width or 1)
             if name:
                 specs.append((name,width))
-                fields[name] = (offset,long((1<<width)-1))
+                fields[name] = (offset,int((1<<width)-1))
             offset += width
             if offset > 32:
                 raise ValueTypeError('total bitfield length > 32')
@@ -498,7 +506,7 @@ class Bits(UInt):
         dct['bitsString'] = bitsString
         #dct['__str__'] = doStr
         if dct['strFmt']:
-            print 'Bits: ignoring strFmt metadata'
+            print('Bits: ignoring strFmt metadata')
         
     def addDescriptors(cls):
         for index,(name,width) in enumerate(cls.fieldSpecs):

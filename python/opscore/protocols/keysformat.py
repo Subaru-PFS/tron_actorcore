@@ -6,10 +6,11 @@ Refer to https://trac.sdss3.org/wiki/Ops/Validation for details.
 
 # Created 18-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import object
 from opscore.protocols.keys import Consumer,Key,CmdKey,RawKey
 
-import external.ply.lex as lex
-import external.ply.yacc as yacc
+import ply.lex as lex
+import ply.yacc as yacc
 
 class KeysFormatParseError(Exception):
     pass

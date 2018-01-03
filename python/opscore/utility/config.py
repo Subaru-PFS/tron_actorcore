@@ -3,23 +3,31 @@ Performs runtime configration based on command-line options and INI files
 
 Refer to https://trac.sdss3.org/wiki/Ops/Config for details.
 """
+from __future__ import print_function
+from __future__ import division
 
 # Created 8-Apr-2009 by David Kirkby (dkirkby@uci.edu)
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
+from builtins import str
+from builtins import range
+from past.utils import old_div
 import sys
 import os,os.path
 import optparse
-import ConfigParser
+import configparser
 
 class ConfigError(Exception):
     pass
 
-class ProductConfig(ConfigParser.SafeConfigParser):
+class ProductConfig(configparser.SafeConfigParser):
     """
     A product-aware INI configuration file parser
     """
     def __init__(self,productName,fileName,sectionName=None):
-        ConfigParser.SafeConfigParser.__init__(self)
+        configparser.SafeConfigParser.__init__(self)
         self.sectionName = sectionName or 'DEFAULT'
         # build a search path for INI files...
         configFiles = [ ]
@@ -48,8 +56,8 @@ class ProductConfig(ConfigParser.SafeConfigParser):
         try:
             getter = getattr(self,'get' + (getType or ''),self.get)
             return getter(self.sectionName,optionName)
-        except (ConfigParser.NoOptionError,ConfigParser.NoSectionError):
-            raise ConfigError
+        except (configparser.NoOptionError,configparser.NoSectionError):
+            raise ConfigError()
 
 class ConfigOptionGroup(optparse.OptionGroup):
     """
@@ -160,7 +168,7 @@ class ConfigOptionParser(optparse.OptionParser):
                 from Crypto.Hash import MD5 as hasher
                 from Crypto.Cipher import AES as cipher
             except ImportError:
-                raise 'secret options require the Crypto package'
+                raise ImportError('secret options require the Crypto package')
             if not passphrase:
                 passphrase = getpass.getpass(prompt)
             key = hasher.new(passphrase).digest()
@@ -197,7 +205,7 @@ class ConfigOptionParser(optparse.OptionParser):
         Appends config info to the standard OptionParser help
         """
         retval = optparse.OptionParser.print_help(self,*args,**kwargs)
-        print '\n' + self.get_config_info()
+        print('\n' + self.get_config_info())
         return retval
     
     @staticmethod    
@@ -217,7 +225,7 @@ class ConfigOptionParser(optparse.OptionParser):
             raise ConfigError('hex digest must have even length')
         try:
             bytes = [ ]
-            for index in xrange(len(data)/2):
+            for index in range(old_div(len(data),2)):
                 bytes.append(chr(int(data[2*index:2*(index+1)],16)))
             return ''.join(bytes)
         except ValueError:

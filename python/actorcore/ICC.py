@@ -1,3 +1,4 @@
+from __future__ import print_function
 from opscore.utility.qstr import qstr
 import opscore.utility.sdss3logging as opsLogging
 import logging
@@ -37,7 +38,7 @@ class ICC(coreActor.Actor):
             mod = imp.load_module(name, file, filename, description)
             self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
                               name, file, filename, description, id(mod))
-        except ImportError, e:
+        except ImportError as e:
             raise RuntimeError('Import of %s failed: %s' % (name, e))
         finally:
             if file:
@@ -65,8 +66,8 @@ class ICC(coreActor.Actor):
         self.logger.info('starting %s controller', instanceName)
         try:
             conn.start()
-        except Exception, e:
-            print sys.exc_info()
+        except Exception as e:
+            print(sys.exc_info())
             self.logger.error('Could not start controller %s/%s: %s', instanceName, name, e)
             return False
         
@@ -93,7 +94,7 @@ class ICC(coreActor.Actor):
             c.stop()
         
     def stopAllControllers(self):
-        for c in self.controllers.keys():
+        for c in list(self.controllers.keys()):
             self.detachController(c)
 
     def shutdown(self):

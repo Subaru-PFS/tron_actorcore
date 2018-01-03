@@ -1,6 +1,11 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import bytes
+from builtins import str
+from builtins import object
 import logging
 import threading
-import Queue
+import queue
 
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
@@ -16,7 +21,7 @@ class CmdrConnection(LineReceiver):
         """
 
         self.MAX_LENGTH = 64*1024
-        self.delimiter = '\n'
+        self.delimiter = b'\n'
         self.readCallback = readCallback
         self.brains = brains
         self.lock = threading.Lock()
@@ -41,7 +46,7 @@ class CmdrConnection(LineReceiver):
         
         with self.lock:
             self.logger.debug("transporting command %s" % (cmdStr))
-            self.transport.write(cmdStr)
+            self.transport.write(bytes(cmdStr, 'latin-1'))
 
     def lineReceived(self, replyStr):
         """ Incorporate an entire reply line.
@@ -49,7 +54,7 @@ class CmdrConnection(LineReceiver):
         Args:
            replyStr   - the new reply line.
         """
-
+        replyStr = replyStr.decode('latin-1')
         self.logger.debug('read: ' + replyStr)
         self.readCallback(self.transport, replyStr)
 
@@ -185,7 +190,7 @@ class Cmdr(object):
         trimmedCmd = argv['cmdStr'] if len(argv['cmdStr']) < 80 else argv['cmdStr'][:80]+"..."
         self.logger.info("queueing command %s(%s)" % (argv['actor'], trimmedCmd))
 
-        q = Queue.Queue()
+        q = queue.Queue()
         argv['callFunc'] = q.put
         cmdvar = opsKeyvar.CmdVar(**argv)
         reactor.callFromThread(self.dispatcher.executeCmd, cmdvar)
@@ -195,7 +200,7 @@ class Cmdr(object):
     def waitForKey(self, **argv):
         self.logger.info("sending command %s" % (argv))
 
-        q = Queue.Queue()
+        q = queue.Queue()
         argv['callFunc'] = q.put
         keyvar = opsKeyvar.KeyVar(**argv)
         reactor.callFromThread(self.dispatcher.executeCmd, keyvar)
@@ -220,7 +225,7 @@ def liveTest():
 
     # Register all tcc keywords to be printed.
     tccModel = opsModel.Model('tcc')
-    for o in tccModel.__dict__.values():
+    for o in list(tccModel.__dict__.values()):
         if isinstance(o, keyvar.KeyVar):
             o.addCallback(showVal)
 
