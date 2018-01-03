@@ -338,8 +338,8 @@ class Actor(object):
                 file.close()
 
         # Instantiate and save a new command handler.
-        cmdSet = mod             # Quiet flymake down a bit.
-        exec('cmdSet = mod.%s(self)' % (cname))
+        cmdClass = getattr(mod, cname)
+        cmdSet = cmdClass(self)
 
         # pdb.set_trace()
 
