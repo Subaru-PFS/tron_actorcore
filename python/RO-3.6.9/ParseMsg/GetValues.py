@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from builtins import range
 """Obtains all values (0 or more) associated with a keyword.
 
@@ -15,7 +15,6 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ["getValues"]
 
 import re

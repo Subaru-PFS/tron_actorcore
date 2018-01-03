@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """Get useful directories for Mac (X or Classic), unix
 or modern versions of Windows. Defines:
 
@@ -77,7 +77,6 @@ History:
 2006-02-28 ROwen    Bug fix: getHomeDir did not work on Windows.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ["PlatformName", "getAppDirs", "getAppSuppDirs", "getDocsDir", "getHomeDir",
     "getPrefsDirs", "getPrefsPrefix"]
 

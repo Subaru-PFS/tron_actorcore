@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """A version of RO.TCPConnection that can negotiate a connection with the APO Hub.
@@ -32,7 +32,6 @@ History:
 2014-09-17 ROwen    Bug fix: an error message referenced a mis-typed variable name.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ["HubConnection"]
 
 try:

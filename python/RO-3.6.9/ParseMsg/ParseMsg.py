@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """Parses a message of the form: header keywordValueData
 returning a dictionary.
 
@@ -9,7 +9,6 @@ returning a dictionary.
                     Modified test code to use astr instead of str.
 2011-06-17 ROwen    Changed "type" to "msgType" in parsed message dictionaries to avoid conflict with builtin.
 """
-from __future__ import absolute_import
 __all__ = ["parseHubMsg"]
 
 from .GetHeader import getHubHeader
