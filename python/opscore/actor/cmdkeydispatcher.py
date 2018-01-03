@@ -114,6 +114,7 @@ from future import standard_library
 standard_library.install_aliases()
 from builtins import next
 from builtins import object
+from builtins import str
 import sys
 import time
 import traceback
@@ -383,7 +384,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                     cmdVar.actor, cmdVar.cmdStr, RO.StringUtil.strFromException(e)),
             )
             self._replyToCmdVar(cmdVar, errReply)
-    
+
     @staticmethod
     def getMaxUserCmdID():
         """Return the maximum user command ID number.

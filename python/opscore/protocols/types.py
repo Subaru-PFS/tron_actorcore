@@ -7,7 +7,6 @@ from __future__ import print_function
 
 # Created 30-Oct-2008 by David Kirkby (dkirkby@uci.edu)
 
-from builtins import str
 from builtins import zip
 from builtins import range
 from past.builtins import basestring
