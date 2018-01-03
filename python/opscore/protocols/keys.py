@@ -7,6 +7,9 @@ from __future__ import print_function
 
 # Created 18-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import map
+from builtins import str
+from builtins import object
 import textwrap
 import imp
 import sys
@@ -265,7 +268,7 @@ class KeysManager(object):
         
     @classmethod
     def getKey(cls,name):
-        for kdict in cls.keys.values():
+        for kdict in list(cls.keys.values()):
             if name in kdict:
                 return kdict[name]
         raise KeysError('No such registered keyword <%s>' % name)
@@ -327,7 +330,7 @@ class KeysDictionary(object):
         """
         self.name = name
         try:
-            (major,minor) = map(int,version)
+            (major,minor) = list(map(int,version))
         except (ValueError,TypeError):
             raise KeysDictionaryError(
             'Invalid version: expected (major,minor) tuple of integers, got %r' % version)
@@ -440,7 +443,7 @@ class KeysDictionary(object):
                 'KeysDictionary': KeysDictionary,
                 'ByName': protoTypes.ByName,
             }
-            for (name,value) in protoTypes.__dict__.iteritems():
+            for (name,value) in protoTypes.__dict__.items():
                 if isinstance(value,type) and issubclass(value,
                     (protoTypes.ValueType,protoTypes.CompoundValueType)):
                     symbols[name] = value

@@ -19,6 +19,9 @@ History:
 2010-11-18 ROwen    Changed set to raise TypeError instead of RuntimeError if the values are inappropriate.
 2010-11-19 ROwen    Bug fix: added CmdVar to __all__.
 """
+from builtins import zip
+from builtins import range
+from builtins import object
 import sys
 import time
 import traceback
@@ -575,7 +578,7 @@ class _SetWdgSet(object):
     """
     def __init__(self, wdgSet):
         self.wdgSet = wdgSet
-        self.wdgInd = range(len(wdgSet))
+        self.wdgInd = list(range(len(wdgSet)))
     def __call__(self, keyVar):
         isCurrent = keyVar.isCurrent
         for wdg, val in zip(self.wdgSet, keyVar.valueList):
@@ -586,7 +589,7 @@ class _SetDefaultWdgSet(object):
     """
     def __init__(self, wdgSet):
         self.wdgSet = wdgSet
-        self.wdgInd = range(len(wdgSet))
+        self.wdgInd = list(range(len(wdgSet)))
     def __call__(self, keyVar):
         isCurrent = keyVar.isCurrent
         for wdg, val in zip(self.wdgSet, keyVar.valueList):

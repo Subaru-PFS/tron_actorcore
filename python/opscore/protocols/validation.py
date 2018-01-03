@@ -7,6 +7,7 @@ from __future__ import print_function
 
 # Created 7-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import object
 import sys
 import textwrap
 

@@ -1,4 +1,6 @@
 from __future__ import print_function
+from builtins import str
+from builtins import chr
 __all__ = ['qstr']
 
 def qstr(o, tquote='"', equotes=None, doNewlines=True):

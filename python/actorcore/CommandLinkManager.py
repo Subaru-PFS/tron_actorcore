@@ -1,6 +1,7 @@
 from __future__ import with_statement
 from __future__ import absolute_import
 
+from builtins import object
 __all__ = ['CommandLinkManager', 'listen']
 
 import logging

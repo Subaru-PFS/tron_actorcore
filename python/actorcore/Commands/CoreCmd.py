@@ -2,17 +2,21 @@
 
 """ Wrap top-level ACTOR functions. """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import pdb
 import logging
 import pprint
 import re
 import sys
-import ConfigParser
+import configparser
 
 import opscore.protocols.validation as validation
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 import actorcore.help as help
+from importlib import reload
 reload(help)
 
 from opscore.utility.qstr import qstr
@@ -56,7 +60,7 @@ class CoreCmd(object):
     def controllerKey(self):
         """ Return formatted keyword listing all loaded controllers. """
         
-        controllerNames = self.actor.controllers.keys()
+        controllerNames = list(self.actor.controllers.keys())
         key = 'controllers=%s' % (','.join([c for c in controllerNames]))
 
         return key
@@ -108,7 +112,7 @@ class CoreCmd(object):
             fullHelp = True
         else:
             cmds = []
-            for a, cSet in self.actor.commandSets.items():
+            for a, cSet in list(self.actor.commandSets.items()):
                 cmds += [c[0] for c in cSet.vocab]
             fullHelp = False
             cmds.sort()
@@ -122,7 +126,7 @@ class CoreCmd(object):
         first = True
         for cmdName in cmds:
             helpList = []
-            for csetName, cSet in self.actor.commandSets.items():
+            for csetName, cSet in list(self.actor.commandSets.items()):
                 if cmdName in [c[0] for c in cSet.vocab]:
                     try:
                         helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html,

@@ -84,9 +84,16 @@ History:
 """
 from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import range
+from past.utils import old_div
+from builtins import object
 import sys
 import threading
-import Queue
+import queue
 import traceback
 import RO.AddCallback
 import RO.Constants
@@ -923,7 +930,7 @@ class _WaitMS(_WaitBase):
     def __init__(self, scriptRunner, msec):
         self._waitTimer = Timer()
         _WaitBase.__init__(self, scriptRunner)
-        self._waitTimer.start(msec / 1000.0, self._continue)
+        self._waitTimer.start(old_div(msec, 1000.0), self._continue)
     
     def cancelWait(self):
         self._waitTimer.cancel()
@@ -1100,7 +1107,7 @@ class _WaitThread(_WaitBase):
         if not callable(func):
             raise ValueError("%r is not callable" % func)
 
-        self.queue = Queue.Queue()
+        self.queue = queue.Queue()
         self.func = func
 
         self.threadObj = threading.Thread(target=self.threadFunc, args=args, kwargs=kargs)

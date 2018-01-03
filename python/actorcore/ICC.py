@@ -94,7 +94,7 @@ class ICC(coreActor.Actor):
             c.stop()
         
     def stopAllControllers(self):
-        for c in self.controllers.keys():
+        for c in list(self.controllers.keys()):
             self.detachController(c)
 
     def shutdown(self):

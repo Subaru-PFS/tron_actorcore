@@ -110,6 +110,10 @@ History:
 """
 from __future__ import print_function
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import next
+from builtins import object
 import sys
 import time
 import traceback
@@ -293,7 +297,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         
         # iterate over a copy of the values
         # so we can modify the dictionary while checking command timeouts
-        cmdVarIter = iter(self.cmdDict.values())
+        cmdVarIter = iter(list(self.cmdDict.values()))
         self._checkRemCmdTimeouts(cmdVarIter)
     
     def dispatchReply(self, reply):
@@ -454,7 +458,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._allRefreshCmdsSent = False
         
         if resetAll:
-            for keyVarList in self.keyVarListDict.values():
+            for keyVarList in list(self.keyVarListDict.values()):
                 for keyVar in keyVarList:
                     keyVar.setNotCurrent()
     
@@ -493,7 +497,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         Inputs:
         - includeNotCurrent: issue callbacks for keyVars that are not current?
         """
-        keyVarListIter = self.keyVarListDict.itervalues()
+        keyVarListIter = iter(self.keyVarListDict.values())
         self._nextKeyVarCallback(keyVarListIter, includeNotCurrent=includeNotCurrent)
 
     def updConnState(self, conn):
@@ -660,7 +664,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             return
 
         if refreshCmdItemIter == None:
-            refreshCmdItemIter = self.refreshCmdDict.iteritems()
+            refreshCmdItemIter = iter(self.refreshCmdDict.items())
 
         try:
             refreshCmdInfo, keyVarSet = next(refreshCmdItemIter)
@@ -719,8 +723,8 @@ if __name__ == "__main__":
     print("\nTesting opscore.actor.CmdKeyVarDispatcher\n")
     import opscore.protocols.types as protoTypes
     import twisted.internet.tksupport
-    import Tkinter
-    root = Tkinter.Tk()
+    import tkinter
+    root = tkinter.Tk()
     twisted.internet.tksupport.install(root)
     
     kvd = CmdKeyVarDispatcher()

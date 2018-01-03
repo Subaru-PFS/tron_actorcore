@@ -13,6 +13,8 @@ distribution.
 
 # Created 10-Oct-2008 by David Kirkby (dkirkby@uci.edu)
 
+from builtins import str
+from builtins import object
 import re
 
 name_pattern = re.compile('[A-Za-z][A-Za-z0-9_.]*$')

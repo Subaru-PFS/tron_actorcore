@@ -1,6 +1,10 @@
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 import logging
 import threading
-import Queue
+import queue
 
 from twisted.internet import reactor
 from twisted.internet.protocol import ReconnectingClientFactory
@@ -185,7 +189,7 @@ class Cmdr(object):
         trimmedCmd = argv['cmdStr'] if len(argv['cmdStr']) < 80 else argv['cmdStr'][:80]+"..."
         self.logger.info("queueing command %s(%s)" % (argv['actor'], trimmedCmd))
 
-        q = Queue.Queue()
+        q = queue.Queue()
         argv['callFunc'] = q.put
         cmdvar = opsKeyvar.CmdVar(**argv)
         reactor.callFromThread(self.dispatcher.executeCmd, cmdvar)
@@ -195,7 +199,7 @@ class Cmdr(object):
     def waitForKey(self, **argv):
         self.logger.info("sending command %s" % (argv))
 
-        q = Queue.Queue()
+        q = queue.Queue()
         argv['callFunc'] = q.put
         keyvar = opsKeyvar.KeyVar(**argv)
         reactor.callFromThread(self.dispatcher.executeCmd, keyvar)
@@ -220,7 +224,7 @@ def liveTest():
 
     # Register all tcc keywords to be printed.
     tccModel = opsModel.Model('tcc')
-    for o in tccModel.__dict__.values():
+    for o in list(tccModel.__dict__.values()):
         if isinstance(o, keyvar.KeyVar):
             o.addCallback(showVal)
 

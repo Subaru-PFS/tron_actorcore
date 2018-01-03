@@ -28,6 +28,7 @@ Todo:
 """
 from __future__ import print_function
 
+from builtins import range
 import logging
 import os
 import os.path

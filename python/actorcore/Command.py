@@ -6,6 +6,7 @@
     wrappers for responding to the sender.
     
 """
+from builtins import object
 __all__ = ['Command']
 
 import logging

@@ -30,6 +30,11 @@ y.writefile('filename')
 """
 from __future__ import print_function
 
+from builtins import str
+from builtins import next
+from builtins import map
+from builtins import range
+from builtins import object
 import logging
 import numpy as np
 import os
@@ -196,7 +201,7 @@ class YPFEnum(object):
     def maxlen(self):
         """ Return the longest tag name. """
         
-        return reduce(max, map(len, self.tags))
+        return reduce(max, list(map(len, self.tags)))
 
     def re(self):
         """ Return a regexp which would match us. """
@@ -551,7 +556,7 @@ class YPFStruct(object):
             mtuple = tuple(mlist)
             
         # It actually pays to know the length of the longest string, for .seal()
-        strlens = map(len,mtuple)
+        strlens = list(map(len,mtuple))
         self.strlens = np.array([self.strlens, strlens]).max(axis=0)        
             
         self.records.append(mtuple)
@@ -826,16 +831,16 @@ class YPF(object):
         """
 
         res = []
-        for v in self.vars.values():
+        for v in list(self.vars.values()):
             res.append(v.asString())
         res.append('')
-        for e in self.enums.values():
+        for e in list(self.enums.values()):
             res.append(e.asString())
             res.append('')
-        for s in self.structs.values():
+        for s in list(self.structs.values()):
             res.append(s.defAsString())
             res.append('')
-        for s in self.structs.values():
+        for s in list(self.structs.values()):
             res.append(s.dataAsString())
 
         return '\n'.join(res)

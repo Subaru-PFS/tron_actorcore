@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 from opscore.utility.qstr import qstr
 import astropy.io.fits as pyfits
 

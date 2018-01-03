@@ -1,7 +1,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
 import functools
-import Queue
+import queue
 import threading
 import time
 
@@ -45,11 +49,11 @@ class QMsg(object):
         self.returnQueue = returnQueue
         self.method = functools.partial(method, **argd)
 
-class PriorityOverrideQueue(Queue.PriorityQueue):
+class PriorityOverrideQueue(queue.PriorityQueue):
     """ A limited Priority Queue, allowing urgent messages to be pushed to the front of the queue. """
 
     def __init__(self):
-        Queue.PriorityQueue.__init__(self)
+        queue.PriorityQueue.__init__(self)
         self.counter = 1
         self.urgentCounter = -1
         self.lock = threading.Lock()
@@ -66,7 +70,7 @@ class PriorityOverrideQueue(Queue.PriorityQueue):
 
         with self.lock:
             counter = self.counter
-            Queue.PriorityQueue.put(self, (counter, item))
+            queue.PriorityQueue.put(self, (counter, item))
             self.counter += 1
         print("lv put(%s) of %s" % (item, self))
         
@@ -75,11 +79,11 @@ class PriorityOverrideQueue(Queue.PriorityQueue):
 
         with self.lock:
             counter = self.urgentCounter
-            Queue.PriorityQueue.put(self, (counter, item))
+            queue.PriorityQueue.put(self, (counter, item))
             self.urgentCounter -= 1
         
     def get(self, *args, **kwargs):
-        _, item = Queue.PriorityQueue.get(self, *args, **kwargs)
+        _, item = queue.PriorityQueue.get(self, *args, **kwargs)
         return item
 
 class QThread(threading.Thread):
@@ -150,16 +154,16 @@ class QThread(threading.Thread):
         if threading.currentThread() == self:
             raise RuntimeError("cannot .call() a QThread from its own thread of control.")
 
-        returnQueue = Queue.Queue()
+        returnQueue = queue.Queue()
         
         qmsg = QMsg(method, returnQueue=returnQueue, **argd)
         self.queue.put(qmsg, urgent=urgent)
 
         try:
             ret = returnQueue.get(timeout=callTimeout)
-        except Queue.Empty:
+        except queue.Empty:
             # Annotate with _something_ informative.
-            raise Queue.Empty("empty return from %s in %s" % (qmsg, self))
+            raise queue.Empty("empty return from %s in %s" % (qmsg, self))
 
         if isinstance(ret, Exception):
             self._realCmd(None).diag('text="%s thead call() raising %s "' % 
@@ -238,7 +242,7 @@ class QThread(threading.Thread):
                         returnQueue.put(ret)
                     self._realCmd(None).diag("returnQueue=%s ret=%s" % (returnQueue, ret))
 
-            except Queue.Empty:
+            except queue.Empty:
                 self.handleTimeout()
             except Exception as e:
                 try:
