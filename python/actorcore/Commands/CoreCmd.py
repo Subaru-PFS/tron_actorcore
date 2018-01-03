@@ -16,7 +16,12 @@ import opscore.protocols.validation as validation
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 import actorcore.help as help
-from importlib import reload
+
+try:
+    from importlib import reload
+except:
+    pass
+
 reload(help)
 
 from opscore.utility.qstr import qstr
