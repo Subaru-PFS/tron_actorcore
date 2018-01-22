@@ -62,7 +62,7 @@ class OurActor(actorcore.Actor.Actor):
             print("%s%s %s %s" % (ts, reply.header.actor, reply.header.code.lower(),
                                   reply.keywords.canonical(delimiter=';')))
             sys.stdout.flush()
-                
+
         if code in DoneCodes:
             self._shutdown()
             reactor.stop()

@@ -456,7 +456,7 @@ class KeysDictionary(object):
                     'dictionary filename and name are different: %s, %s'
                     % (dictname,kdict.name))
             # do a checksum so that we can detect changes independently of versioning
-            kdict.checksum = hashlib.md5(filedata).hexdigest()
+            kdict.checksum = hashlib.md5(filedata.encode('utf-8')).hexdigest()
             return kdict
         except ImportError as e:
             raise KeysDictionaryError('no keys dictionary found for %s: %s'
