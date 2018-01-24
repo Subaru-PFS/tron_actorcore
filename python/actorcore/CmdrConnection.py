@@ -167,6 +167,34 @@ class Cmdr(object):
         
         reactor.connectTCP(tronHost, tronPort, self.connector)
 
+    def bgCall(self, callFunc, actor, cmdStr, timeLim=10, **argv):
+        """ Send a command in the background.
+
+        Args
+        ----
+        callFunc  - callable
+           a callable which is sent the CmdVar.
+        actor - str
+           The actor to send the cmdStr to.
+        cmdStr - str
+           The command to string
+        timeLim - float
+           Seconds before timeout
+
+        Notes
+        -----
+
+        I think this is dangerous: the dispatcher runs in a different thread. We need
+        to arrange for it to call into the callFunc in this thread.
+        """
+
+        cmdvar = opsKeyvar.CmdVar(actor=actor,
+                                  cmdStr=cmdStr,
+                                  timeLim=timeLim,
+                                  callFunc=callFunc,
+                                  **argv)
+        reactor.callFromThread(self.dispatcher.executeCmd, cmdvar)
+
     def call(self, **argv):
         """ Send a command and generate all its output. 
 
