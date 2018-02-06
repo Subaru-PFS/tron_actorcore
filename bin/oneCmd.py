@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from past.builtins import basestring
 import os
 import sys
 import time
@@ -92,35 +94,36 @@ class OurActor(actorcore.Actor.Actor):
 def main(argv=None):
     import argparse
     import sys
-    
+
     if argv is None:
         argv = sys.argv[1:]
     elif isinstance(argv, basestring):
         import shlex
         argv = shlex.split(argv)
 
-    actorName = os.path.basename(sys.argv[1])
-    argv = argv[1:]
-    
-    parser = argparse.ArgumentParser(prog=actorName,
-                                     description="Send a single actor command")
+    parser = argparse.ArgumentParser(description="Send a single actor command")
     parser.add_argument('--level', 
                         choices={'d','i','w','f'},
                         default='i',
                         help='minimum reply level [d(ebug),i(nfo),w(arn),f(ail)]. Default=i')
     parser.add_argument('--timelim', default=0.0,
-                        type=float, help='how long to wait for command completion. 0=forever')
+                        type=float,
+                        help='how long to wait for command completion. Default=0.0 (forever)')
     parser.add_argument('--noTimes', action='store_true',
                         help='print timestamps for each line.')
-    parser.add_argument('commandArgs', nargs=argparse.REMAINDER)
+    parser.add_argument('actor',
+                        help='actor name')
+    parser.add_argument('commandAndArgs', nargs=argparse.REMAINDER,
+                        help='actor command and arguments')
     opts = parser.parse_args(argv)
-    actorArgs = opts.commandArgs
+    actorArgs = opts.commandAndArgs
 
-    # print('rawOpts="%s' % (opts))
-    # print('actorname=%s level=%s args=%s' % (actorName, opts.level, actorArgs))
+    if False:
+        print('rawOpts="%s' % (opts))
+        print('actorname=%s level=%s args=%s' % (opts.actor, opts.level, actorArgs))
 
     theActor = OurActor('oneCmd', productName='tron_actorcore',
-                        cmdActor=actorName,
+                        cmdActor=opts.actor,
                         timelim=opts.timelim,
                         cmdStr=' '.join(actorArgs),
                         printLevel=opts.level.upper(),
