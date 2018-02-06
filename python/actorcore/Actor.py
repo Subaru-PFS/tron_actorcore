@@ -19,6 +19,10 @@ import logging
 
 from twisted.internet import reactor
 
+# This has to be set very early -- earlier than some imports, even.
+import RO.Comm.Generic
+RO.Comm.Generic.setFramework('twisted')
+
 import opscore
 from opscore.protocols.parser import CommandParser
 from opscore.utility.qstr import qstr
