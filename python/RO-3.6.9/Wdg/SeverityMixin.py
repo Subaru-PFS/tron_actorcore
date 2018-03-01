@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import object
@@ -22,7 +22,6 @@ History:
 2005-06-08 ROwen    Changed SeverityMixin to a new-style class.
 2006-10-24 ROwen    Added support for RO.Constants.sevDebug.
 """
-from __future__ import absolute_import
 __all__ = ["SeverityMixin", "SeverityActiveMixin", "SeveritySelectMixin"]
 
 import RO.Constants

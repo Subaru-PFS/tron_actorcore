@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import range
@@ -20,7 +20,6 @@ History:
 2004-09-14 ROwen    Test code no longer imports RO.Wdg to avoid circular import.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ['HistoryMenu']
 
 import tkinter

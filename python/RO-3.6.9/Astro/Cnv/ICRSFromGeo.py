@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """
 History:
 2002-07-22 ROwen    Converted to Python from cnv_AppGeo2J 4-2.
 2002-12-23 ROwen    Fixed "failed to converge" message; thanks to pychecker.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
-from __future__ import absolute_import
 __all__ = ["icrsFromGeo"]
 
 import numpy

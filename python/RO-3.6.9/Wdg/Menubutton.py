@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Variant on Menubutton that adds callback and severity functionality
@@ -7,7 +7,6 @@ History:
 2014-05-08 ROwen
 2015-03-18 ROwen    Removed Aqua 8.5 width bug workarounds because they are not wanted for Tcl/Tk 8.5.18
 """
-from __future__ import absolute_import
 __all__ = ['Menubutton']
 
 import tkinter

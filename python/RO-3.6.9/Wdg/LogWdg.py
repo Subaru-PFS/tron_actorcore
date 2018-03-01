@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str
@@ -72,7 +72,6 @@ History:
 2010-06-28 ROwen    Removed two statements that had no effect (thanks to pychecker).
 2014-08-09 ROwen    Fixed a bug in an error message (misspelled variable) and removed some unused imports.
 """
-from __future__ import absolute_import
 __all__ = ['LogWdg']
 
 import tkinter

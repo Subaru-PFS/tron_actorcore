@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import range
@@ -13,7 +13,6 @@ History:
 2011-09-12 ROwen    Set highlightthickness = selectborderwidth = 0 on contained Canvas, making alignment easier.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ['ScrolledWdg']
 
 import tkinter

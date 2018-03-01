@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Variants on buttons that add help.
@@ -20,7 +20,6 @@ History:
                     for Aqua Tk 8.5.18.
 2015-04-02 ROwen    Added a simple workaround for cramped button text in Aqua Tk 8.5.18.
 """
-from __future__ import absolute_import
 __all__ = ['Button', 'Radiobutton']
 
 import tkinter

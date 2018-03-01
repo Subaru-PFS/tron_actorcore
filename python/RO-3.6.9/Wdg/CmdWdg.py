@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Entry widget for commands, with history.
@@ -28,7 +28,6 @@ History:
 2004-09-14 ROwen    Tweaked the imports.
 2006-02-22 ROwen    Split off from CmdReplyWdg.
 """
-from __future__ import absolute_import
 __all__ = ['CmdWdg']
 
 import tkinter

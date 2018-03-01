@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Variant of Tkinter.Text that includes a few extra features, including:
@@ -15,7 +15,6 @@ History:
 2006-10-24 ROwen    Added search method with elide argument
                     because Tkinter's Text.search doesn't yet support elide.
 """
-from __future__ import absolute_import
 __all__ = ['Text']
 
 import tkinter

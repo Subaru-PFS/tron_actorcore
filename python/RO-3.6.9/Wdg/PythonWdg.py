@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """An interactive Python session and simple script file editor/runner
@@ -39,7 +39,6 @@ History:
 2005-06-16 ROwen    Changed "== None" to "is None" in some cases, to appease pychecker and myself.
 2015-09-24 ROwen    Replace remaining "== None" with "is None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ['PythonWdg']
 
 import os
