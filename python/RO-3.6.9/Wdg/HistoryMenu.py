@@ -24,9 +24,9 @@ __all__ = ['HistoryMenu']
 
 import tkinter
 import RO.Alg
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 
-class HistoryMenu (tkinter.Menubutton, CtxMenu.CtxMenuMixin):
+class HistoryMenu (tkinter.Menubutton, CtxMenuMixin):
     """A menu showing a history of recent events.
     
     Inputs:
@@ -59,7 +59,7 @@ class HistoryMenu (tkinter.Menubutton, CtxMenu.CtxMenuMixin):
             relief="raised",
 #           state="disabled",
         )
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL = helpURL)
+        CtxMenuMixin.__init__(self, helpURL = helpURL)
 
         self.__callFunc = callFunc
         self.__removeAdjDup = removeAdjDup

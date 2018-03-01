@@ -32,10 +32,10 @@ import tkinter
 import tkinter.filedialog
 import RO.AddCallback
 import RO.Constants
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 from .SeverityMixin import SeverityActiveMixin
 
-class BasePathWdg (tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixin,
+class BasePathWdg (tkinter.Button, RO.AddCallback.BaseMixin, CtxMenuMixin,
     SeverityActiveMixin):
     def __init__(self,
         master,
@@ -80,7 +80,7 @@ class BasePathWdg (tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixi
         
         RO.AddCallback.BaseMixin.__init__(self)
         
-        CtxMenu.CtxMenuMixin.__init__(self,
+        CtxMenuMixin.__init__(self,
             helpURL = helpURL,
         )
         SeverityActiveMixin.__init__(self, severity)

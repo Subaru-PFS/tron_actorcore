@@ -26,10 +26,10 @@ import tkinter
 import RO.AddCallback
 import RO.Constants
 import RO.TkUtil
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 from .SeverityMixin import SeverityActiveMixin
 
-class Button(tkinter.Button, RO.AddCallback.TkButtonMixin, CtxMenu.CtxMenuMixin, SeverityActiveMixin):
+class Button(tkinter.Button, RO.AddCallback.TkButtonMixin, CtxMenuMixin, SeverityActiveMixin):
     def __init__(self,
         master,
         helpText = None,
@@ -67,7 +67,7 @@ class Button(tkinter.Button, RO.AddCallback.TkButtonMixin, CtxMenu.CtxMenuMixin,
             command = command,
         )
         
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL = helpURL)
+        CtxMenuMixin.__init__(self, helpURL = helpURL)
         SeverityActiveMixin.__init__(self, severity)
     
     def setEnable(self, doEnable):
@@ -91,7 +91,7 @@ class Button(tkinter.Button, RO.AddCallback.TkButtonMixin, CtxMenu.CtxMenuMixin,
         return self["state"] != tkinter.DISABLED
 
 
-class Radiobutton(tkinter.Radiobutton, CtxMenu.CtxMenuMixin, SeverityActiveMixin):
+class Radiobutton(tkinter.Radiobutton, CtxMenuMixin, SeverityActiveMixin):
     def __init__(self,
         master,
         helpText = None,
@@ -109,6 +109,6 @@ class Radiobutton(tkinter.Radiobutton, CtxMenu.CtxMenuMixin, SeverityActiveMixin
         self.helpText = helpText
 
         tkinter.Radiobutton.__init__(self, master = master, **kwArgs)
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL = helpURL)
+        CtxMenuMixin.__init__(self, helpURL = helpURL)
         SeverityActiveMixin.__init__(self, severity)
     

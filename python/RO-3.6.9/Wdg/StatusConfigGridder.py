@@ -15,7 +15,7 @@ History:
                     Improved error message for units and cfgUnits being the same widget.
 2006-04-27 ROwen    Removed ignored clearMenu and defMenu arguments (thanks pychecker!).
 2006-10-31 ROwen    Added support adding help text and URL to created widgets.
-                    Modified for changed Gridder._BaseGridSet.
+                    Modified for changed _BaseGridSet.
 2007-12-19 ROwen    Added numStatusCols argument. This makes it easier to start all configuration widgets
                     in the same column.
 2008-03-14 ROwen    Bug fix: removed unused statusCols argument.
@@ -26,11 +26,11 @@ History:
 """
 __all__ = ['StatusConfigGridder']
 
-from . import Gridder
+from .Gridder import Gridder, _BaseGridSet
 
 ConfigCat = "config"
 
-class StatusConfigGridder(Gridder.Gridder):
+class StatusConfigGridder(Gridder):
     ConfigCat = ConfigCat
     def __init__(self,
         master,
@@ -53,7 +53,7 @@ class StatusConfigGridder(Gridder.Gridder):
                         and your code will still work if you add status widgets that use more columns.
                         
         """
-        Gridder.Gridder.__init__(self,
+        Gridder.__init__(self,
             master = master,
             row = row,
             col = col,
@@ -123,7 +123,7 @@ class StatusConfigGridder(Gridder.Gridder):
         return gs
 
 
-class _StatusConfigGridSet(Gridder._BaseGridSet):
+class _StatusConfigGridSet(_BaseGridSet):
     def __init__ (self,
         master,
         label = None,
@@ -187,7 +187,7 @@ class _StatusConfigGridSet(Gridder._BaseGridSet):
         if numStatusCols is not None:
             numStatusCols = int(numStatusCols)
 
-        Gridder._BaseGridSet.__init__(self,
+        _BaseGridSet.__init__(self,
             master,
             row,
             col,

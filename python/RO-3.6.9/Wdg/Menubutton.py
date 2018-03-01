@@ -11,9 +11,9 @@ __all__ = ['Menubutton']
 
 import tkinter
 import RO.Constants
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 
-class Menubutton(tkinter.Menubutton, CtxMenu.CtxMenuMixin):
+class Menubutton(tkinter.Menubutton, CtxMenuMixin):
     def __init__(self,
         master,
         helpText = None,
@@ -37,7 +37,7 @@ class Menubutton(tkinter.Menubutton, CtxMenu.CtxMenuMixin):
 
         tkinter.Menubutton.__init__(self, master = master, **kwArgs)
 
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL = helpURL)
+        CtxMenuMixin.__init__(self, helpURL = helpURL)
     
     def setEnable(self, doEnable):
         """Enable or disable widget

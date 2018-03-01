@@ -44,7 +44,7 @@ import RO.Constants
 import RO.MathUtil
 import RO.Comm.HTTPGet as HTTPGet
 import RO.Wdg
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 
 _StatusInterval = 200 # ms between status checks
 

@@ -20,9 +20,9 @@ __all__ = ['ChangedIndicator']
 
 import tkinter
 import RO.SeqUtil
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 
-class ChangedIndicator (tkinter.Label, CtxMenu.CtxMenuMixin):
+class ChangedIndicator (tkinter.Label, CtxMenuMixin):
     def __init__(self,
         master,
         wdgOrSet,
@@ -56,7 +56,7 @@ class ChangedIndicator (tkinter.Label, CtxMenu.CtxMenuMixin):
             master = master,
             textvariable = self.__var,
         **kargs)
-        CtxMenu.CtxMenuMixin.__init__(self,
+        CtxMenuMixin.__init__(self,
             helpURL = helpURL,
         )
         

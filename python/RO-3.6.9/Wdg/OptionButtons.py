@@ -38,10 +38,10 @@ __all__ = ['OptionButtons']
 import RO.InputCont
 from . import Button
 from . import Checkbutton
-from . import InputContFrame
+from .InputContFrame import InputContFrame
 from . import Label
 
-class OptionButtons(InputContFrame.InputContFrame):
+class OptionButtons(InputContFrame):
     def __init__ (self,
         master,
         name,
@@ -90,7 +90,7 @@ class OptionButtons(InputContFrame.InputContFrame):
             The default format is RO.InputCont.BasicFmt.
         **kargs: keyword arguments for Frame
         """
-        InputContFrame.InputContFrame.__init__(self, master, **kargs)
+        InputContFrame.__init__(self, master, **kargs)
 
         # optional header
         if headerText:

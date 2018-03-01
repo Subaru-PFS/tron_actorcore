@@ -22,10 +22,10 @@ import RO.CnvUtil
 import RO.StringUtil
 import RO.MathUtil
 from . import Bindings
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 from . import WdgPrefs
 
-class Text (tkinter.Text, CtxMenu.CtxMenuMixin):
+class Text (tkinter.Text, CtxMenuMixin):
     """Text widget
 
     Inputs:
@@ -56,7 +56,7 @@ class Text (tkinter.Text, CtxMenu.CtxMenuMixin):
         
         tkinter.Text.__init__(self, master, **kargs)
 
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL = helpURL)
+        CtxMenuMixin.__init__(self, helpURL = helpURL)
 
         self._prefDict = WdgPrefs.getWdgPrefDict()
         self._sevPrefDict = WdgPrefs.getSevPrefDict()

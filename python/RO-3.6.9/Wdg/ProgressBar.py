@@ -37,7 +37,7 @@ from RO.TkUtil import Timer
 import tkinter
 from . import Button
 from . import Entry
-from . import Gridder
+from .Gridder import Gridder, _BaseGridSet
 from . import Label
 
 class ProgressBar (tkinter.Frame):
@@ -531,7 +531,7 @@ if __name__ == "__main__":
     
     setProg()
 
-    gr = Gridder.Gridder(root)
+    gr = Gridder(root)
     
     gr.gridWdg ("Val", valEntry)
     gr.gridWdg ("Minimum", minEntry)

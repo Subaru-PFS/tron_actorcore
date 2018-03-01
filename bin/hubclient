@@ -5,17 +5,20 @@
 History:
 2009-07-10 ROwen    Removed an inline conditional statement to be Python 2.4 compatible.
 """
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 import re, os, platform, pwd, sys, time
 from datetime import datetime
 
-import Tkinter
+import tkinter
 import RO.Comm.TCPConnection
 import RO.Wdg
 
 
-class TCPClient(Tkinter.Frame):
+class TCPClient(tkinter.Frame):
     def __init__(self, master, addr, port=None, cmdrName=None):
-        Tkinter.Frame.__init__(self, master)
+        tkinter.Frame.__init__(self, master)
         self.master = master
         self.displayRegexp = None       # regexp must match to display output in window
         self.noDisplayRegexp = None     # regexp must not match to display output in window
@@ -26,7 +29,7 @@ class TCPClient(Tkinter.Frame):
         )
         self.logWdg.grid(row=0, column=0, sticky="nsew")
         
-        self.bottomWdg = Tkinter.Frame(self, background="")
+        self.bottomWdg = tkinter.Frame(self, background="")
         self.bottomWdg.grid(row=1, column=0, sticky="ew")
 
         self.prefixWdg = RO.Wdg.CmdWdg(
@@ -53,7 +56,7 @@ class TCPClient(Tkinter.Frame):
 
         self.prefixWdg.pack(fill="x", side="left"); self.prefix = None
         self.cmdWdg.pack(fill="x", side="left", expand=True)
-        Tkinter.Label(self.bottomWdg, text=" Filter actors:").pack(side="left")
+        tkinter.Label(self.bottomWdg, text=" Filter actors:").pack(side="left")
         self.reWdg.pack(side="right")
 
         self.cmdrName = "%s.%s" % ("client", 
@@ -74,11 +77,11 @@ class TCPClient(Tkinter.Frame):
         self.doCmd('hub setUsername %s' % (self.cmdrName))
         
     def connState(self, sock):
-        stateVal, stateStr, reason = sock.getFullState()
+        state, reason = sock.fullState
         if reason:
-            self.logMsg("*** Socket %s: %s" % (stateStr, reason))
+            self.logMsg("*** Socket %s: %s" % (state, reason))
         else:
-            self.logMsg("*** Socket %s" % (stateStr,))
+            self.logMsg("*** Socket %s" % (state,))
     
     def connRead(self, sock, readStr):
         self.logMsg(readStr)
@@ -110,7 +113,7 @@ class TCPClient(Tkinter.Frame):
 
         cmd = "%s %d %s" % (self.cmdrName, self.cmdID, cmd)
         self.cmdID += 1
-        if not self.conn.isConnected():
+        if not self.conn.isConnected:
             self.logMsg("*** Not connected")
         self.conn.writeLine(cmd)
 
@@ -142,8 +145,8 @@ class TCPClient(Tkinter.Frame):
             (self.noDisplayRegexp and     re.search(self.noDisplayRegexp, msg))) and msg != "<cr>":
 
             if False:
-                print '"%s"' % msg, self.displayRegexp, (self.displayRegexp   and not re.search(self.displayRegexp,   msg)), \
-                      self.noDisplayRegexp, (self.noDisplayRegexp and     re.search(self.noDisplayRegexp, msg))
+                print('"%s"' % msg, self.displayRegexp, (self.displayRegexp   and not re.search(self.displayRegexp,   msg)), \
+                      self.noDisplayRegexp, (self.noDisplayRegexp and     re.search(self.noDisplayRegexp, msg)))
             return
 
         self.logWdg.addOutput("%s %s\n" % (self.timeStamp(), msg))
@@ -165,14 +168,14 @@ class TCPClient(Tkinter.Frame):
 
 if __name__ == "__main__":
     if len(sys.argv) not in (1,3):
-        print "Usage: hubclient addr [port]"
+        print("Usage: hubclient addr [port]")
         sys.exit(1)
     
     addr = sys.argv[1] if len(sys.argv) > 1 else "localhost"
     port = sys.argv[2] if len(sys.argv) > 2 else 6093
     cmdrName = sys.argv[3] if len(sys.argv) > 3 else pwd.getpwuid(os.getuid()).pw_name
     
-    root = Tkinter.Tk()
+    root = tkinter.Tk()
     root.geometry("1000x500")
     client = TCPClient(root, addr, port, cmdrName=cmdrName)
     client.setTitle()
