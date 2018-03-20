@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 from opscore.utility.qstr import qstr

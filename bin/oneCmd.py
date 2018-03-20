@@ -1,7 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-from __future__ import print_function
-from past.builtins import basestring
 import os
 import sys
 import time
@@ -97,7 +95,7 @@ def main(argv=None):
 
     if argv is None:
         argv = sys.argv[1:]
-    elif isinstance(argv, basestring):
+    elif isinstance(argv, str):
         import shlex
         argv = shlex.split(argv)
 

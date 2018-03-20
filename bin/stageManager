@@ -133,7 +133,7 @@ do_start() {
 
     stdioLog=$LOG_DIR/stdio-`now`.log
     cd $PRODUCT_DIR
-    python python/$FULLACTOR/main.py $ACTORARGS >$stdioLog 2>&1 &
+    python3 python/$FULLACTOR/main.py $ACTORARGS >$stdioLog 2>&1 &
 
     # Check that it really started...
     #
