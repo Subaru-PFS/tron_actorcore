@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 """Install this package. Requires sdss3tools.
 
 To use:
