@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from builtins import range
 """
 History:
@@ -7,7 +7,6 @@ P.t.Wallace Starlink    21 November 1994
 2002-07-11 ROwen    Converted to Python.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
-from __future__ import absolute_import
 __all__ = ["evp"]
 
 from math import sin, cos, pi, sqrt, fmod

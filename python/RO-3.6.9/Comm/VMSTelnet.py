@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import chr
@@ -30,7 +30,6 @@ History:
 2005-01-12 ROwen    Modified for new RO.Wdg.ModalDialogBase.
 2014-09-18 ROwen    Bug fix: some states needed self. prefix.
 """
-from __future__ import absolute_import
 __all__ = ["VMSTelnet"]
 
 import sys

@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Variant on Menubutton that adds callback and severity functionality
@@ -7,14 +7,13 @@ History:
 2014-05-08 ROwen
 2015-03-18 ROwen    Removed Aqua 8.5 width bug workarounds because they are not wanted for Tcl/Tk 8.5.18
 """
-from __future__ import absolute_import
 __all__ = ['Menubutton']
 
 import tkinter
 import RO.Constants
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 
-class Menubutton(tkinter.Menubutton, CtxMenu.CtxMenuMixin):
+class Menubutton(tkinter.Menubutton, CtxMenuMixin):
     def __init__(self,
         master,
         helpText = None,
@@ -38,7 +37,7 @@ class Menubutton(tkinter.Menubutton, CtxMenu.CtxMenuMixin):
 
         tkinter.Menubutton.__init__(self, master = master, **kwArgs)
 
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL = helpURL)
+        CtxMenuMixin.__init__(self, helpURL = helpURL)
     
     def setEnable(self, doEnable):
         """Enable or disable widget

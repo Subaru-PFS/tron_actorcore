@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """
 History:
 6/01 ROwen  Initial release.
 2002-07-24 ROwen    Simplified by using Numeric.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
-from __future__ import absolute_import
 __all__ = ["angSep"]
 
 import math

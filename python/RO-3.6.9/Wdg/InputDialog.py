@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Basic dialog class(es). The dialog's window is shown when the object is created
@@ -26,7 +26,6 @@ History:
                     Removed an unused variable (caught by pychecker).
 2012-07-10 ROwen    Removed use of update_idletasks; it no longer appears to be necessary on Mac OS X.
 """
-from __future__ import absolute_import
 __all__ = ['ModalDialogBase']
 
 import tkinter

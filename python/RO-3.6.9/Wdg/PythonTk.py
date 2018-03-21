@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """
@@ -26,7 +26,6 @@ History:
 2004-09-14 ROwen    Modified import of Bindings to not import RO.Wdg.
 2014-09-17 ROwen    Modified to test for Exception instead of StandardError 
 """
-from __future__ import absolute_import
 __all__ = ['PythonTk']
 
 import tkinter

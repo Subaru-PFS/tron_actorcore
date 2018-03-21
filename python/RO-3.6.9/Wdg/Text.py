@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Variant of Tkinter.Text that includes a few extra features, including:
@@ -15,7 +15,6 @@ History:
 2006-10-24 ROwen    Added search method with elide argument
                     because Tkinter's Text.search doesn't yet support elide.
 """
-from __future__ import absolute_import
 __all__ = ['Text']
 
 import tkinter
@@ -23,10 +22,10 @@ import RO.CnvUtil
 import RO.StringUtil
 import RO.MathUtil
 from . import Bindings
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 from . import WdgPrefs
 
-class Text (tkinter.Text, CtxMenu.CtxMenuMixin):
+class Text (tkinter.Text, CtxMenuMixin):
     """Text widget
 
     Inputs:
@@ -57,7 +56,7 @@ class Text (tkinter.Text, CtxMenu.CtxMenuMixin):
         
         tkinter.Text.__init__(self, master, **kargs)
 
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL = helpURL)
+        CtxMenuMixin.__init__(self, helpURL = helpURL)
 
         self._prefDict = WdgPrefs.getWdgPrefDict()
         self._sevPrefDict = WdgPrefs.getSevPrefDict()

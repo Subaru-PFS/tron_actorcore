@@ -1,4 +1,4 @@
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str
@@ -16,14 +16,13 @@ History:
 2004-09-14 ROwen    Tweaked the imports.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ['ChangedIndicator']
 
 import tkinter
 import RO.SeqUtil
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 
-class ChangedIndicator (tkinter.Label, CtxMenu.CtxMenuMixin):
+class ChangedIndicator (tkinter.Label, CtxMenuMixin):
     def __init__(self,
         master,
         wdgOrSet,
@@ -57,7 +56,7 @@ class ChangedIndicator (tkinter.Label, CtxMenu.CtxMenuMixin):
             master = master,
             textvariable = self.__var,
         **kargs)
-        CtxMenu.CtxMenuMixin.__init__(self,
+        CtxMenuMixin.__init__(self,
             helpURL = helpURL,
         )
         

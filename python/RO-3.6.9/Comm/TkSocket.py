@@ -262,7 +262,7 @@ class _TkSocketWrapper(object):
 class TCPSocket(BaseSocket):
     """A TCP/IP socket that reads and writes using Tk events.
     """
-    lineEndPattern = re.compile("\r\n|\r|\n")
+    lineEndPattern = re.compile(b"\r\n|\r|\n")
     def __init__(self,
         host,
         port,

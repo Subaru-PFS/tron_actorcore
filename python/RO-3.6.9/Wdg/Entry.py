@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from past.builtins import basestring
@@ -165,7 +165,6 @@ History:
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 2015-11-05 ROwen    Stop using dangerous bare "except:".
 """
-from __future__ import absolute_import
 __all__ = ['StrEntry', 'ASCIIEntry', 'FloatEntry', 'IntEntry', 'DMSEntry']
 
 #import os

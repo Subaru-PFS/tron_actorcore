@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """
 A widget showing a set of options as checkbuttons.
 
@@ -33,16 +33,15 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-05 ROwen    Changed ==/!= True/False to is/is not True/False to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ['OptionButtons']
 
 import RO.InputCont
 from . import Button
 from . import Checkbutton
-from . import InputContFrame
+from .InputContFrame import InputContFrame
 from . import Label
 
-class OptionButtons(InputContFrame.InputContFrame):
+class OptionButtons(InputContFrame):
     def __init__ (self,
         master,
         name,
@@ -91,7 +90,7 @@ class OptionButtons(InputContFrame.InputContFrame):
             The default format is RO.InputCont.BasicFmt.
         **kargs: keyword arguments for Frame
         """
-        InputContFrame.InputContFrame.__init__(self, master, **kargs)
+        InputContFrame.__init__(self, master, **kargs)
 
         # optional header
         if headerText:

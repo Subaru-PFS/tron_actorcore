@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Widget to manage named presets of an input container list
@@ -11,7 +11,6 @@ History:
 2014-03-14 ROwen    Added helpText and helpURL arguments.
 2014-05-07 ROwen    Added autoUpdate argument and modified to use RO.Wdg.Menubutton
 """
-from __future__ import absolute_import
 __all__ = ["InputContPresetsWdg"]
 
 import functools

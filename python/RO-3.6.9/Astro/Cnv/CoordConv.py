@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from builtins import object
 """Convert astronomical positions between various coordinate systems.
 
@@ -28,7 +28,6 @@ History:
 2007-04-24 ROwen    Converted from Numeric to numpy.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ["coordConv"]
 
 import numpy

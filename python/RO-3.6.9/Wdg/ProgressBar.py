@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """
@@ -29,7 +29,6 @@ History:
                     Removed use of update_idletasks.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ['ProgressBar', 'TimeBar']
 
 import time
@@ -38,7 +37,7 @@ from RO.TkUtil import Timer
 import tkinter
 from . import Button
 from . import Entry
-from . import Gridder
+from .Gridder import Gridder, _BaseGridSet
 from . import Label
 
 class ProgressBar (tkinter.Frame):
@@ -532,7 +531,7 @@ if __name__ == "__main__":
     
     setProg()
 
-    gr = Gridder.Gridder(root)
+    gr = Gridder(root)
     
     gr.gridWdg ("Val", valEntry)
     gr.gridWdg ("Minimum", minEntry)

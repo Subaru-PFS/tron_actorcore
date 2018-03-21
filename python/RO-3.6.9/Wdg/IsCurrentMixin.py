@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import object
@@ -23,7 +23,6 @@ History:
                     instead of getString and getDefault.
 2010-05-27 ROwen    Corrected a few document strings.
 """
-from __future__ import absolute_import
 __all__ = ["IsCurrentMixin", "IsCurrentActiveMixin", "IsCurrentCheckbuttonMixin", "AutoIsCurrentMixin"]
 
 from . import WdgPrefs

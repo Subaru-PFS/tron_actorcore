@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import str
@@ -55,7 +55,6 @@ History:
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 2015-11-05 ROwen    Stop using dangerous bare "except:".
 """
-from __future__ import absolute_import
 __all__ = ['Label', 'BoolLabel', 'StrLabel', 'IntLabel', 'FloatLabel', 'DMSLabel']
 
 import sys
@@ -63,11 +62,11 @@ import tkinter
 import RO.Constants
 import RO.MathUtil
 import RO.StringUtil
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 from .SeverityMixin import SeverityMixin
 from .IsCurrentMixin import IsCurrentMixin
 
-class Label(tkinter.Label, CtxMenu.CtxMenuMixin, IsCurrentMixin, SeverityMixin):
+class Label(tkinter.Label, CtxMenuMixin, IsCurrentMixin, SeverityMixin):
     """Base class for labels (display ROWdgs); do not use directly.
     
     Inputs:
@@ -104,7 +103,7 @@ class Label(tkinter.Label, CtxMenu.CtxMenuMixin, IsCurrentMixin, SeverityMixin):
         
         tkinter.Label.__init__(self, master, **kargs)
         
-        CtxMenu.CtxMenuMixin.__init__(self, helpURL=helpURL)
+        CtxMenuMixin.__init__(self, helpURL=helpURL)
         
         IsCurrentMixin.__init__(self, isCurrent)
         

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Run an application as a droplet (an application onto which you drop file) with a log window.
@@ -43,7 +43,6 @@ History:
 2011-10-07 ROwen    Added doneMsg argument. 
                     Bug fix: the default for recursionDepth was False, which is not a valid value; changed to None.
 """
-from __future__ import absolute_import
 __all__ = ["DropletApp"]
 
 import sys

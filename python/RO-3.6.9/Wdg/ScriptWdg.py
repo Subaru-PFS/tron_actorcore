@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division
+from __future__ import absolute_import, division
 from past.builtins import execfile
 from future import standard_library
 standard_library.install_aliases()
@@ -35,7 +35,6 @@ History:
                     (I'm not sure how, but I removed that import in this module to fix it).
 2015-11-05 ROwen    Stop using dangerous bare "except:".
 """
-from __future__ import absolute_import
 __all__ = ['BasicScriptWdg', 'ScriptModuleWdg', 'ScriptFileWdg']
 
 import os.path

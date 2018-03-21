@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 """Widgets for selecting files and directories.
@@ -25,7 +25,6 @@ History:
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ["DirWdg", "FileWdg"]
 
 import os
@@ -33,10 +32,10 @@ import tkinter
 import tkinter.filedialog
 import RO.AddCallback
 import RO.Constants
-from . import CtxMenu
+from .CtxMenu import CtxMenuMixin
 from .SeverityMixin import SeverityActiveMixin
 
-class BasePathWdg (tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixin,
+class BasePathWdg (tkinter.Button, RO.AddCallback.BaseMixin, CtxMenuMixin,
     SeverityActiveMixin):
     def __init__(self,
         master,
@@ -81,7 +80,7 @@ class BasePathWdg (tkinter.Button, RO.AddCallback.BaseMixin, CtxMenu.CtxMenuMixi
         
         RO.AddCallback.BaseMixin.__init__(self)
         
-        CtxMenu.CtxMenuMixin.__init__(self,
+        CtxMenuMixin.__init__(self,
             helpURL = helpURL,
         )
         SeverityActiveMixin.__init__(self, severity)

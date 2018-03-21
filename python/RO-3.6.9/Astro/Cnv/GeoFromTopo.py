@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """
 History:
 2002-07-22 ROwen    Converted to Python from the TCC's cnv_AppTopo2AppGeo 3-3.
@@ -7,7 +7,6 @@ History:
 2004-05-18 ROwen    Stopped importing math; it wasn't used.
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
-from __future__ import absolute_import
 __all__ = ["geoFromTopo"]
 
 import numpy

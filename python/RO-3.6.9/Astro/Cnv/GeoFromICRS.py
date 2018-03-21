@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """    
 History:
 2002-07-12 ROwen    Converted to Python from the TCC's cnv_J2AppGeo 7-3
 2007-04-24 ROwen    Converted from Numeric to numpy.
 """
-from __future__ import absolute_import
 __all__ = ["geoFromICRS"]
 
 import numpy

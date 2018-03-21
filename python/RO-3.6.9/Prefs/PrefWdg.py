@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from future import standard_library
 standard_library.install_aliases()
 from builtins import range
@@ -38,7 +38,6 @@ History:
                     formerly only the status bar had this.
 2015-11-03 ROwen    Replace "!= None" with "is not None" to modernize the code.
 """
-from __future__ import absolute_import
 __all__ = ["PrefWin", "PrefWdg"]
 
 import tkinter

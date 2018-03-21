@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 from builtins import str
 from builtins import range
 from builtins import object
@@ -23,7 +23,6 @@ History:
 2009-07-19 ROwen    Added posFromPVT.
 2015-09-24 ROwen    Replace "== None" with "is None" to future-proof array tests and modernize the code.
 """
-from __future__ import absolute_import
 from . import SeqUtil
 
 _FalseValues = set((False, 0, "0", "f", "false", "no", "off", None))

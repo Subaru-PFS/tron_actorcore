@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-from __future__ import division, print_function
+from __future__ import absolute_import, division, print_function
 """
 History:
 2002-07-23 R Owen.
 2007-04-24 ROwen    Changed Numeric to numpy in a doc string.
 """
-from __future__ import absolute_import
 __all__ = ["dcFromSC"]
 
 from .CCFromSC import ccFromSC
