@@ -10,6 +10,8 @@ Welcome to Actorcore's documentation.
    :maxdepth: 2
    :caption: Contents:
 
+   Installation requirements <install>
+   
    Handling incoming commands <runCmd>
    Sending commands <sendCmd>
 
