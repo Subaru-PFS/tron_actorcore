@@ -206,16 +206,12 @@ class Cmdr(object):
         q = self.cmdq(**argv)
         ret = q.get()
         trimmedResponse = str(ret)
-        if True or len(trimmedResponse) > 80 and self.logger.level > logging.DEBUG:
-            # trimmedResponse = trimmedResponse[:80] + "..."
-            trimmedResponse = "len(trimmedResponse) == %d, level=%s" % (len(trimmedResponse),
-                                                                        self.logger.level)
         self.logger.info("command returned %s" % (trimmedResponse))
         return ret
         
     def cmdq(self, **argv):
         """ Send a command and return a Queue on which the command output will be put. """
-        trimmedCmd = argv['cmdStr'] if len(argv['cmdStr']) < 80 else argv['cmdStr'][:80]+"..."
+        trimmedCmd = argv['cmdStr']
         self.logger.info("queueing command %s(%s)" % (argv['actor'], trimmedCmd))
 
         q = queue.Queue()
