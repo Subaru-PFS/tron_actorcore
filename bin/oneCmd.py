@@ -74,6 +74,10 @@ class OurActor(actorcore.Actor.Actor):
                                   callFunc=self.printResponse,
                                   callCodes=AllCodes)
 
+        if self.printTimes:
+            now = self.TS()
+            print(f'{now}sent {self.cmdActor} {self.cmdStr}')
+
         reactor.callLater(0, self.cmdr.dispatcher.executeCmd, cmdvar)
 
     def _connectionMade(self):
