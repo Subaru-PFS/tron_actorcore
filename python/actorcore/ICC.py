@@ -23,7 +23,7 @@ class ICC(coreActor.Actor):
 
     def attachController(self, name, instanceName=None, path=None, cmd=None):
         """ (Re-)load and attach a named set of commands. """
-
+        logger = self.logger if cmd is None else cmd
         if path is None:
             path = [os.path.join(self.product_dir, 'python', self.productName, 'Controllers')]
 
@@ -44,45 +44,36 @@ class ICC(coreActor.Actor):
             if file:
                 file.close()
 
-        # Instantiate and save a new controller. 
+        # Instantiate and save a new controller.
         self.logger.info('creating new %s (%08x)', name, id(mod))
         try:
             controllerClass = getattr(mod, name)
         except AttributeError:
-            self.logger.warn('text="controller module %s does not contain %s"',
-                             name, name)
-            return False
-        
-        try:
-            conn = controllerClass(self, instanceName)
-        except Exception as e:
-            self.logger.warn('text="controller %s(%s) could not be created: %s"',
-                             name, instanceName, e)
-            return False
-        
-        # If we loaded the module and the controller is already running, cleanly stop the old one. 
+            logger.warn('text="controller module %s does not contain %s"', name, name)
+            raise
+
+        conn = controllerClass(self, instanceName)
+
+        # If we loaded the module and the controller is already running, cleanly stop the old one.
         self.detachController(instanceName)
 
         self.logger.info('starting %s controller', instanceName)
-        try:
-            conn.start()
-        except Exception as e:
-            print(sys.exc_info())
-            self.logger.error('Could not start controller %s/%s: %s', instanceName, name, e)
-            return False
-        
+        conn.start(cmd=cmd)
+
         self.controllers[instanceName] = conn
-        return True
+
 
     def attachAllControllers(self, path=None):
-        """ (Re-)load and (re-)connect to the hardware controllers listed in config:tron.controllers. 
+        """ (Re-)load and (re-)connect to the hardware controllers listed in config:tron.controllers.
         """
 
         for c in self.allControllers:
-            if not self.attachController(c, path):
-                self.bcast.warn('text="Could not connect to controller %s."' % (c))
+            try:
+                self.attachController(c, path)
+            except Exception as e:
+                self.bcast.warn('text=%s' % self.strTraceback(e))
 
-    def detachController(self, controllerName):
+    def detachController(self, controllerName, cmd=None):
         controller = self.controllers.get(controllerName)
 
         if controller:
@@ -91,8 +82,8 @@ class ICC(coreActor.Actor):
             c = self.controllers[controllerName]
             del self.controllers[controllerName]
 
-            c.stop()
-        
+            c.stop(cmd=cmd)
+
     def stopAllControllers(self):
         for c in list(self.controllers.keys()):
             self.detachController(c)

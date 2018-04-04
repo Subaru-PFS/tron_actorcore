@@ -100,7 +100,8 @@ class CoreCmd(object):
         controller = cmd.cmd.keywords['controller'].values[0]
 
         try:
-            self.actor.detachController(controller)
+            self.actor.detachController(controller,
+                                        cmd=cmd)
         except Exception as e:
             cmd.fail('text="failed to disconnect controller %s: %s"' % (controller, e))
             return
