@@ -418,6 +418,10 @@ class Actor(object):
 
         return "%r at %s:%d" % (eValue, where[0], where[1])
 
+    def strTraceback(self, e):
+
+        oneLiner = self.cmdTraceback(e)
+        return qstr("command failed: %s" % oneLiner)
 
     def runActorCmd(self, cmd):
         try:
