@@ -1,29 +1,28 @@
 from __future__ import print_function
-from opscore.utility.qstr import qstr
-import opscore.utility.sdss3logging as opsLogging
-import logging
 
 import imp
+import logging
 import os
-import sys
 
 import actorcore.Actor as coreActor
+import opscore.utility.sdss3logging as opsLogging
+
 
 class ICC(coreActor.Actor):
     def __init__(self, name, **kwargs):
         coreActor.Actor.__init__(self, name, **kwargs)
-        
+
         # Create a separate logger for controller io
         opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "io"), 'io')
         self.iolog = logging.getLogger('io')
-        self.iolog.setLevel(int(self.config.get('logging','ioLevel')))
+        self.iolog.setLevel(int(self.config.get('logging', 'ioLevel')))
         self.iolog.propagate = False
 
         self.controllers = dict()
 
     def attachController(self, name, instanceName=None, path=None, cmd=None):
         """ (Re-)load and attach a named set of commands. """
-        logger = self.logger if cmd is None else cmd
+
         if path is None:
             path = [os.path.join(self.product_dir, 'python', self.productName, 'Controllers')]
 
@@ -49,19 +48,25 @@ class ICC(coreActor.Actor):
         try:
             controllerClass = getattr(mod, name)
         except AttributeError:
-            logger.warn('text="controller module %s does not contain %s"', name, name)
+            self.logger.warn('text="controller module %s does not contain %s"', name, name)
             raise
 
-        conn = controllerClass(self, instanceName)
-
+        try:
+            conn = controllerClass(self, instanceName)
+        except:
+            self.logger.warn('text="controller %s(%s) could not be created"', name, instanceName)
+            raise
         # If we loaded the module and the controller is already running, cleanly stop the old one.
         self.detachController(instanceName)
 
         self.logger.info('starting %s controller', instanceName)
-        conn.start(cmd=cmd)
+        try:
+            conn.start(cmd=cmd)
+        except:
+            self.logger.error('Could not start controller %s/%s', instanceName, name)
+            raise
 
         self.controllers[instanceName] = conn
-
 
     def attachAllControllers(self, path=None):
         """ (Re-)load and (re-)connect to the hardware controllers listed in config:tron.controllers.
@@ -70,8 +75,10 @@ class ICC(coreActor.Actor):
         for c in self.allControllers:
             try:
                 self.attachController(c, path)
+                self.callCommand('%s status' % c)
+
             except Exception as e:
-                self.bcast.warn('text=%s' % self.strTraceback(e))
+                self.logger.warn('text=%s' % self.strTraceback(e))
 
     def detachController(self, controllerName, cmd=None):
         controller = self.controllers.get(controllerName)
@@ -90,6 +97,5 @@ class ICC(coreActor.Actor):
 
     def shutdown(self):
         coreActor.shutdown(self)
-        
-        self.stopAllControllers()
 
+        self.stopAllControllers()

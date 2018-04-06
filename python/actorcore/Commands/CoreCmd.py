@@ -3,16 +3,11 @@
 """ Wrap top-level ACTOR functions. """
 
 from future import standard_library
+
 standard_library.install_aliases()
 from builtins import object
-import pdb
-import logging
-import pprint
-import re
 import sys
-import configparser
 
-import opscore.protocols.validation as validation
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 import actorcore.help as help
@@ -25,11 +20,11 @@ except:
 reload(help)
 
 from opscore.utility.qstr import qstr
-from opscore.utility.tback import tback
+
 
 class CoreCmd(object):
     """ Wrap common Actor commands """
-    
+
     def __init__(self, actor):
         self.actor = actor
 
@@ -42,7 +37,7 @@ class CoreCmd(object):
                                                  help='the names a controller.'),
                                         keys.Key("name", types.String(),
                                                  help='an optional name to assign to a controller instance'),
-                                        keys.Key("cmds", types.String()*(1,None),
+                                        keys.Key("cmds", types.String() * (1, None),
                                                  help="A list of command modules."),
                                         keys.Key("html", help="Generate HTML"),
                                         keys.Key("full", help="Generta full help for all commands"),
@@ -64,13 +59,13 @@ class CoreCmd(object):
 
     def controllerKey(self):
         """ Return formatted keyword listing all loaded controllers. """
-        
+
         controllerNames = list(self.actor.controllers.keys())
         key = 'controllers=%s' % (','.join([c for c in controllerNames]))
 
         return key
-        
-    def connect(self, cmd, doFinish=True):
+
+    def connect(self, cmd):
         """ Reload controller objects. 
 
         If the controllers argument is not passed in, all controllers are reloaded.
@@ -86,15 +81,13 @@ class CoreCmd(object):
             self.actor.attachController(controller,
                                         instanceName=instanceName,
                                         cmd=cmd)
-        except Exception as e:
-                cmd.fail('text="failed to connect controller %s: %s"' % (instanceName,
-                                                                         e))
-                return
+        except:
+            cmd.warn('text="failed to connect controller %s' % instanceName)
+            raise
 
-        if doFinish:
-            cmd.finish(self.controllerKey())
-        
-    def disconnect(self, cmd, doFinish=True):
+        cmd.finish(self.controllerKey())
+
+    def disconnect(self, cmd):
         """ Disconnect the given, or all, controller objects. """
 
         controller = cmd.cmd.keywords['controller'].values[0]
@@ -102,11 +95,12 @@ class CoreCmd(object):
         try:
             self.actor.detachController(controller,
                                         cmd=cmd)
-        except Exception as e:
-            cmd.fail('text="failed to disconnect controller %s: %s"' % (controller, e))
-            return
+        except:
+            cmd.warn('text="failed to disconnect controller %s"')
+            raise
+
         cmd.finish(self.controllerKey())
-        
+
     def cmdHelp(self, cmd):
         """ Return a summary of all commands, or the complete help string for the specified commands.
 
@@ -122,7 +116,7 @@ class CoreCmd(object):
                 cmds += [c[0] for c in cSet.vocab]
             fullHelp = False
             cmds.sort()
-            
+
         if "full" in cmd.cmd.keywords:
             fullHelp = True
 
@@ -156,7 +150,7 @@ class CoreCmd(object):
                     cmd.inform('help=%s' % qstr(line))
 
         cmd.finish("")
-                                          
+
     def version(self, cmd, doFinish=True):
         """ Return a version keyword. """
 
@@ -182,23 +176,23 @@ class CoreCmd(object):
 
         # Finish by redeclaring the version, since we are probably a live version.
         self.version(cmd)
-    
+
     def reloadConfiguration(self, cmd):
         """ Reload the configuration.
 
         Note that only some configuration variables will take effect, depending on how
         they are used. Read the Source, etc.
         """
-        
+
         cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
         try:
             self.actor._reloadConfiguration(cmd)
         except Exception as e:
             cmd.fail('text="failed to reload configuration file: %s', e)
             return
-        
+
         cmd.finish('text="configuration file reloaded"')
-    
+
     def exitCmd(self, cmd):
         """ Brutal exit when all else has failed. """
         from twisted.internet import reactor
@@ -218,19 +212,19 @@ class CoreCmd(object):
             import pdb
             cmd.warn('text="starting pdb on console..."')
             debugFunction = pdb.set_trace
-            
+
         try:
             debugFunction()
         except Exception as e:
             cmd.fail('text="debugger blammo: %s"' % (e))
             return
-        
+
         cmd.warn('text="back to regular operations"')
         cmd.finish()
 
     def ipythonCmd(self, cmd):
         """ Try to start a subshell. """
-        
+
         try:
             from IPython import embed
         except Exception as e:
@@ -239,17 +233,17 @@ class CoreCmd(object):
 
         cmd.warn('text="starting ipython on console..."')
         try:
-            embed() # this call anywhere in your program will start IPython
+            embed()  # this call anywhere in your program will start IPython
         except Exception as e:
             cmd.fail('text="ipython blammo: %s"' % (e))
             return
-        
+
         cmd.warn('text="back to normal interpreter"')
         cmd.finish()
 
     def iKernelCmd(self, cmd):
         """ Try to start a subshell. """
-        
+
         try:
             import twistedloop
         except Exception as e:
@@ -262,6 +256,6 @@ class CoreCmd(object):
         except Exception as e:
             cmd.fail('text="ipython blammo: %s"' % (e))
             return
-        
+
         cmd.finish('text="back to normal interpreter"')
         cmd.finish()

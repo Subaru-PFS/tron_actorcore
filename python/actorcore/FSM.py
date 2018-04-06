@@ -1,5 +1,4 @@
 import logging
-import socket
 
 import fysom
 
@@ -65,7 +64,6 @@ class FSMDev(object):
         self.addStateCB('INITIALISING', self.initDevice)
 
         self.states.start()
-
 
     def loadDevice(self, e):
         try:
