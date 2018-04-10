@@ -61,8 +61,10 @@ class ICC(coreActor.Actor):
 
         self.logger.info('starting %s controller', instanceName)
         try:
+            self.controllers[instanceName] = conn
             conn.start(cmd=cmd)
         except:
+            self.controllers.pop(instanceName)
             self.logger.error('Could not start controller %s/%s', instanceName, name)
             raise
 

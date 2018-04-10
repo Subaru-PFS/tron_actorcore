@@ -119,6 +119,13 @@ class FSMDev(object):
     def updateStates(self, cmd):
         cmd.inform('%sFSM=%s,%s' % (self.name, self.states.current, self.substates.current))
 
+        # Update actor state and substate, 'logical and' of lower controllers state make sense
+
+        try:
+            self.actor.updateStates(cmd=cmd, onsubstate=self.substates.current)
+        except Exception as e:
+            cmd.warn('text=%s' % self.actor.strTraceback(e))
+
     def loadCfg(self, cmd):
         cmd.inform("text='Config Loaded'")
 
