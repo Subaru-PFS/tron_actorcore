@@ -67,7 +67,7 @@ class FSMDev(object):
 
     def loadDevice(self, e):
         try:
-            self.loadCfg(cmd=e.cmd)
+            self.loadCfg(cmd=e.cmd, mode=e.mode)
             self.startComm(cmd=e.cmd)
 
             self.states.toLoaded()
@@ -93,12 +93,12 @@ class FSMDev(object):
 
         setattr(self.substates, 'on%s' % state, func)
 
-    def start(self, cmd=None, doInit=False):
+    def start(self, cmd=None, doInit=False, mode=None):
         # start load event which will trigger loadDevice Callback
         cmd = self.actor.bcast if cmd is None else cmd
 
         self.substates.start(cmd=cmd)
-        self.substates.load(cmd=cmd)
+        self.substates.load(cmd=cmd, mode=mode)
 
         # Trigger initDevice Callback if init is set automatically
         if doInit:
@@ -126,7 +126,7 @@ class FSMDev(object):
         except Exception as e:
             cmd.warn('text=%s' % self.actor.strTraceback(e))
 
-    def loadCfg(self, cmd):
+    def loadCfg(self, cmd, mode=None):
         cmd.inform("text='Config Loaded'")
 
     def startComm(self, cmd):

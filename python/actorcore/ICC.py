@@ -20,7 +20,7 @@ class ICC(coreActor.Actor):
 
         self.controllers = dict()
 
-    def attachController(self, name, instanceName=None, path=None, cmd=None):
+    def attachController(self, name, instanceName=None, path=None, cmd=None, **kwargs):
         """ (Re-)load and attach a named set of commands. """
 
         if path is None:
@@ -62,7 +62,7 @@ class ICC(coreActor.Actor):
         self.logger.info('starting %s controller', instanceName)
         try:
             self.controllers[instanceName] = conn
-            conn.start(cmd=cmd)
+            conn.start(cmd=cmd, **kwargs)
         except:
             self.controllers.pop(instanceName)
             self.logger.error('Could not start controller %s/%s', instanceName, name)
