@@ -72,7 +72,7 @@ class PriorityOverrideQueue(queue.PriorityQueue):
             counter = self.counter
             queue.PriorityQueue.put(self, (counter, item))
             self.counter += 1
-        print("lv put(%s) of %s" % (item, self))
+        #print("lv put(%s) of %s" % (item, self))
         
     def putUrgent(self, item):
         """ Put an urgent message at the front of our queue. """
@@ -126,7 +126,7 @@ class QThread(threading.Thread):
             **argd: the arguments to the method.
         """
 
-        print(("putMsg(%s, %s) %d", method, argd, self.queue.qsize()))
+        #print(("putMsg(%s, %s) %d", method, argd, self.queue.qsize()))
         qmsg = QMsg(method, **argd)
         self.queue.put(qmsg, urgent=urgent)
         
@@ -250,5 +250,5 @@ class QThread(threading.Thread):
                     self._realCmd().diag(emsg)
                     tback("DeviceThread", e)
                 except:
-                    print(emsg)
+                    #print(emsg)
                     tback("DeviceThread", e)
