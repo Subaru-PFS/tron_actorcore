@@ -1,4 +1,3 @@
-setupOptional("python")
 setupRequired("ics_config")
 
 # Just for stageManager bits
