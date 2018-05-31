@@ -60,15 +60,9 @@ class ICC(coreActor.Actor):
         self.detachController(instanceName)
 
         self.logger.info('starting %s controller', instanceName)
-        try:
-            self.controllers[instanceName] = conn
-            conn.start(cmd=cmd, **kwargs)
-        except:
-            self.controllers.pop(instanceName)
-            self.logger.error('Could not start controller %s/%s', instanceName, name)
-            raise
 
         self.controllers[instanceName] = conn
+        conn.start(cmd=cmd, **kwargs)
 
     def attachAllControllers(self, path=None):
         """ (Re-)load and (re-)connect to the hardware controllers listed in config:tron.controllers.

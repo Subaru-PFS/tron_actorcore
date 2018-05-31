@@ -9,7 +9,7 @@ class States(fysom.Fysom):
                                     'events': [{'name': 'start', 'src': 'none', 'dst': 'OFF'},
                                                {'name': 'toLoaded', 'src': ['OFF', 'ONLINE'], 'dst': 'LOADED'},
                                                {'name': 'toOnline', 'src': 'LOADED', 'dst': 'ONLINE'},
-                                               {'name': 'stop', 'src': ['LOADED', 'ONLINE'], 'dst': 'OFF'}],
+                                               {'name': 'stop', 'src': ['OFF',' LOADED', 'ONLINE'], 'dst': 'OFF'}],
                                     })
         self.onOFF = stateChangeCB
 
