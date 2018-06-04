@@ -69,7 +69,7 @@ class ValueType(type,Descriptive):
     A metaclass for types that represent an enumerated or numeric value
     """
     _nameSpec = re.compile('[A-Za-z][A-Za-z0-9_]*')
-    _metaKeys = ('reprFmt','strFmt','invalid','units','help','name')
+    _metaKeys = ('reprFmt','strFmt','invalid','units','help','name','FITS')
     
     def __new__(cls,*args,**kwargs):
         """
@@ -119,6 +119,16 @@ class ValueType(type,Descriptive):
             if (fmt.find('%s') != -1) or (fmt.find('%r') != -1):
                 raise ValueTypeError('strFmt cannot contain %r or %s')
 
+        # crudely check the format of any FITS key. Should also
+        # reject FITS keys on non-basic types.
+        if 'FITS' in kwargs:
+            try:
+                short, long = kwargs['FITS']
+                assert (isinstance(short, str) and
+                        isinstance(long, str))
+            except:
+                raise ValueError('FITS key must be a pair of strings')
+
         get = lambda name,default=None: kwargs.get(name,cls.__dict__.get(name,default))
 
         dct = {
@@ -128,6 +138,7 @@ class ValueType(type,Descriptive):
             'units': get('units'),
             'help': get('help'),
             'name': get('name'),
+            'FITS': get('FITS'),
             '__repr__': doRepr,
             '__str__': doStr
         }
