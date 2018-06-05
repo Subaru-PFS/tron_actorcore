@@ -85,38 +85,6 @@ def mcpCards(models, cmd=None):
 
     return d
 
-def apoCards(models, cmd=None):
-    """ Return a list of pyfits Cards describing APO weather state. """
-
-    cards = []
-    weatherDict = models['apo'].keyVarDict
-    keys = (('pressure', None, float),
-            ('windd', None, float),
-            ('winds', None, float),
-            ('gustd', None, float),
-            ('gusts', None, float),
-            ('airTempPT', 'airtemp', float),
-            ('dpTempPT', 'dewpoint', float),
-            #('dpErrPT', None, str),
-            ('humidity', None, float),
-            ('dusta', None, float),
-            ('dustb', None, float),
-            ('windd25m', None, float),
-            ('winds25m', None, float))
-
-    for keyName, cardName, cnv in keys:
-        if not cardName:
-            cardName = keyName
-        cardName = cardName.upper()
-        card = makeCardFromKey(cmd, weatherDict, keyName, cardName,
-                               comment='%s' % (keyName),
-                               cnv=cnv,
-                               onFail='NaN')
-        cards.append(card)
-
-    return cards
-    
-
 def tccCards(models, cmd=None):
     """ Return a list of pyfits Cards describing the TCC state. """
 
@@ -274,10 +242,10 @@ def _cnvPVTPosCard(pvt, atTime=None):
     try:
         return pvt.getPos()
     except:
-        return numpy.nan
+        return np.nan
 
 def _cnvPVTVelCard(pvt):
     try:
         return pvt.getVel()
     except:
-        return numpy.nan
+        return np.nan
