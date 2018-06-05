@@ -394,6 +394,8 @@ class Actor(object):
                                                     'python','actorcore','Commands'))
             self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python',
                                                     self.productName, 'Commands'))
+            self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python', 'ics',
+                                                    self.productName, 'Commands'))
             return
 
         try:
