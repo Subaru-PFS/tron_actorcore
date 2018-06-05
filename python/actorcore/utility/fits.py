@@ -85,7 +85,6 @@ def cardsFromModel(cmd, model, shortNames=False):
     """
 
     logger = logging.getLogger('FITS')
-
     cards = []
     for mk, mv in model.keyVarDict.items():
         try:
@@ -173,16 +172,20 @@ def gatherHeaderCards(cmd, actor, modelNames=None, shortNames=False):
       Suitable to get a header with "fitsio.FITSHDR(cards)"
     """
 
+    logger = logging.getLogger('FITS')
+    
     if modelNames is None:
         modelNames = actor.models.keys()
 
     allCards = []
     for modName in modelNames:
+        logger.info(f'gathering cards from model {modName}')
         try:
             modCards = cardsFromModel(cmd, actor.models[modName], shortNames=shortNames)
             allCards.append(f'################################ Cards from {modName}')
             allCards.extend(modCards)
         except Exception as e:
+            logger.warn(f' Failed to get FITS cards for actor {modName}: {e}')
             allCards.append(f' Failed to get FITS cards for actor {modName}')
             allCards.append(f' Exception: {e}')
             cmd.warn(f'text="FAILED to get FITS cards for actor {modName}: {e}"')
