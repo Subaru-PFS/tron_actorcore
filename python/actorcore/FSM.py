@@ -25,7 +25,8 @@ class Substates(fysom.Fysom):
                    {'name': 'load', 'src': 'IDLE', 'dst': 'LOADING'},
                    {'name': 'init', 'src': 'IDLE', 'dst': 'INITIALISING'},
                    {'name': 'idle', 'src': ['LOADING', 'INITIALISING'], 'dst': 'IDLE'},
-                   {'name': 'fail', 'src': ['LOADING', 'INITIALISING'], 'dst': 'FAILED'}]
+                   {'name': 'fail', 'src': ['LOADING', 'INITIALISING'], 'dst': 'FAILED'},
+                   {'name': 'acknowledge', 'src': 'FAILED', 'dst': 'IDLE'}]
 
         fysom.Fysom.__init__(self, {'initial': 'none', 'events': events})
 
