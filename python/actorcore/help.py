@@ -8,7 +8,9 @@ import opscore.protocols.types as types
 def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=True):
     """Return a help string for command cmdName, formatted for a line length of pageWidth"""
 
-    cmds = [p for p in vocab if p[0] == cmdName]
+    cmdWord = cmdName.split(' ', 1)[0]
+    
+    cmds = [p for p in vocab if ' '.join((p[0], p[1])).strip() == cmdName]
     if not cmds:
         return "Unknown command %s" % cmdName
 
@@ -16,16 +18,16 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=Tru
     for cmd in cmds:
         args = parse(cmd[1], keys)
         docstring = cmd[2].__doc__
-        if docstring == None:
+        if docstring is None:
             docstring = 'No documentation at all; bad, bad programmer.'
 
         helpStr = ""
         if html:
-            helpStr += "<DT>%s %s" % (actorName, cmdName)
+            helpStr += "<DT>%s %s" % (actorName, cmdWord)
         elif fullHelp:
-            helpStr += "Usage: %s %s" % (actorName, cmdName)
+            helpStr += "Usage: %s %s" % (actorName, cmdWord)
         else:
-            helpStr += "%s %s" % (actorName, cmdName)
+            helpStr += "%s %s" % (actorName, cmdWord)
 
         for a in args:
             if not html and len(helpStr.split("\n")[-1]) + len(str(a)) + 1 > pageWidth:
@@ -48,7 +50,7 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=Tru
                 else:
                     helpStr += "\nArguments:"
 
-                for a in sorted(args, lambda a, b: cmp(a.name, b.name)):
+                for a in sorted(args, key=lambda cmd: cmd.name):
                     extra = None
                     for k in a.key:
                         extra = a.extraDescrip()
