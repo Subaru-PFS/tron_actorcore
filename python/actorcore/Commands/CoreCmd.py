@@ -2,10 +2,7 @@
 
 """ Wrap top-level ACTOR functions. """
 
-from future import standard_library
-
-standard_library.install_aliases()
-from builtins import object
+import re
 import sys
 
 import opscore.protocols.keys as keys
@@ -37,8 +34,8 @@ class CoreCmd(object):
                                                  help='the names a controller.'),
                                         keys.Key("name", types.String(),
                                                  help='an optional name to assign to a controller instance'),
-                                        keys.Key("cmds", types.String() * (1, None),
-                                                 help="A list of command modules."),
+                                        keys.Key("cmds", types.String(),
+                                                 help="A regexp matching commands"),
                                         keys.Key("html", help="Generate HTML"),
                                         keys.Key("full", help="Generta full help for all commands"),
                                         keys.Key("pageWidth", types.Int(),
@@ -101,21 +98,25 @@ class CoreCmd(object):
 
         cmd.finish(self.controllerKey())
 
+    def _vocabCmds(self, vocab):
+        return [' '.join((c[0], c[1])).strip() for c in vocab]
+    
     def cmdHelp(self, cmd):
         """ Return a summary of all commands, or the complete help string for the specified commands.
 
         Also allows generating an html file.
         """
 
+        cmds = []
+        for a, cSet in list(self.actor.commandSets.items()):
+            cmds.extend(self._vocabCmds(cSet.vocab))
+        fullHelp = False
+        cmds.sort()
+
         if "cmds" in cmd.cmd.keywords:
-            cmds = cmd.cmd.keywords['cmds'].values
+            cmdRe = re.compile(cmd.cmd.keywords['cmds'].values[0])
+            cmds = filter(cmdRe.search, cmds)
             fullHelp = True
-        else:
-            cmds = []
-            for a, cSet in list(self.actor.commandSets.items()):
-                cmds += [c[0] for c in cSet.vocab]
-            fullHelp = False
-            cmds.sort()
 
         if "full" in cmd.cmd.keywords:
             fullHelp = True
@@ -127,7 +128,7 @@ class CoreCmd(object):
         for cmdName in cmds:
             helpList = []
             for csetName, cSet in list(self.actor.commandSets.items()):
-                if cmdName in [c[0] for c in cSet.vocab]:
+                if cmdName in self._vocabCmds(cSet.vocab):
                     try:
                         helpStr = help.help(self.actor.name, cmdName, cSet.vocab, cSet.keys, pageWidth, html,
                                             fullHelp=fullHelp)
