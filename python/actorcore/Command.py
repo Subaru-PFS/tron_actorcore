@@ -82,11 +82,12 @@ class Command(object):
 
         self.inform(response)
 
-    def inform(self, response):
+    def inform(self, response, warn=False):
         """ Return intermediate response. """
 
-        self.__respond('i', response)
-
+        self.__respond('i' if not warn else 'w', response)
+    info = inform
+    
     def diag(self, response):
         """ Return diagnostic output. """
 
