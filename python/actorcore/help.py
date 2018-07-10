@@ -48,7 +48,7 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=Tru
                 else:
                     helpStr += "\nArguments:"
 
-                for a in sorted(args, lambda a, b: cmp(a.name, b.name)):
+                for a in sorted(args, key=lambda cmd: cmd.name):
                     extra = None
                     for k in a.key:
                         extra = a.extraDescrip()
