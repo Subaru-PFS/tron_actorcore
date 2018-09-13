@@ -12,6 +12,7 @@ from builtins import str
 from builtins import object
 import textwrap
 import imp
+import re
 import sys
 import hashlib
 
@@ -429,13 +430,19 @@ class KeysDictionary(object):
             # open the file corresponding to the requested keys dictionary
             try:
                 (dictfile,name,description) = imp.find_module(dictname,keyspath)
-            except:
+            except ImportError:
+                # Try to find model matching a sane prefix of the actor name
                 parts = dictname.split('_', 1)
-                if len(parts) == 1:
-                    raise
-                dictname = parts[0]
+                if len(parts) == 2:
+                    dictname = parts[0]
+                else:
+                    m = re.match('^(.*[a-zA-Z])(\d+)$', dictname)
+                    if not m:
+                        raise RuntimeError("cannot find a dictionary for actor %s" % (dictname))
+                    dictname = m.groups()[0]
+
                 (dictfile,name,description) = imp.find_module(dictname,keyspath)
-                
+
             # create a global symbol table for evaluating the keys dictionary expression
             symbols = {
                 '__builtins__': __builtins__,
