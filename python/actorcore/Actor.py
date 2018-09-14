@@ -227,7 +227,7 @@ class Actor(object):
             ourHost = ourAddr.host
 
         cmdStr = "startNub %s %s:%s" % (self.name, ourHost, ourPort)
-        self.bcast.inform('text=%s' % (qstr("asking the hub to connect back to us with: %s" % (cmdStr))))
+        self.logger.info('text=%s' % (qstr("asking the hub to connect back to us with: %s" % (cmdStr))))
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
                                                                     cmdStr=cmdStr,
                                                                     timeLim=5.0))
