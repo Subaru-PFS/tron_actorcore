@@ -1,5 +1,5 @@
 import logging
-
+from twisted.internet import reactor
 import fysom
 
 
@@ -66,6 +66,9 @@ class FSMDev(object):
 
         self.states.start()
 
+        self.defaultSamptime = 60
+        reactor.callLater(5, self.setSampling)
+
     def loadDevice(self, e):
         try:
             self.loadCfg(cmd=e.cmd, mode=e.mode)
@@ -126,6 +129,10 @@ class FSMDev(object):
             self.actor.updateStates(cmd=cmd, onsubstate=self.substates.current)
         except Exception as e:
             cmd.warn('text=%s' % self.actor.strTraceback(e))
+
+    def setSampling(self, samptime=False):
+        samptime = self.defaultSamptime if not samptime else samptime
+        self.actor.callCommand('monitor controllers=%s period=%d' % (self.name, samptime))
 
     def loadCfg(self, cmd, mode=None):
         cmd.inform("text='Config Loaded'")
