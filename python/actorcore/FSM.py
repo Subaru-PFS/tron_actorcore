@@ -132,6 +132,7 @@ class FSMDev(object):
 
     def setSampling(self, samptime=False):
         samptime = self.defaultSamptime if not samptime else samptime
+        self.actor.callCommand('%s status' % self.name)
         self.actor.callCommand('monitor controllers=%s period=%d' % (self.name, samptime))
 
     def loadCfg(self, cmd, mode=None):
