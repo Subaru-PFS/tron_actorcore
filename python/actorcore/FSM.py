@@ -15,8 +15,8 @@ class States(fysom.Fysom):
 
 
 class Substates(fysom.Fysom):
-    def __init__(self, topState, substates, events, stateChangeCB):
-        self.topState = topState
+    def __init__(self, topstate, substates, events, stateChangeCB):
+        self.topstate = topstate
         self.dictState = {'OFF': ['IDLE', 'LOADING', 'FAILED'],
                           'LOADED': ['IDLE', 'INITIALISING', 'FAILED'],
                           'ONLINE': substates}
@@ -37,9 +37,9 @@ class Substates(fysom.Fysom):
             setattr(self, 'onbefore%s' % event['name'], self.checkTransition)
 
     def checkTransition(self, e):
-        if e.dst not in self.dictState[self.topState.current]:
+        if e.dst not in self.dictState[self.topstate.current]:
             raise fysom.FysomError('FysomError: event %s inappropriate in top state %s' % (e.event,
-                                                                                           self.topState.current))
+                                                                                           self.topstate.current))
 
 
 class FSMDev(object):
@@ -56,7 +56,7 @@ class FSMDev(object):
 
         self.states = States(stateChangeCB=self.statesCB)
 
-        self.substates = Substates(topState=self.states,
+        self.substates = Substates(topstate=self.states,
                                    substates=substates,
                                    events=events,
                                    stateChangeCB=self.statesCB)
@@ -111,6 +111,7 @@ class FSMDev(object):
     def stop(self, cmd=None):
         cmd = self.actor.bcast if cmd is None else cmd
         self.states.stop(cmd=cmd)
+        self.setSampling(0)
 
     def statesCB(self, e):
         try:
@@ -130,9 +131,8 @@ class FSMDev(object):
         except Exception as e:
             cmd.warn('text=%s' % self.actor.strTraceback(e))
 
-    def setSampling(self, samptime=False):
-        samptime = self.defaultSamptime if not samptime else samptime
-        self.actor.callCommand('%s status' % self.name)
+    def setSampling(self, samptime=None):
+        samptime = samptime if samptime is not None else self.defaultSamptime
         self.actor.callCommand('monitor controllers=%s period=%d' % (self.name, samptime))
 
     def loadCfg(self, cmd, mode=None):
