@@ -216,13 +216,18 @@ class Actor(object):
         if not self.acceptCmdrs:
             self.logger.warn('not triggering hub callback.')
             return
-        
-        ourAddr = self.commandSources.listeningPort.getHost()
-        ourPort = ourAddr.port
-        ourHost = ourAddr.host
+
+        # Look for override on where tron should connect back to. For tunnels, etc.
+        try:
+            advertisedSocket = self.config.get(self.name, 'hostAndPortForTron')
+            ourHost, ourPort = advertisedSocket.split(':')
+        except:
+            ourAddr = self.commandSources.listeningPort.getHost()
+            ourPort = ourAddr.port
+            ourHost = ourAddr.host
 
         cmdStr = "startNub %s %s:%s" % (self.name, ourHost, ourPort)
-        self.bcast.diag('text=%s' % (qstr("asking the hub to connect back to us with: %s" % (cmdStr))))
+        self.logger.info('text=%s' % (qstr("asking the hub to connect back to us with: %s" % (cmdStr))))
         self.cmdr.dispatcher.executeCmd(opscore.actor.keyvar.CmdVar(actor='hub',
                                                                     cmdStr=cmdStr,
                                                                     timeLim=5.0))
