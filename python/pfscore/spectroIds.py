@@ -44,12 +44,20 @@ class SpectroIds(object):
         ----
         partName : str
             A name of the form 'b2' or 'sm3'.
-            None to autodetect the hostname
+            None to autodetect from the hostname
         site : str
-            One of the PFS fite names.
-            None to autodetect using $PFS_SITE
+            One of the PFS site names.
+            None to autodetect using the DNS pfs-site. record
        
         Internally we track the spectrograph module number, the site, and (optionally) the arm letter.
+
+        Examples
+        --------
+
+        >>> ids = SpectroIds()
+        >>> ids.makeFitsName(999, 'A')
+        'PFJA00099912.fits'
+
         """
         
         self.arm = None
@@ -118,7 +126,7 @@ class SpectroIds(object):
             
         return _idDict
 
-    def makeFitsName(self, visit, fileType, extension='.fits'):
+    def makeFitsName(self, visit, fileType=None, extension='.fits'):
         """ Create a complete filename 
 
         Args
@@ -127,17 +135,26 @@ class SpectroIds(object):
         visit : int
           Between 0..999999
         fileType : str 
-          'A' or 'B', for now.
-        """
+          'A' or 'B', for now. Only required if arm == 'n'
 
-        if not isinstance(visit, int) or visit < 0 or visit > 999999:
-            raise ValueError('visit must be an integer between 0 and 999999')
-        if fileType not in {'A', 'B'}:
-            raise ValueError('fileType must be A or B')
+        By default, returns a fully fleshed out filename appropriate for visible or NIR cameras.
+        """
 
         if self.arm is None:
             raise RuntimeError('cannot generate a filename without an arm')
         
+        if not isinstance(visit, int) or visit < 0 or visit > 999999:
+            raise ValueError('visit must be an integer between 0 and 999999')
+
+        if self.arm == 'n':
+            if fileType not in {'A', 'B'}:
+                raise ValueError('fileType must be A or B')
+        else:
+            if fileType not in {'A', None}:
+                raise ValueError('fileType must be A')
+            fileType = 'A'
+                
+
         return "PF%1s%1s%06d%1d%1d%s" % (self.site,
                                          fileType,
                                          visit,
