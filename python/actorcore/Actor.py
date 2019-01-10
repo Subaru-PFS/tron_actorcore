@@ -282,6 +282,7 @@ class Actor(object):
                                                                                 cmdStr='listen addActors %s' % (n),
                                                                                 timeLim=5.0))
                 except Exception as e:
+                    self.logger.warn('text="failed to add model %s: %s"' % (n, e))
                     self.bcast.warn('text="failed to add model %s: %s"' % (n, e))
                 
     def dropModels(self, dropModelNames):
