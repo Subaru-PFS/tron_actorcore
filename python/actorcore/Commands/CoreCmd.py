@@ -58,7 +58,7 @@ class CoreCmd(object):
         """ Return formatted keyword listing all loaded controllers. """
 
         controllerNames = list(self.actor.controllers.keys())
-        key = 'controllers=%s' % (','.join([c for c in controllerNames]))
+        key = 'controllers=%s' % (','.join([c for c in controllerNames]) if controllerNames else None)
 
         return key
 
