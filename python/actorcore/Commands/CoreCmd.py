@@ -79,6 +79,7 @@ class CoreCmd(object):
                                         instanceName=instanceName,
                                         cmd=cmd)
         except:
+            cmd.warn(self.controllerKey())
             cmd.warn('text="failed to connect controller %s' % instanceName)
             raise
 
@@ -93,6 +94,7 @@ class CoreCmd(object):
             self.actor.detachController(controller,
                                         cmd=cmd)
         except:
+            cmd.warn(self.controllerKey())
             cmd.warn('text="failed to disconnect controller %s"')
             raise
 
