@@ -424,7 +424,7 @@ class Actor(object):
         tbList = traceback.extract_tb(eTraceback)
         where = tbList[-1]
 
-        return "%r at %s:%d" % (eValue, where[0], where[1])
+        return "%r in %s() at %s:%d" % (eValue, where[2], where[0], where[1])
 
     def strTraceback(self, e):
 
