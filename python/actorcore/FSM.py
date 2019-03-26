@@ -1,4 +1,3 @@
-import logging
 from functools import partial
 
 import fysom
@@ -38,21 +37,19 @@ class Substates(fysom.Fysom):
         for event in events:
             setattr(self, 'onbefore%s' % event['name'], self.checkTransition)
 
-    def checkTransition(self, e):
-        if e.dst not in self.dictState[self.topstate.current]:
-            raise fysom.FysomError('FysomError: event %s inappropriate in top state %s' % (e.event,
+    def checkTransition(self, event):
+        if event.dst not in self.dictState[self.topstate.current]:
+            raise fysom.FysomError('FysomError: event %s inappropriate in top state %s' % (event.event,
                                                                                            self.topstate.current))
 
 
-class FSMDev(object):
-    def __init__(self, actor, name, events=False, substates=False, loglevel=logging.DEBUG):
+class FSMDevice(object):
+    def __init__(self, actor, name, events=False, substates=False):
         # This sets up the connections to/from the hub, the logger, and the twisted reactor.
-        #
 
         self.actor = actor
         self.name = name
-        self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(loglevel)
+
         events = [] if not events else events
         substates = ['IDLE', 'FAILED'] if not substates else substates
 
@@ -63,36 +60,35 @@ class FSMDev(object):
                                    events=events,
                                    stateChangeCB=self.statesCB)
 
-        self.addStateCB('LOADING', self.loadDevice)
-        self.addStateCB('INITIALISING', self.initDevice)
+        self.addStateCB('LOADING', self.loading)
+        self.addStateCB('INITIALISING', self.initialising)
 
         self.states.start()
 
-    def loadDevice(self, e):
-        try:
-            self.loadCfg(cmd=e.cmd, mode=e.mode)
-            self.startComm(cmd=e.cmd)
+    def loading(self, cmd, mode=None):
+        self.loadCfg(cmd=cmd, mode=mode)
+        self.openComm(cmd=cmd)
+        self.testComm(cmd=cmd)
+        self.states.toLoaded()
 
-            self.states.toLoaded()
-            self.substates.idle(cmd=e.cmd)
-        except:
-            self.substates.fail(cmd=e.cmd)
-            raise
-
-    def initDevice(self, e):
-        try:
-            self.init(cmd=e.cmd)
-
-            self.states.toOnline()
-            self.substates.idle(cmd=e.cmd)
-        except:
-            self.substates.fail(cmd=e.cmd)
-            raise
+    def initialising(self, cmd, *args):
+        self.init(cmd, *args)
+        self.states.toOnline()
 
     def addStateCB(self, state, callback):
-        def func(obj, *args, **kwargs):
-            self.statesCB(obj)
-            return callback(obj, *args, **kwargs)
+        def func(event):
+            self.statesCB(event)
+            cmd = event.args[0] if len(event.args) else self.actor.bcast
+
+            try:
+                ret = callback(*event.args)
+            except UserWarning as e:
+                cmd.warn('text=%s' % self.actor.strTraceback(e))
+            except:
+                self.substates.fail()
+                raise
+
+            self.substates.idle()
 
         setattr(self.substates, 'on%s' % state, func)
 
@@ -100,30 +96,25 @@ class FSMDev(object):
         # start load event which will trigger loadDevice Callback
         cmd = self.actor.bcast if cmd is None else cmd
 
-        self.substates.start(cmd=cmd)
-        self.substates.load(cmd=cmd, mode=mode)
+        self.substates.start(cmd)
+        self.substates.load(cmd, mode)
 
         # Trigger initDevice Callback if init is set automatically
         if doInit:
-            self.substates.init(cmd=cmd)
+            self.substates.init(cmd)
 
     def stop(self, cmd=None):
         cmd = self.actor.bcast if cmd is None else cmd
-        self.states.stop(cmd=cmd)
+        self.states.stop(cmd)
 
         reactor.callLater(2, partial(self.actor.callCommand, 'status'))
 
-    def statesCB(self, e):
-        try:
-            cmd = e.cmd
-        except AttributeError:
-            cmd = self.actor.bcast
-
+    def statesCB(self, event):
+        cmd = event.args[0] if len(event.args) else self.actor.bcast
         self.updateStates(cmd=cmd)
 
     def updateStates(self, cmd):
         cmd.inform('%sFSM=%s,%s' % (self.name, self.states.current, self.substates.current))
-
         # Update actor state and substate, 'logical and' of lower controllers state make sense
 
         try:
@@ -132,10 +123,13 @@ class FSMDev(object):
             cmd.warn('text=%s' % self.actor.strTraceback(e))
 
     def loadCfg(self, cmd, mode=None):
-        cmd.inform("text='Config Loaded'")
+        cmd.inform("text='%s configuration correctly Loaded'" % self.name)
 
-    def startComm(self, cmd):
-        cmd.inform("text='Communication established with controller'")
+    def openComm(self, cmd):
+        cmd.inform("text='%s communication is open'" % self.name)
 
-    def init(self, cmd):
-        cmd.inform("text='Init Device OK'")
+    def testComm(self, cmd):
+        cmd.inform("text='%s communication is functional'" % self.name)
+
+    def init(self, cmd, *args):
+        cmd.inform("text='%s initialisation OK'" % self.name)
