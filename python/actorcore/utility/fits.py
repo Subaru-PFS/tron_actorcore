@@ -91,43 +91,63 @@ def cardsFromModel(cmd, model, shortNames=False):
             # When values are not current, they are structurally invalid. So iterate over the _types_,
             # then pick up the value only when necessary.
             for kv_i, kvt in enumerate(mv._typedValues.vtypes):
-                if kvt.FITS is None:
-                    continue
+                try:
+                    if not hasattr(kvt, 'FITS') or kvt.FITS is None:
+                        continue
 
-                shortCard, longCard = kvt.FITS
+                    shortCard, longCard = kvt.FITS
 
-                # Hackery: bool cannot be subclassed, so we need to check the keyword class
-                if issubclass(kvt.__class__, types.Bool):
-                    baseType = bool
-                else:
-                    baseType = kvt.__class__.baseType
+                    # Hackery: bool cannot be subclassed, so we need to check the keyword class
+                    if issubclass(kvt.__class__, types.Bool):
+                        baseType = bool
+                    else:
+                        baseType = kvt.__class__.baseType
 
-                logger.debug(f'FITS card:  {kv_i}({kvt.name}, {baseType} {kvt.__class__}) = {shortCard}, {longCard}"')
+                    logger.debug(f'FITS card:  {kv_i}({kvt.name}, {baseType} {kvt.__class__}) = {shortCard}, {longCard}"')
 
-                if not mv.isCurrent:
-                    logger.debug(f'text="SKIPPING NOT CURRENT {mk} = {mv}"')
-                    value = "NO CURRENT VALUE"
-                else:
-                    # Now we can get the value
-                    value = baseType(mv[kv_i])
+                    postComment = ''
+                    if not mv.isCurrent:
+                        logger.debug(f'text="SKIPPING NOT CURRENT {mk} = {mv}"')
+                        value = None
+                        postComment = " NOT CURRENT"
+                    else:
+                        rawVal = mv[kv_i]
+                        if isinstance(rawVal, types.Invalid):
+                            cmd.warn(f'text="FITS card {shortCard} from {mk}[{kv_i}] has the invalid value"') 
+                            value = None
+                            postComment = " INVALID"
+                        else:
+                            try:
+                                # Now we can get the value
+                                value = baseType(rawVal)
+                            except Exception as e:
+                                postComment = f' JUNK {rawVal}"'
+                                cmd.warn(f'text="FAILED to convert card value {rawVal} for {mk}[{kv_i}], {kvt}: {e}"') 
+                                value = None
 
-                if shortNames:
-                    card = dict(name=shortCard, value=value, longName=longCard)
-                else:
-                    card = dict(name=longCard, value=value)
+                    if shortNames:
+                        card = dict(name=shortCard, value=value, longName=longCard)
+                    else:
+                        card = dict(name=longCard, value=value)
 
-                if kvt.units is not None:
-                    comment = f'[{kvt.units}] '
-                else:
-                    comment = ''
+                    if kvt.units is not None:
+                        comment = f'[{kvt.units}] '
+                    else:
+                        comment = ''
 
-                if kvt.help is not None:
-                    comment += kvt.help
+                    if kvt.help is not None:
+                        comment += kvt.help
 
-                if comment:
-                    card['comment'] = comment
+                    if postComment:
+                        comment += postComment
+                    if comment:
+                        card['comment'] = comment
 
-                cards.append(card)
+                    cards.append(card)
+                except Exception as e:
+                    cmd.warn(f'text="FAILED to generate FITS cards for {mk}[{kv_i}], {kvt}: {e}"')
+                    cards.append(f'Failed to make FITS cards for MHS key {mk}[{kv_i}]')
+                    
         except Exception as e:
             cmd.warn(f'text="FAILED to generate FITS cards for {mk}: {e}"')
             cards.append(f'Failed to get FITS cards for MHS key {mk}')
