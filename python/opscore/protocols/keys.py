@@ -472,6 +472,6 @@ class KeysDictionary(object):
             indent = '\n >> '
             description = indent + indent.join(str(e).split('\n'))
             raise KeysDictionaryError('badly formatted keys dictionary in %s:%s'
-                % (dictfile.name,description))
+                                      % (dictname, description))
         finally:
             if dictfile: dictfile.close()
