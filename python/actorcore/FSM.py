@@ -19,13 +19,14 @@ class Substates(fysom.Fysom):
     def __init__(self, topstate, substates, events, stateChangeCB):
         self.topstate = topstate
         self.dictState = {'OFF': ['IDLE', 'LOADING', 'FAILED'],
-                          'LOADED': ['IDLE', 'INITIALISING', 'FAILED'],
+                          'LOADED': ['IDLE', 'INITIALISING', 'SAFESTOP', 'FAILED'],
                           'ONLINE': substates}
 
         events += [{'name': 'start', 'src': 'none', 'dst': 'IDLE'},
                    {'name': 'load', 'src': 'IDLE', 'dst': 'LOADING'},
                    {'name': 'init', 'src': 'IDLE', 'dst': 'INITIALISING'},
-                   {'name': 'idle', 'src': ['LOADING', 'INITIALISING'], 'dst': 'IDLE'},
+                   {'name': 'idle', 'src': ['LOADING', 'INITIALISING', 'SAFESTOP'], 'dst': 'IDLE'},
+                   {'name': 'safestop', 'src': 'IDLE', 'dst': 'SAFESTOP'},
                    {'name': 'fail', 'src': ['LOADING', 'INITIALISING'], 'dst': 'FAILED'},
                    {'name': 'acknowledge', 'src': 'FAILED', 'dst': 'IDLE'}]
 
