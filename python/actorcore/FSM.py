@@ -45,6 +45,8 @@ class Substates(fysom.Fysom):
 
 
 class FSMDevice(object):
+    ignore = ['fsm', 'event', 'src', 'dst', 'args']
+
     def __init__(self, actor, name, events=False, substates=False):
         # This sets up the connections to/from the hub, the logger, and the twisted reactor.
 
@@ -67,22 +69,23 @@ class FSMDevice(object):
         self.states.start()
 
     def loading(self, cmd, mode=None):
-        self.loadCfg(cmd=cmd, mode=mode)
-        self.openComm(cmd=cmd)
-        self.testComm(cmd=cmd)
+        self.loadCfg(cmd, mode=mode)
+        self.openComm(cmd)
+        self.testComm(cmd)
         self.states.toLoaded()
 
-    def initialising(self, cmd, *args):
-        self.init(cmd, *args)
+    def initialising(self, cmd, **kwargs):
+        self.init(cmd, **kwargs)
         self.states.toOnline()
 
     def addStateCB(self, state, callback):
         def func(event):
             self.statesCB(event)
             cmd = event.args[0] if len(event.args) else self.actor.bcast
+            kwargs = dict([(key, val) for key, val in event.__dict__.items() if key not in FSMDevice.ignore])
 
             try:
-                ret = callback(*event.args)
+                ret = callback(*event.args, **kwargs)
             except UserWarning as e:
                 cmd.warn('text=%s' % self.actor.strTraceback(e))
             except:
@@ -98,7 +101,7 @@ class FSMDevice(object):
         cmd = self.actor.bcast if cmd is None else cmd
 
         self.substates.start(cmd)
-        self.substates.load(cmd, mode)
+        self.substates.load(cmd, mode=mode)
 
         # Trigger initDevice Callback if init is set automatically
         if doInit:
@@ -132,5 +135,5 @@ class FSMDevice(object):
     def testComm(self, cmd):
         cmd.inform("text='%s communication is functional'" % self.name)
 
-    def init(self, cmd, *args):
+    def init(self, cmd, *args, **kwargs):
         cmd.inform("text='%s initialisation OK'" % self.name)
