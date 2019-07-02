@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 import imp
 import re
 import inspect
@@ -34,6 +30,8 @@ import opscore.protocols.validation as validation
 from . import CommandLinkManager as cmdLinkManager
 from . import Command as actorCmd
 from . import CmdrConnection
+
+from pfs.utils import versions
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None,
@@ -187,14 +185,7 @@ class Actor(object):
         If you simply want to generate the keyword, call .sendVersionKey().
         """
 
-        try:
-            headURL = self.headURL
-            headURL = headURL.split(' ')[1]
-            headURL.strip()
-        except:
-            headURL = None
-
-        versionString = "unknown" # get from git
+        versionString = versions.version(self.productName)
         if versionString == "unknown" or versionString == "":
             cmd.warn("text='pathetic version string: %s'" % (versionString))
 
@@ -203,8 +194,13 @@ class Actor(object):
     def sendVersionKey(self, cmd):
         """ Generate the version keyword in response to cmd. """
 
-        version = self.versionString(cmd)
-        cmd.inform('version=%s' % (qstr(version)))
+        setupVersions = versions.allSetupVersions()
+        for prodName in setupVersions.keys():
+            versionString = setupVersions[prodName]
+            cmd.inform(f'version_{prodName}=%s' % qstr(versionString))
+            
+        versionString = versions.version(self.productName)
+        cmd.inform('version=%s' % (qstr(versionString)))
 
     def triggerHubConnection(self):
         """ Send the hub a command to connect back to us. """
