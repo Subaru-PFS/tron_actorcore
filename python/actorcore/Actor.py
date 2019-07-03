@@ -185,7 +185,9 @@ class Actor(object):
         If you simply want to generate the keyword, call .sendVersionKey().
         """
 
-        versionString = versions.version(self.productName)
+        versionString = versions.version('ics_' + self.productName)
+        if versionString == "unknown" or versionString == "":
+            versionString = versions.version(self.productName)
         if versionString == "unknown" or versionString == "":
             cmd.warn("text='pathetic version string: %s'" % (versionString))
 
@@ -199,7 +201,7 @@ class Actor(object):
             versionString = setupVersions[prodName]
             cmd.inform(f'version_{prodName}=%s' % qstr(versionString))
             
-        versionString = versions.version(self.productName)
+        versionString = self.versionString(cmd)
         cmd.inform('version=%s' % (qstr(versionString)))
 
     def triggerHubConnection(self):
