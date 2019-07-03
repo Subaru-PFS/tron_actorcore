@@ -157,12 +157,10 @@ class CoreCmd(object):
     def version(self, cmd, doFinish=True):
         """ Return a version keyword. """
 
-        versionString = self.actor.versionString(cmd)
+        self.actor.sendVersionKey(cmd)
         if doFinish:
-            cmd.finish('version=%s' % (qstr(versionString)))
-        else:
-            cmd.respond('version=%s' % (qstr(versionString)))
-
+            cmd.finish()
+            
     def reloadCommands(self, cmd):
         """ If cmds argument is defined, reload the listed command sets, otherwise reload all command sets. """
 
