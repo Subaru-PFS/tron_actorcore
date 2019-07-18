@@ -77,15 +77,17 @@ class ICC(coreActor.Actor):
                 self.logger.warn('text=%s' % self.strTraceback(e))
 
     def detachController(self, controllerName, cmd=None):
+        cmd = self.bcast if cmd is None else cmd
         controller = self.controllers.get(controllerName)
 
         if controller:
             self.logger.info('stopping existing %s controller', controllerName)
+            try:
+                controller.stop(cmd=cmd)
+            except Exception as e:
+                cmd.warn('text=%s' % self.strTraceback(e))
 
-            c = self.controllers[controllerName]
             del self.controllers[controllerName]
-
-            c.stop(cmd=cmd)
 
     def stopAllControllers(self):
         for c in list(self.controllers.keys()):
