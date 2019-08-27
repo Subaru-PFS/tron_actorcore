@@ -93,9 +93,14 @@ class TimeCards(object):
 
         Args
         ----
-        timePoint : {'start', '', 'end'}
+        timePoint : {'start', 'middle', 'end'}
           The time we want cards for.
+        addSuffix : `bool`
+          If False, do not add the "-STR" to start times.
 
+        Returns
+        -------
+        cards : list of `fitsio.FITSCard` compliant dictionaries.
         """
         if timePoint == 'start':
             suffix = "-STR" if addSuffix else ""
@@ -107,7 +112,7 @@ class TimeCards(object):
             suffix = "-END"
             timestamp = self.endTime
             comment = "at exposure end"
-        elif not timePoint:
+        elif timePoint == 'middle':
             if self.endTime is None:
                 raise RuntimeError("end time must be known to generate -END or middle time cards")
             suffix = ""
@@ -137,8 +142,10 @@ class TimeCards(object):
     def getCards(self):
         """ Get all time cards for an exposure.
 
-        We always return TIMESYS, DATE-OBS, MJD-STR, UT-STR, HST-STR, and LST-STR.
-        If we have an end time, we also gwnerate the cards for the middle and end of the exposure.
+        We always return TIMESYS, DATE-OBS.
+
+        We always generate cards for the start of an exposure.
+        If we have an endTime, we also generate cards for the middle and end.
 
         Returns
         -------
@@ -150,7 +157,7 @@ class TimeCards(object):
             cards.extend(self.getCardsForTime('start', addSuffix=False))
         else:
             cards.extend(self.getCardsForTime('start'))
-            cards.extend(self.getCardsForTime(''))
+            cards.extend(self.getCardsForTime('middle'))
             cards.extend(self.getCardsForTime('end'))
 
         return cards
