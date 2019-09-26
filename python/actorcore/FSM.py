@@ -86,8 +86,9 @@ class FSMDevice(object):
 
             try:
                 ret = callback(*event.args, **kwargs)
-            except UserWarning as e:
-                cmd.warn('text=%s' % self.actor.strTraceback(e))
+            except UserWarning:
+                self.substates.idle()
+                raise
             except:
                 self.substates.fail()
                 raise
