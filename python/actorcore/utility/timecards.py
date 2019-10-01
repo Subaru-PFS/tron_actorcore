@@ -3,6 +3,7 @@ import numpy as np
 import pytz
 import astropy.time
 import astropy.coordinates
+import datetime
 
 class TimeCards(object):
     """ Provide FITS time cards for Subaru. """
@@ -149,7 +150,7 @@ class TimeCards(object):
 
         Returns
         -------
-        cards : list of `fitsio.FITSCard` compliant dictionaries.
+        cards : list of `fitsio.FITSRecord` compliant dictionaries.
 
         """
         cards = self.baseCards()
@@ -161,3 +162,22 @@ class TimeCards(object):
             cards.extend(self.getCardsForTime('end'))
 
         return cards
+
+def main():
+    import fitsio
+    
+    now = astropy.time.Time('2000-01-01T00:00:00', scale='utc')
+    then = now + datetime.timedelta(seconds=5.0)
+    
+    timeCards = TimeCards(now)
+    timeCards.end(then)
+
+    cards = timeCards.getCards()
+    hdr = fitsio.FITSHDR([fitsio.FITSRecord(c) for c in cards])
+    print(hdr)
+    return hdr
+    
+        
+if __name__ == "__main__":
+    main()
+    
