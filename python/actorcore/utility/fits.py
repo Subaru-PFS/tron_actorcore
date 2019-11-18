@@ -227,13 +227,12 @@ def gatherHeaderCards(cmd, actor, modelNames=None, shortNames=False):
     for modName in modelNames:
         logger.info(f'gathering cards from model {modName}')
         try:
+            allCards.append(dict(name='comment', value=f'################################ Cards from {modName}'))
             modCards = cardsFromModel(cmd, actor.models[modName], shortNames=shortNames)
-            allCards.append(f'################################ Cards from {modName}')
             allCards.extend(modCards)
         except Exception as e:
             logger.warn(f' Failed to get FITS cards for actor {modName}: {e}')
-            allCards.append(f' Failed to get FITS cards for actor {modName}')
-            allCards.append(f' Exception: {e}')
+            allCards.append(dict(name='comment', value=f' Failed to get FITS cards for actor {modName}'))
             cmd.warn(f'text="FAILED to get FITS cards for actor {modName}: {e}"')
 
     return allCards
