@@ -64,17 +64,21 @@ def makeCardFromKey(cmd, keyDict, keyName, cardName, cnv=None, idx=None, comment
 def getExpiredValue(keyType, key):
     """ Return a type-correct Expired value. """
 
+    if issubclass(keyType.__class__, types.Bool):
+        return False
     if keyType.baseType is int:
         return -9998
     if keyType.baseType is float:
         return -9998.0
     if keyType.baseType is str:
-        return 'expired value'
+        return 'no available value'
     raise ValueError('unexpected type: %s' % (keyType.baseType))
 
 def getInvalidValue(keyType, key):
     """ Return a type-correct Invalid value. """
 
+    if issubclass(keyType.__class__, types.Bool):
+        return False
     if keyType.baseType is int:
         return -9999
     if keyType.baseType is float:
@@ -122,15 +126,13 @@ def cardsFromModel(cmd, model, shortNames=False):
                     # Hackery: bool cannot be subclassed, so we need to check the keyword class
                     if issubclass(kvt.__class__, types.Bool):
                         baseType = bool
-                        isBool = True
                     else:
                         baseType = kvt.__class__.baseType
-                        isBool = False
 
                     logger.debug(f'FITS card:  {kv_i}({kvt.name}, {baseType} {kvt.__class__}) = {shortCard}, {longCard}"')
 
                     postComment = ''
-                    if not mv.isCurrent and not isBool:
+                    if not mv.isCurrent:
                         logger.debug(f'text="SKIPPING NOT CURRENT {mk} = {mv}"')
                         value = getExpiredValue(kvt, mv)
                         postComment = " NOT CURRENT"
