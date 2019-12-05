@@ -169,8 +169,8 @@ class TimeCards(object):
 def main():
     import fitsio
     
-    now = astropy.time.Time('2000-01-01T00:00:00', scale='utc')
-    then = now + datetime.timedelta(seconds=5.0)
+    now = astropy.time.Time('2000-01-01T01:01:01', scale='utc')
+    then = now + astropy.time.TimeDelta(5.0, format='sec')
     
     timeCards = TimeCards(now)
     timeCards.end(then)
