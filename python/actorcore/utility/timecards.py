@@ -3,7 +3,10 @@ import numpy as np
 import pytz
 import astropy.time
 import astropy.coordinates
-import datetime
+
+# Until we upgrade astropy, use this hack. The config file does not work as expected.
+import astropy.utils.iers as iers
+iers.conf.iers_auto_url = 'ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals2000A.all'
 
 class TimeCards(object):
     """ Provide FITS time cards for Subaru. """
