@@ -138,7 +138,7 @@ class TimeCards(object):
         cards = []
 
         date, _ = self.dateAndTime(self.startTime)
-        cards.append(dict(name="TIMESYS", value="UTC", comment="Time System used in the header"))
+        cards.append(dict(name="TIMESYS", value="UT", comment="Time System used in the header"))
         cards.append(dict(name="DATE-OBS", value=date, comment="[YMD] Observation start"))
 
         return cards
