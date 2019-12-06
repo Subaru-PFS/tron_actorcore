@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 import pytz
 import astropy.time
@@ -11,7 +12,7 @@ iers.conf.iers_auto_url = 'ftp://cddis.gsfc.nasa.gov/pub/products/iers/finals200
 class TimeCards(object):
     """ Provide FITS time cards for Subaru. """
 
-    def __init__(self, startTime, location="Subaru", timezoneName='HST'):
+    def __init__(self, startTime=None, location="Subaru", timezoneName='HST'):
         """ Set the starting time of the exposure.
 
         Args
@@ -19,6 +20,9 @@ class TimeCards(object):
         startTime : `astropy.time.Time`
           The start of the exposure. Must be utc
         """
+
+        if startTime is None:
+            startTime = self._now()
 
         if not (isinstance(startTime, astropy.time.Time) and startTime.scale == 'utc'):
             raise TypeError("startTime must be a UTC astropy.time.Time")
@@ -29,17 +33,36 @@ class TimeCards(object):
         self.timezoneName = timezoneName
         self.timezone = pytz.timezone(timezoneName)
 
+    def _now(self):
+        """ Return an astropy.time.Time for now. """
+
+        return astropy.time.Time(time.time(), format='unix', scale='utc')
+
     def __str__(self):
         return f"TimeCards(start={self.startTime} end={self.endTime})"
 
-    def end(self, endTime):
+    def end(self, endTime=None, expTime=None):
         """ Set the time of the end of the exposure.
 
         Args
         ----
         endTime : `astropy.time.Time`
           The end of the exposure. Must be utc
+        expTime : `float`
+          Th exposure time.
+
+        Only one of the two can be passed in. Or neither in which case we use now.
         """
+        if (endTime is not None) and (expTime is not None):
+            raise ValueError('both expTime or endTime cannot be used')
+
+        if expTime is not None:
+            dtime = astropy.time.TimeDelta(expTime, format='sec')
+            endTime = self.startTime + dtime
+        else:
+            if endTime is None:
+                endTime = self._now()
+            
         if not (isinstance(endTime, astropy.time.Time) and endTime.scale == 'utc'):
             raise TypeError("endTime must be a UTC astropy.time.Time")
 
