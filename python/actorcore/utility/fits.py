@@ -131,23 +131,19 @@ def cardsFromModel(cmd, model, shortNames=False):
 
                     logger.debug(f'FITS card:  {kv_i}({kvt.name}, {baseType} {kvt.__class__}) = {shortCard}, {longCard}"')
 
-                    postComment = ''
                     if not mv.isCurrent:
                         logger.debug(f'text="SKIPPING NOT CURRENT {mk} = {mv}"')
                         value = getExpiredValue(kvt, mv)
-                        postComment = " NOT CURRENT"
                     else:
                         rawVal = mv[kv_i]
                         if isinstance(rawVal, types.Invalid):
                             cmd.warn(f'text="FITS card {shortCard} from {mk}[{kv_i}] has the invalid value"') 
                             value = getInvalidValue(kvt, mv)
-                            postComment = " INVALID"
                         else:
                             try:
                                 # Now we can get the value
                                 value = baseType(rawVal)
                             except Exception as e:
-                                postComment = f' JUNK {rawVal}"'
                                 cmd.warn(f'text="FAILED to convert card value {rawVal} for {mk}[{kv_i}], {kvt}: {e}"') 
                                 value = getInvalidValue(kvt, mv)
 
@@ -164,8 +160,6 @@ def cardsFromModel(cmd, model, shortNames=False):
                     if kvt.help is not None:
                         comment += kvt.help
 
-                    if postComment:
-                        comment += postComment
                     if comment:
                         card['comment'] = comment
 
