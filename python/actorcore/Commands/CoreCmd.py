@@ -7,7 +7,10 @@ import sys
 
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
+from opscore.utility.qstr import qstr
 import actorcore.help as help
+
+from actorcore.utility import fits as fitsUtils
 
 try:
     from importlib import reload
@@ -15,9 +18,7 @@ except:
     pass
 
 reload(help)
-
-from opscore.utility.qstr import qstr
-
+reload(fitsUtils)
 
 class CoreCmd(object):
     """ Wrap common Actor commands """
@@ -34,16 +35,19 @@ class CoreCmd(object):
                                                  help='the names a controller.'),
                                         keys.Key("name", types.String(),
                                                  help='an optional name to assign to a controller instance'),
+                                        keys.Key("filename", types.String(),
+                                                 help='file for output'),
                                         keys.Key("cmds", types.String(),
                                                  help="A regexp matching commands"),
                                         keys.Key("html", help="Generate HTML"),
-                                        keys.Key("full", help="Generta full help for all commands"),
+                                        keys.Key("full", help="Generate full help for all commands"),
                                         keys.Key("pageWidth", types.Int(),
                                                  help="Number of characters per line"),
                                         )
 
         self.vocab = (
             ('help', '[(full)] [<cmds>] [<pageWidth>] [(html)]', self.cmdHelp),
+            ('cardFormats', '<filename>', self.cardFormats),
             ('reload', '[<cmds>]', self.reloadCommands),
             ('reloadConfiguration', '', self.reloadConfiguration),
             ('connect', '<controller> [<name>]', self.connect),
@@ -100,6 +104,13 @@ class CoreCmd(object):
 
         cmd.finish(self.controllerKey())
 
+    def cardFormats(self, cmd):
+        """ Generate the FITS format file for all connected models. """
+
+        filename = cmd.cmd.keywords['filename'].values[0]
+        fitsUtils.printHeaderFormats(cmd, self.actor, filename, longNames=True)
+        cmd.finish()
+        
     def _vocabCmds(self, vocab):
         return [' '.join((c[0], c[1])).strip() for c in vocab]
     
