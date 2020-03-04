@@ -404,7 +404,7 @@ def printHeaderFormats(cmd, actor, filename, longNames=True):
         
     with open(filename, "w") as of:
         if style == 'markdown':
-            of.write(f'## {actor.productName} FITS cards, generated from ``ics_actorkeys`` {_getActorkeyVersion(actor)}\n\n')
+            of.write(f'## ``{actor.productName}`` FITS cards, generated from ``ics_actorkeys`` {_getActorkeyVersion(actor)}\n\n')
                                      
         of.write(dlim.join([f.capitalize() for f in fields]))
         of.write('\n')
