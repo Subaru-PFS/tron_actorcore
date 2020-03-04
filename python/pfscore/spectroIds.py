@@ -70,7 +70,7 @@ class SpectroIds(object):
         self.site = site
 
         if self.site == 'J':
-            self.validModules += (9,)
+            self.validModules += (9,8,)
             
         if partName is None:
             partName = idFromHostname(hostname=hostname)
