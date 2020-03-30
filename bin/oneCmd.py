@@ -7,7 +7,7 @@ import time
 from twisted.internet import reactor
 
 import actorcore.Actor
-from opscore.actor.keyvar import AllCodes, DoneCodes
+from opscore.actor.keyvar import AllCodes, DoneCodes, FailedCodes
 import opscore.actor.keyvar as opsKeyvar
 
 class OurActor(actorcore.Actor.Actor):
@@ -66,6 +66,8 @@ class OurActor(actorcore.Actor.Actor):
         if code in DoneCodes:
             self._shutdown()
             reactor.stop()
+
+        os._exit(code in FailedCodes)
 
     def callAndPrint(self):
         cmdvar = opsKeyvar.CmdVar(cmdStr=self.cmdStr,
