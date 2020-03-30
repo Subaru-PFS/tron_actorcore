@@ -67,7 +67,7 @@ class OurActor(actorcore.Actor.Actor):
             self._shutdown()
             reactor.stop()
 
-        os._exit(code in FailedCodes)
+            os._exit(code in FailedCodes)
 
     def callAndPrint(self):
         cmdvar = opsKeyvar.CmdVar(cmdStr=self.cmdStr,
