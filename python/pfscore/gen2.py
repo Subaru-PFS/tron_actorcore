@@ -1,3 +1,5 @@
+from pfs.utils.opdb import opDB
+
 def fetchVisitFromGen2(self, cmd=None):
     """Actually get a new visit from Gen2.
     What PFS calls a "visit", Gen2 calls a "frame".
@@ -11,5 +13,7 @@ def fetchVisitFromGen2(self, cmd=None):
     if ret.didFail:
         raise RuntimeError("Failed to get a visit number in 10s!")
 
-    visit = self.models['gen2'].keyVarDict['visit'].valueList[0]
-    return int(visit)
+    visit = int(self.models['gen2'].keyVarDict['visit'].valueList[0])
+    opDB.insert('pfs_visit', pfs_visit_id=visit, pfs_visit_description='sps')
+
+    return visit
