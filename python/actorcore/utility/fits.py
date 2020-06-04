@@ -364,7 +364,7 @@ def printHeaderFormats(cmd, actor, filename, longNames=True):
     path = pathlib.Path(filename)
     suffix = path.suffix
     if suffix == '.csv':
-        dlim = ','
+        dlim = '\t'
         style = 'csv'
     elif suffix == '.md':
         dlim = ' | '
@@ -373,9 +373,9 @@ def printHeaderFormats(cmd, actor, filename, longNames=True):
         raise ValueError("can only output to .csv or .md files")
 
     if longNames:
-        fields = ('name', 'longname', 'type', 'format', 'units', 'actor', 'keyword', 'comment')
+        fields = ('name', 'longname', 'type', 'format', 'units', 'actor', 'keyword', 'comment', 'enum')
     else:
-        fields = ('name', 'type', 'format', 'units', 'actor', 'keyword', 'comment')
+        fields = ('name', 'type', 'format', 'units', 'actor', 'keyword', 'comment', 'enum')
 
     def _markdown_str(name, s):
         if name == 'comment':
@@ -387,10 +387,7 @@ def printHeaderFormats(cmd, actor, filename, longNames=True):
     
     def _fmt(c, style=style, fields=fields):
         if c['enum'] != '':
-            fields = list(fields)
-            c_i = fields.index('comment')
-            fields[c_i] = 'enum'
-            
+            c['enum'] = str(c['enum'])
         if style == 'csv':
             return dlim.join([c[f] for f in fields])
         formattedFields = [_markdown_str(f, c[f]) for f in fields]
