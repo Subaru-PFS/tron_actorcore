@@ -19,6 +19,8 @@ from twisted.internet import reactor
 import RO.Comm.Generic
 RO.Comm.Generic.setFramework('twisted')
 
+import eups
+
 import opscore
 from opscore.protocols.parser import CommandParser
 from opscore.utility.qstr import qstr
@@ -59,10 +61,18 @@ class Actor(object):
         self.name = name
         self.productName = productName if productName else self.name
 
-        # This requires that the actor be started from its root directory. Not great,
-        # but it removed dependance on another environment variable. Could import eups and
-        # ask that object.
-        self.product_dir = os.getcwd()
+        # Incomplete/missing eups environment will make us blow
+        # up. Note that we allow "actorName" as equivalent to
+        # "ics_actorName". This was a bad decision made a long time
+        # ago.
+        eupsEnv = eups.Eups()
+        setupProds = eupsEnv.findProducts(tags='setup', name=self.productName)
+        if len(setupProds) == 0:
+            setupProds = eupsEnv.findProducts(tags='setup', name=f'ics_{self.productName}')
+        if len(setupProds) == 0:
+            raise RuntimeError(f"cannot figure out what our eups product name is. {self.productName} is not useful")
+            
+        self.product_dir = setupProds[0].dir
         self.configFile = configFile if configFile else \
             os.path.expandvars(os.path.join(self.product_dir, 'etc', '%s.cfg' % (self.name)))
 
