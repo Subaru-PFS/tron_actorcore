@@ -10,7 +10,7 @@ from time import ctime
 from getpass import getuser
 from socket import gethostname
 from sys import argv
-from cgi import escape
+from html import escape
 from os.path import splitext
 
 class HTMLDocumentError(Exception):
