@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import socket
 import sys
 import time
 
@@ -23,6 +24,7 @@ class OurActor(actorcore.Actor.Actor):
         if configFile is None:
             configFile = os.path.expandvars(os.path.join('$TRON_ACTORCORE_DIR', 'etc', 'oneCmd.cfg'))
 
+        self.identifyingCmd = self._identifyOurself()
         self.cmdActor = cmdActor
         self.cmdStr = cmdStr
         self.timelim = timelim
@@ -43,6 +45,21 @@ class OurActor(actorcore.Actor.Actor):
                                        modelNames=modelNames)
         self.logger.setLevel(self.printLevel * 10 + 5)
 
+    def _identifyOurself(self):
+        """ Create a CmdVar whose .cmdr string identifies the hostname and user.  """
+
+        tr = ''.maketrans('-.', '__')
+
+        user = os.getlogin().translate(tr)
+        host = socket.gethostname()
+        host = host.split('.',1)[0]
+        host = host.translate(tr)
+        
+        cmdvar = opsKeyvar.CmdVar()
+        cmdvar.cmdr = f"{user}_{host}"
+
+        return cmdvar
+        
     def TS(self):
         now = time.time()
         basetime = time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(now))
@@ -72,13 +89,14 @@ class OurActor(actorcore.Actor.Actor):
     def callAndPrint(self):
         cmdvar = opsKeyvar.CmdVar(cmdStr=self.cmdStr,
                                   actor=self.cmdActor,
+                                  forUserCmd=self.identifyingCmd,
                                   timeLim=self.timelim,
                                   callFunc=self.printResponse,
                                   callCodes=AllCodes)
 
         if self.printTimes:
             now = self.TS()
-            print(f'{now}sent {self.cmdActor} {self.cmdStr}')
+            print(f'{now}sent {self.cmdActor} {self.cmdStr} (from {self.identifyingCmd.cmdr})')
 
         reactor.callLater(0, self.cmdr.dispatcher.executeCmd, cmdvar)
 
