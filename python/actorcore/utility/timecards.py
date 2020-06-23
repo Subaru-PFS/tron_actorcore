@@ -108,7 +108,7 @@ class TimeCards(object):
 
         last = timeStamp.sidereal_time('apparent', self.location.lon)
         cards.append(dict(name=f"LST{suffix}",
-                          value=last.to_string(sep=':', precision=3),
+                          value=last.to_string(sep=':', pad=True, precision=3),
                           comment=f"[HMS] LST {timeComment}"))
 
         return cards
