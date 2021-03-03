@@ -49,8 +49,13 @@ class OurActor(actorcore.Actor.Actor):
         """ Create a CmdVar whose .cmdr string identifies the hostname and user.  """
 
         tr = ''.maketrans('-.', '__')
+        
+        try:
+            login = os.getlogin()
+        except:
+            login = os.getenv('USER')
 
-        user = os.getlogin().translate(tr)
+        user = login.translate(tr)
         host = socket.gethostname()
         host = host.split('.',1)[0]
         host = host.translate(tr)
