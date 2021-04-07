@@ -17,6 +17,7 @@ Options:
    -l, --log DIR	Directory to write log files
    -v, --verbose	Be chatty
    --name               Added to actor args.
+   --cam                Added to actor args.
 EOF
     exit 1
 }
@@ -40,6 +41,10 @@ while [ ! -z $1 ]; do
 	  verbose=1;;
       --name)
           ACTORARGS="$ACTORARGS --name=$2"
+          shift;;
+                  
+      --cam)
+          ACTORARGS="$ACTORARGS --cam=$2"
           shift;;
                   
       -*)
