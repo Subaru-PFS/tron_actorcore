@@ -1,7 +1,6 @@
 import logging
 from logging import log
 from multiprocessing import Process, Queue
-from multiprocessing.process import current_process
 import numpy as np
 import os
 import pathlib
@@ -124,7 +123,7 @@ class FitsWriter(object):
         """
 
         try:
-            compress = None if data is None else 'RICE_1'
+            compress = None # if data is None else 'RICE_1'
             self.currentFits.write(data, header=header, extname=extname, compress=compress)
 
             if data is not None:
@@ -169,8 +168,13 @@ class FitsWriter(object):
         while True:
             cmd = None
             try:
+                self.logger.info('waiting for new command...')
+                t0 = time.time()
                 cmd = self.inQ.get()
-                self.logger.info(f'new cmd (len={len(cmd)}): {cmd}')
+                t1 = time.time()
+                self.logger.info(f'new cmd (len={len(cmd)}), {t1-t0:0.4f}s')
+                if isinstance(cmd, str):
+                    self.logger.info(f'    {cmd}')
                 if cmd == 'shutdown':
                     if self.currentFits is not None:
                         self.close()
@@ -185,14 +189,17 @@ class FitsWriter(object):
 
                 cmd, *cmdArgs = cmd
                 if cmd == 'create':
-                    self.logger.info(f'new cmd {cmd} (len={len(cmdArgs)}): {cmdArgs}')
+                    self.logger.info(f'new cmd {cmd} (len={len(cmdArgs)})')
                     path, header = cmdArgs
                     if path is None:
                         raise ValueError("cannot open file without a path")
                     self.create(path, header)
                 elif cmd == 'write':
                     hduId, extname, data, header = cmdArgs
+                    t0 = time.time()
                     self.write(hduId, extname, data, header)
+                    t1 = time.time()
+                    self.logger.info(f'fitsio HDU write of {self.currentPath} {hduId} took {t1-t0:0.4f}s')
                 else:
                     raise ValueError(f'unknown command: {cmd} {cmdArgs}')
             except Exception as e:
@@ -277,6 +284,9 @@ class FitsBuffer(object):
         header : fitsio-compliant header
             The cards to create the PHDU with
         """
+
+        if path is None:
+            raise ValueError("must provide a pathname to create a FITS file.")
         if self.catcher is None:
             self.catcher = FitsCatcher(caller, self.replyQ)
             self.catcher.start()
