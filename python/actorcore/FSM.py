@@ -1,7 +1,72 @@
-from functools import partial
-
 import fysom
+from functools import partial
 from twisted.internet import reactor
+
+
+class MetaStates(object):
+    statesLogic = dict(OFF=2, LOADED=1, ONLINE=0)
+    inactives = dict(FAILED=100, IDLE=0)
+
+    def __init__(self, FSMActor):
+        self.actor = FSMActor
+        self.actives = dict()
+
+    @property
+    def controllers(self):
+        return list(self.actor.controllers.values())
+
+    @property
+    def states(self):
+        """Return list of controller current state."""
+        return list(set([controller.states.current for controller in self.controllers]))
+
+    @property
+    def substates(self):
+        """Return list of controller current substate."""
+        return list(set([controller.substates.current for controller in self.controllers]))
+
+    @property
+    def state(self):
+        """Return current meta state as a result of underlying state machine."""
+        if not self.controllers:
+            return 'OFF'
+
+        return self.maxLogicalState(self.states, logicDict=MetaStates.statesLogic)
+
+    @property
+    def substate(self):
+        """Return current meta substate as a result of underlying state machine."""
+        if not self.controllers:
+            return 'IDLE'
+
+        allLogic = dict([kv for kv in MetaStates.inactives.items()] + [kv for kv in self.actives.items()])
+        return self.maxLogicalState(self.substates, logicDict=allLogic)
+
+    def maxLogicalState(self, stateList, logicDict):
+        """Return current enu meta substate as a result of underlying state machine."""
+        statesLogic = [(state, logicDict[state]) for state in stateList]
+        state, logicNumber = max(statesLogic, key=lambda item: item[1])
+        return state
+
+    def update(self, cmd, current=False):
+        """Generate metaFSM keyword."""
+        self.clearObsolete()
+        if current and current not in self.inactives.keys():
+            self.actives[current] = self.generateActiveLogicNumber()
+
+        cmd.inform('metaFSM=%s,%s' % (self.state, self.substate))
+
+    def clearObsolete(self):
+        """Clear obsolete active substates."""
+        for substate in list(set(self.actives.keys()) - set(self.substates)):
+            self.actives.pop(substate, None)
+
+    def generateActiveLogicNumber(self):
+        """Generate active logic number, more recent wins."""
+        if not self.actives.values():
+            return 1
+
+        return max(self.actives.values()) + 1
 
 
 class States(fysom.Fysom):
@@ -123,7 +188,7 @@ class FSMDevice(object):
         # Update actor state and substate, 'logical and' of lower controllers state make sense
 
         try:
-            self.actor.updateStates(cmd=cmd, onsubstate=self.substates.current)
+            self.actor.metaStates.update(cmd=cmd, current=self.substates.current)
         except Exception as e:
             cmd.warn('text=%s' % self.actor.strTraceback(e))
 
