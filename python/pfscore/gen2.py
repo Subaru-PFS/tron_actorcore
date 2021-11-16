@@ -1,4 +1,4 @@
-def fetchVisitFromGen2(self, cmd=None):
+def fetchVisitFromGen2(self, cmd=None, designId=None):
     """Actually get a new visit from Gen2.
     What PFS calls a "visit", Gen2 calls a "frame".
     """
@@ -7,7 +7,9 @@ def fetchVisitFromGen2(self, cmd=None):
         gen = self.bcast if cmd is None else cmd
         gen.inform('text="connecting gen2 model"')
 
-    ret = self.cmdr.call(actor='gen2', cmdStr='getVisit', timeLim=10.0, forUserCmd=cmd)
+    designArg = 'designId=0x%016x' % designId if designId is not None else ''
+
+    ret = self.cmdr.call(actor='gen2', cmdStr=f'getVisit {designArg}'.strip(), timeLim=10.0, forUserCmd=cmd)
     if ret.didFail:
         raise RuntimeError("Failed to get a visit number in 10s!")
 
