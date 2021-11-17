@@ -9,7 +9,8 @@ def fetchVisitFromGen2(self, cmd=None, designId=None):
 
     designArg = 'designId=0x%016x' % designId if designId is not None else ''
 
-    ret = self.cmdr.call(actor='gen2', cmdStr=f'getVisit {designArg}'.strip(), timeLim=10.0, forUserCmd=cmd)
+    ret = self.cmdr.call(actor='gen2', cmdStr=f'getVisit caller={self.name} {designArg}'.strip(), timeLim=10.0,
+                         forUserCmd=cmd)
     if ret.didFail:
         raise RuntimeError("Failed to get a visit number in 10s!")
 
