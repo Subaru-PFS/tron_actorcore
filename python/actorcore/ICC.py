@@ -1,11 +1,11 @@
-from __future__ import print_function
-
-import imp
 import logging
 import os
+from importlib import reload
+from importlib.util import find_spec, spec_from_file_location
 
 import actorcore.Actor as coreActor
 import opscore.utility.sdss3logging as opsLogging
+from opscore.utility.qstr import qstr
 
 
 class ICC(coreActor.Actor):
@@ -23,43 +23,58 @@ class ICC(coreActor.Actor):
     def attachController(self, name, instanceName=None, path=None, cmd=None, **kwargs):
         """ (Re-)load and attach a named set of commands. """
 
-        if path is None:
-            path = [os.path.join(self.product_dir, 'python', self.productName, 'Controllers')]
-
         if instanceName is None:
             instanceName = name
-        self.logger.info("attaching controller %s/%s from path %s", instanceName, name, path)
-        file = None
+
+        if cmd is None:
+            cmd = self.bcast
+
+        if path is not None:
+            cmd.inform(f'text="attaching controller {instanceName}/{name} from {path}"')
+            spec = spec_from_file_location(name, location=path)
+
+        else:
+            cmd.inform(f'text="attaching controller {instanceName} from {self.productName}.Controllers.{name}"')
+            spec = find_spec(f'{self.productName}.Controllers.{name}')
+
         try:
-            file, filename, description = imp.find_module(name, path)
-            self.logger.debug("controller file=%s filename=%s from path %s",
-                              file, filename, path)
-            mod = imp.load_module(name, file, filename, description)
-            self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
-                              name, file, filename, description, id(mod))
-        except ImportError as e:
+            if spec is None:
+                # the module might be nested in Controllers.__init__py
+                cmd.warn('text="module not found.. checking for nested imports..."')
+                spec = find_spec(f'{self.productName}.Controllers')
+                cmd.inform(f'text={qstr(spec)}')
+                # loading controllers module  and try to retrieve the required module as an attribute.
+                controllers = spec.loader.load_module()
+                mod = getattr(controllers, name)
+            else:
+                cmd.inform(f'text={qstr(spec)}')
+                mod = spec.loader.load_module()
+
+        except Exception as e:
             raise RuntimeError('Import of %s failed: %s' % (name, e))
-        finally:
-            if file:
-                file.close()
+
+        # just reloading by safety
+        mod = reload(mod)
+        cmd.inform(f'text={qstr(mod)}')
 
         # Instantiate and save a new controller.
-        self.logger.info('creating new %s (%08x)', name, id(mod))
+        cmd.inform('text="creating new %s (%08x)"' % (name, id(mod)))
         try:
             controllerClass = getattr(mod, name)
         except AttributeError:
-            self.logger.warn('text="controller module %s does not contain %s"', name, name)
+            cmd.warn(f'text="controller module {name} does not contain {name}"')
             raise
 
         try:
             conn = controllerClass(self, instanceName)
         except:
-            self.logger.warn('text="controller %s(%s) could not be created"', name, instanceName)
+            cmd.warn(f'text="controller {name}({instanceName}) could not be created"')
             raise
+
         # If we loaded the module and the controller is already running, cleanly stop the old one.
         self.detachController(instanceName)
 
-        self.logger.info('starting %s controller', instanceName)
+        cmd.inform(f'text="starting {instanceName} controller"')
 
         self.controllers[instanceName] = conn
         conn.start(cmd=cmd, **kwargs)
