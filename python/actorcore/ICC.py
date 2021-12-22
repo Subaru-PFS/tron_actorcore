@@ -1,6 +1,7 @@
 from __future__ import print_function
 
-import imp
+from importlib.util import find_spec, spec_from_file_location
+from importlib import reload
 import logging
 import os
 
@@ -23,25 +24,31 @@ class ICC(coreActor.Actor):
     def attachController(self, name, instanceName=None, path=None, cmd=None, **kwargs):
         """ (Re-)load and attach a named set of commands. """
 
-        if path is None:
-            path = [os.path.join(self.product_dir, 'python', self.productName, 'Controllers')]
-
         if instanceName is None:
             instanceName = name
-        self.logger.info("attaching controller %s/%s from path %s", instanceName, name, path)
-        file = None
+
+        if path is not None:
+            self.logger.info(f"attaching controller {instanceName}/{name} from {path}")
+            spec = spec_from_file_location(name, location=path)
+
+        else:
+            self.logger.info(f"attaching controller {instanceName} from {self.productName}.Controllers.{name}")
+            spec = find_spec(f'{self.productName}.Controllers.{name}')
+
         try:
-            file, filename, description = imp.find_module(name, path)
-            self.logger.debug("controller file=%s filename=%s from path %s",
-                              file, filename, path)
-            mod = imp.load_module(name, file, filename, description)
-            self.logger.debug('load_module(%s, %s, %s, %s) = %08x',
-                              name, file, filename, description, id(mod))
-        except ImportError as e:
+            if spec is None:
+                # the module might be nested in Controllers.__init__py
+                spec = find_spec(f'{self.productName}.Controllers')
+                controllers = spec.loader.load_module()
+                mod = getattr(controllers, name)
+            else:
+                mod = spec.loader.load_module()
+
+        except Exception as e:
             raise RuntimeError('Import of %s failed: %s' % (name, e))
-        finally:
-            if file:
-                file.close()
+
+        # just reloading by safety
+        mod = reload(mod)
 
         # Instantiate and save a new controller.
         self.logger.info('creating new %s (%08x)', name, id(mod))
