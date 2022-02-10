@@ -171,7 +171,8 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         # get the time that this sequence starts at and make it a TimeTuple
         timeString = time.strftime("%Y-%m-%dT%H:%M:%S",
                                    time.gmtime(self.startTime))
-        filename = self.basename + timeString + ".log"
+        fracSecStr = f'{self.startTime % 1 :0.3f}'[1:]
+        filename = self.basename + timeString + fracSecStr + ".log"
 
         try:
             os.makedirs(self.dirname, 0o755)
