@@ -10,16 +10,12 @@ import opscore.protocols.types as types
 from opscore.utility.qstr import qstr
 import actorcore.help as help
 
-from actorcore.utility import fits as fitsUtils
-
 try:
     from importlib import reload
 except:
     pass
 
 reload(help)
-reload(fitsUtils)
-
 class CoreCmd(object):
     """ Wrap common Actor commands """
 
@@ -106,6 +102,12 @@ class CoreCmd(object):
 
     def cardFormats(self, cmd):
         """ Generate the FITS format file for all connected models. """
+
+        try:
+            from ics.utils.fits import mhs as fitsUtils
+        except ImportError:
+            cmd.fail('text="failed to import ics_utils FITS routines"')
+            return
 
         filename = cmd.cmd.keywords['filename'].values[0]
         fitsUtils.printHeaderFormats(cmd, self.actor, filename, longNames=True)
