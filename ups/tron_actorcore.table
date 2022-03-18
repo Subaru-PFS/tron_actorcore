@@ -1,5 +1,6 @@
 setupRequired("ics_config")
-setupRequired("pfs_utils")
+setupRequired("ics_utils")
+setupRequired("pfs_instdata")
 
 pathPrepend(PATH, ${PRODUCT_DIR}/bin)
 pathPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
