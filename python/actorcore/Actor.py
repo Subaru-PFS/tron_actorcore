@@ -51,7 +51,7 @@ class Actor(object):
             makeCmdrConnection
                          - establish self.cmdr as a command connection to the hub.
                            This needs to be True if we send commands or listen to keys.
-            acceptCmdrs  - allow incoming commander connections. 
+            acceptCmdrs  - allow incoming commander connections.
             modelNames   - a list of actor names, whose key dictionaries we want to
                            listen to and have in our .models[]
         """
@@ -79,9 +79,6 @@ class Actor(object):
         # Missing config bits should make us blow up.
         self.configFile = os.path.expandvars(self.configFile)
 
-        # initializing actorConfig
-        self.actorConfig = dict()
-
         self._reloadConfiguration()
         self.logger.info('%s starting up....' % (name))
         self.parser = CommandParser()
@@ -94,10 +91,10 @@ class Actor(object):
             makeCmdrConnection = True
 
         # The list of all connected sources.
-        listenInterface = self.config.get(self.name, 'interface')
+        listenInterface = self.actorConfig['listen']['interface']
         if listenInterface == 'None':
             listenInterface = None
-        listenPort = self.config.getint(self.name, 'port')
+        listenPort = self.actorConfig['listen']['port']
 
         # Allow for a passive actor which does not accept external commands.
         if not self.acceptCmdrs:
@@ -144,23 +141,20 @@ class Actor(object):
         try:
             newConfig = configparser.ConfigParser()
             newConfig.read(self.configFile)
+            self.config = newConfig
         except Exception as e:
             if cmd:
-                cmd.fail('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
-            raise
-
-        self.config = newConfig
-        self.configureLogs()
+                cmd.warn('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
 
         try:
             newConfig = instdata.InstConfig(self.name)
         except Exception as e:
             if cmd:
-                cmd.warn('text=%s' % (qstr("failed to load instdata configuration file, old config untouched: %s" % (e))))
-
-            newConfig = self.actorConfig if self.actorConfig else dict()
+                cmd.fail('text=%s' % (qstr("failed to load instdata configuration file, old config untouched: %s" % (e))))
+            raise
 
         self.actorConfig = newConfig
+        self.configureLogs()
 
         try:
             # Call optional user hook.
@@ -170,8 +164,9 @@ class Actor(object):
 
     def configureLogs(self, cmd=None):
         """ (re-)configure our logs. """
-
-        self.logDir = self.config.get('logging', 'logdir')
+        loggingConfig = self.actorConfig['logging']
+        # per actor log dir.
+        self.logDir = loggingConfig['logdir']
         if not self.logDir:
             raise RuntimeError("logdir must be set!")
 
@@ -180,22 +175,23 @@ class Actor(object):
 
         # The real stderr/console filtering is actually done through the console Handler.
         try:
-            consoleLevel = int(self.config.get('logging', 'consoleLevel'))
+            consoleLevel = loggingConfig['consoleLevel']
         except:
-            consoleLevel = int(self.config.get('logging', 'baseLevel'))
+            consoleLevel = loggingConfig['baseLevel']
+
         opsLogging.setConsoleLevel(consoleLevel)
 
         # self.console needs to be renamed ore deleted, I think.
         self.console = logging.getLogger('')
-        self.console.setLevel(int(self.config.get('logging', 'baseLevel')))
+        self.console.setLevel(loggingConfig['baseLevel'])
 
         self.logger = logging.getLogger('actor')
-        self.logger.setLevel(int(self.config.get('logging', 'baseLevel')))
+        self.logger.setLevel(loggingConfig['baseLevel'])
         self.logger.propagate = True
         self.logger.info('(re-)configured root and actor logs')
 
         self.cmdLog = logging.getLogger('cmds')
-        self.cmdLog.setLevel(int(self.config.get('logging', 'cmdLevel')))
+        self.cmdLog.setLevel(loggingConfig['cmdLevel'])
         self.cmdLog.propagate = True
         self.cmdLog.info('(re-)configured cmds log')
 
@@ -240,7 +236,7 @@ class Actor(object):
 
         # Look for override on where tron should connect back to. For tunnels, etc.
         try:
-            advertisedSocket = self.config.get(self.name, 'hostAndPortForTron')
+            advertisedSocket = self.actorConfig['listen']['hostAndPortForTron']
             ourHost, ourPort = advertisedSocket.split(':')
         except:
             ourAddr = self.commandSources.listeningPort.getHost()
@@ -281,7 +277,7 @@ class Actor(object):
                                                                         timeLim=5.0))
 
     def addModels(self, newModelNames):
-        """ Add new models/actors to get and keep keyword updates from. 
+        """ Add new models/actors to get and keep keyword updates from.
 
         Args
         ====
@@ -306,7 +302,7 @@ class Actor(object):
                     self.bcast.warn('text="failed to add model %s: %s"' % (n, e))
 
     def dropModels(self, dropModelNames):
-        """ Add new models/actors to get and keep keyword updates from. 
+        """ Add new models/actors to get and keep keyword updates from.
 
         Args
         ====
@@ -542,7 +538,7 @@ class Actor(object):
     def run(self, doReactor=True):
         """ Actually run the twisted reactor. """
         try:
-            self.runInReactorThread = self.config.getboolean(self.name, 'runInReactorThread')
+            self.runInReactorThread = self.actorConfig['misc']['runInReactorThread']
         except:
             self.runInReactorThread = False
 

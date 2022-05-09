@@ -15,7 +15,7 @@ class ICC(coreActor.Actor):
         # Create a separate logger for controller io
         opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "io"), 'io')
         self.iolog = logging.getLogger('io')
-        self.iolog.setLevel(int(self.config.get('logging', 'ioLevel')))
+        self.iolog.setLevel(self.actorConfig['logging']['ioLevel'])
         self.iolog.propagate = False
 
         self.controllers = dict()
