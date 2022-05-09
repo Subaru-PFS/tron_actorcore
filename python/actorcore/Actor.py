@@ -31,7 +31,8 @@ from . import CommandLinkManager as cmdLinkManager
 from . import Command as actorCmd
 from . import CmdrConnection
 
-from pfs.utils import versions
+from ics.utils import versions
+import ics.utils.instdata as instdata
 
 
 class Actor(object):
@@ -77,6 +78,9 @@ class Actor(object):
 
         # Missing config bits should make us blow up.
         self.configFile = os.path.expandvars(self.configFile)
+
+        # initializing actorConfig
+        self.actorConfig = dict()
 
         self._reloadConfiguration()
         self.logger.info('%s starting up....' % (name))
@@ -147,6 +151,16 @@ class Actor(object):
 
         self.config = newConfig
         self.configureLogs()
+
+        try:
+            newConfig = instdata.InstConfig(self.name)
+        except Exception as e:
+            if cmd:
+                cmd.warn('text=%s' % (qstr("failed to load instdata configuration file, old config untouched: %s" % (e))))
+
+            newConfig = self.actorConfig if self.actorConfig else dict()
+
+        self.actorConfig = newConfig
 
         try:
             # Call optional user hook.
