@@ -1,22 +1,20 @@
+import configparser
 import imp
-import re
 import inspect
-import traceback
-import sys
+import logging
 import os
 import queue
-
-import configparser
+import re
+import sys
 import threading
-
-# import our routines before logging itself.
-import opscore.utility.sdss3logging as opsLogging
-import logging
-
-from twisted.internet import reactor
+import traceback
 
 # This has to be set very early -- earlier than some imports, even.
 import RO.Comm.Generic
+# import our routines before logging itself.
+import opscore.utility.sdss3logging as opsLogging
+from twisted.internet import reactor
+
 RO.Comm.Generic.setFramework('twisted')
 
 import eups
@@ -33,7 +31,9 @@ from . import CommandLinkManager as cmdLinkManager
 from . import Command as actorCmd
 from . import CmdrConnection
 
-from pfs.utils import versions
+from ics.utils import versions
+import ics.utils.instdata as instdata
+
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None,
@@ -71,7 +71,7 @@ class Actor(object):
             setupProds = eupsEnv.findProducts(tags='setup', name=f'ics_{self.productName}')
         if len(setupProds) == 0:
             raise RuntimeError(f"cannot figure out what our eups product name is. {self.productName} is not useful")
-            
+
         self.product_dir = setupProds[0].dir
         self.configFile = configFile if configFile else \
             os.path.expandvars(os.path.join(self.product_dir, 'etc', '%s.cfg' % (self.name)))
@@ -79,12 +79,15 @@ class Actor(object):
         # Missing config bits should make us blow up.
         self.configFile = os.path.expandvars(self.configFile)
 
+        # initializing actorConfig
+        self.actorConfig = dict()
+
         self._reloadConfiguration()
         self.logger.info('%s starting up....' % (name))
         self.parser = CommandParser()
 
         self.acceptCmdrs = acceptCmdrs
-        
+
         self.models = {}
         if modelNames and not makeCmdrConnection:
             self.logger.warn("modelNames were requested but makeCmdrConnection is False. Forcing that to True.")
@@ -150,6 +153,16 @@ class Actor(object):
         self.configureLogs()
 
         try:
+            newConfig = instdata.InstConfig(self.name)
+        except Exception as e:
+            if cmd:
+                cmd.warn('text=%s' % (qstr("failed to load instdata configuration file, old config untouched: %s" % (e))))
+
+            newConfig = self.actorConfig if self.actorConfig else dict()
+
+        self.actorConfig = newConfig
+
+        try:
             # Call optional user hook.
             self.reloadConfiguration(cmd)
         except:
@@ -167,14 +180,14 @@ class Actor(object):
 
         # The real stderr/console filtering is actually done through the console Handler.
         try:
-            consoleLevel = int(self.config.get('logging','consoleLevel'))
+            consoleLevel = int(self.config.get('logging', 'consoleLevel'))
         except:
-            consoleLevel = int(self.config.get('logging','baseLevel'))
+            consoleLevel = int(self.config.get('logging', 'baseLevel'))
         opsLogging.setConsoleLevel(consoleLevel)
 
         # self.console needs to be renamed ore deleted, I think.
         self.console = logging.getLogger('')
-        self.console.setLevel(int(self.config.get('logging','baseLevel')))
+        self.console.setLevel(int(self.config.get('logging', 'baseLevel')))
 
         self.logger = logging.getLogger('actor')
         self.logger.setLevel(int(self.config.get('logging', 'baseLevel')))
@@ -210,7 +223,7 @@ class Actor(object):
         for prodName in setupVersions.keys():
             versionString = setupVersions[prodName]
             cmd.inform(f'version_{prodName}=%s' % qstr(versionString))
-            
+
         versionString = self.versionString(cmd)
         cmd.inform('version=%s' % (qstr(versionString)))
 
@@ -245,10 +258,9 @@ class Actor(object):
 
         if isinstance(modelNames, str):
             modelNames = [modelNames]
-            
+
         for n in modelNames:
             self.models[n] = opscore.actor.model.Model(n)
-
 
     def _initializeHubInterest(self):
         """ Tell the hub which actors we want updates from. """
@@ -276,7 +288,7 @@ class Actor(object):
         newModelNames : list-like or string
            names of actors to start listening to.
         """
-        
+
         if isinstance(newModelNames, str):
             newModelNames = [newModelNames]
 
@@ -292,7 +304,7 @@ class Actor(object):
                 except Exception as e:
                     self.logger.warn('text="failed to add model %s: %s"' % (n, e))
                     self.bcast.warn('text="failed to add model %s: %s"' % (n, e))
-                
+
     def dropModels(self, dropModelNames):
         """ Add new models/actors to get and keep keyword updates from. 
 
@@ -301,7 +313,7 @@ class Actor(object):
         dropModelNames : list-like or string
            names of actors to start listening to.
         """
-        
+
         if isinstance(dropModelNames, str):
             dropModelNames = [dropModelNames]
 
@@ -316,8 +328,7 @@ class Actor(object):
                                                                                 timeLim=5.0))
                 except Exception as e:
                     self.bcast.warn('text="failed to drop model %s: %s"' % (n, e))
-                    
-                
+
     def _connectionMade(self):
         """ twisted arranges to call this when self.cmdr has been established. """
 
@@ -405,7 +416,7 @@ class Actor(object):
 
         if path is None:
             self.attachAllCmdSets(path=os.path.join(os.path.expandvars('$TRON_ACTORCORE_DIR'),
-                                                    'python','actorcore','Commands'))
+                                                    'python', 'actorcore', 'Commands'))
             self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python',
                                                     self.productName, 'Commands'))
             self.attachAllCmdSets(path=os.path.join(self.product_dir, 'python', 'ics',
@@ -417,7 +428,7 @@ class Actor(object):
         except OSError as e:
             self.logger.warn("no Cmd path %s" % (path))
             return
-        
+
         dirlist.sort()
         self.logger.warn("loading %s" % (dirlist))
 
@@ -450,7 +461,7 @@ class Actor(object):
             except Exception as e:
                 cmd.fail('text=%s' % (qstr("Unmatched command: %s (exception: %s)" %
                                            (cmdStr, e))))
-                    #tback('actor_loop', e)
+                # tback('actor_loop', e)
                 return
 
             if not validatedCmd:
@@ -468,7 +479,7 @@ class Actor(object):
             except Exception as e:
                 oneLiner = self.cmdTraceback(e)
                 cmd.fail('text=%s' % (qstr("command failed: %s" % (oneLiner))))
-                #tback('newCmd', e)
+                # tback('newCmd', e)
                 return
 
         except Exception as e:
@@ -479,13 +490,12 @@ class Actor(object):
             except:
                 pass
 
-
     def actor_loop(self):
         """ Check the command queue and dispatch commands."""
 
         while True:
             try:
-                cmd = self.commandQueue.get(block=True,timeout=3)
+                cmd = self.commandQueue.get(block=True, timeout=3)
             except queue.Empty:
                 if self.shuttingDown:
                     return
