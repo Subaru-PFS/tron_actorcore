@@ -40,7 +40,8 @@ class Actor(object):
                  makeCmdrConnection=True,
                  acceptCmdrs=True,
                  productPrefix="",
-                 modelNames=()):
+                 modelNames=(),
+                 idDict=None):
         """ Build an Actor.
 
         Args:
@@ -60,6 +61,9 @@ class Actor(object):
         # configuration file.
         self.name = name
         self.productName = productName if productName else self.name
+
+        # optional idDict
+        self.idDict = dict() if idDict is None else idDict
 
         # Incomplete/missing eups environment will make us blow
         # up. Note that we allow "actorName" as equivalent to
@@ -147,7 +151,7 @@ class Actor(object):
                 cmd.warn('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
 
         try:
-            newConfig = instdata.InstConfig(self.name)
+            newConfig = instdata.InstConfig(self.name, idDict=self.idDict)
         except Exception as e:
             if cmd:
                 cmd.fail('text=%s' % (qstr("failed to load instdata configuration file, old config untouched: %s" % (e))))
