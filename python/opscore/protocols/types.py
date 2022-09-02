@@ -90,8 +90,10 @@ class ValueType(type,Descriptive):
                 return self.strFmt % self
             elif self.reprFmt:
                 return self.reprFmt % self
+            elif cls.baseType == str:
+                return str.__str__(self)
             else:
-                return cls.baseType.__str__(self)
+                return cls.baseType(self).__str__()
                 
         # check for any invalid metadata keys
         for key in kwargs.keys():
