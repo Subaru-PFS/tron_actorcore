@@ -32,8 +32,8 @@ from . import Command as actorCmd
 from . import CmdrConnection
 
 from ics.utils import versions
-import ics.utils.instdata as instdata
-
+import ics.utils.instdata.instconfig as instconfig
+import ics.utils.instdata.actordata as actordata
 
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None,
@@ -151,13 +151,16 @@ class Actor(object):
                 cmd.warn('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
 
         try:
-            newConfig = instdata.InstConfig(self.name, idDict=self.idDict)
+            newConfig = instconfig.InstConfig(self.name, idDict=self.idDict)
         except Exception as e:
             if cmd:
                 cmd.fail('text=%s' % (qstr("failed to load instdata configuration file, old config untouched: %s" % (e))))
             raise
 
+        # setting both actorConfig and actorData
         self.actorConfig = newConfig
+        self.actorData = actordata.ActorData(self)
+
         self.configureLogs()
 
         try:
