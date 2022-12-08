@@ -6,7 +6,7 @@ class FetchVisitFromGen2(Exception):
         return f"{self.__class__.__name__}({self.reason})"
 
 
-def fetchVisitFromGen2(self, cmd=None, designId=None, nTry=1, maxTry=2, timeLim=10):
+def fetchVisitFromGen2(self, cmd=None, designId=None, nTry=1, maxTry=2, timeLim=30):
     """Actually get a new visit from Gen2.
     What PFS calls a "visit", Gen2 calls a "frame".
     """
