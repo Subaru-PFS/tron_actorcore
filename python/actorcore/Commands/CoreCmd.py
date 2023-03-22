@@ -199,8 +199,12 @@ class CoreCmd(object):
         Note that only some configuration variables will take effect, depending on how
         they are used. Read the Source, etc.
         """
+        # still referring to old config for now if it exists.
+        if self.actor.etcConfigExists:
+            cmd.respond('text="Reparsing etc config file: %s."' % self.actor.configFile)
 
-        cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
+        cmd.respond('text="Reparsing the configuration file: %s."' % self.actor.actorConfig.filepath)
+
         try:
             self.actor._reloadConfiguration(cmd)
         except Exception as e:
