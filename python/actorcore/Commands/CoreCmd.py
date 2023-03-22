@@ -5,10 +5,10 @@
 import re
 import sys
 
+import actorcore.help as help
 import opscore.protocols.keys as keys
 import opscore.protocols.types as types
 from opscore.utility.qstr import qstr
-import actorcore.help as help
 
 try:
     from importlib import reload
@@ -16,6 +16,8 @@ except:
     pass
 
 reload(help)
+
+
 class CoreCmd(object):
     """ Wrap common Actor commands """
 
@@ -112,10 +114,10 @@ class CoreCmd(object):
         filename = cmd.cmd.keywords['filename'].values[0]
         fitsUtils.printHeaderFormats(cmd, self.actor, filename, longNames=True)
         cmd.finish()
-        
+
     def _vocabCmds(self, vocab):
         return [' '.join((c[0], c[1])).strip() for c in vocab]
-    
+
     def cmdHelp(self, cmd):
         """ Return a summary of all commands, or the complete help string for the specified commands.
 
@@ -173,7 +175,7 @@ class CoreCmd(object):
         self.actor.sendVersionKey(cmd)
         if doFinish:
             cmd.finish()
-            
+
     def reloadCommands(self, cmd):
         """ If cmds argument is defined, reload the listed command sets, otherwise reload all command sets. """
 
@@ -197,8 +199,12 @@ class CoreCmd(object):
         Note that only some configuration variables will take effect, depending on how
         they are used. Read the Source, etc.
         """
+        # still referring to old config for now if it exists.
+        if self.actor.etcConfigExists:
+            cmd.respond('text="Reparsing etc config file: %s."' % self.actor.configFile)
 
-        cmd.respond('text="Reparsing the configuration file: %s."' % (self.actor.configFile))
+        cmd.respond('text="Reparsing the configuration file: %s."' % self.actor.actorConfig.filepath)
+
         try:
             self.actor._reloadConfiguration(cmd)
         except Exception as e:

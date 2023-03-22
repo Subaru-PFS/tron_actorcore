@@ -35,6 +35,7 @@ from ics.utils import versions
 import ics.utils.instdata.instconfig as instconfig
 import ics.utils.instdata.actordata as actordata
 
+
 class Actor(object):
     def __init__(self, name, productName=None, configFile=None,
                  makeCmdrConnection=True,
@@ -77,11 +78,10 @@ class Actor(object):
             raise RuntimeError(f"cannot figure out what our eups product name is. {self.productName} is not useful")
 
         self.product_dir = setupProds[0].dir
-        self.configFile = configFile if configFile else \
-            os.path.expandvars(os.path.join(self.product_dir, 'etc', '%s.cfg' % (self.name)))
 
+        configFile = os.path.join(self.product_dir, 'etc', '%s.cfg' % self.name) if configFile is None else configFile
         # Missing config bits should make us blow up.
-        self.configFile = os.path.expandvars(self.configFile)
+        self.configFile = os.path.expandvars(configFile)
 
         self._reloadConfiguration()
         self.logger.info('%s starting up....' % (name))
@@ -139,22 +139,27 @@ class Actor(object):
         else:
             self.cmdr = None
 
-    def _reloadConfiguration(self, cmd=None):
-        logging.info("reading config file %s", self.configFile)
+    @property
+    def etcConfigExists(self):
+        return os.path.isfile(self.configFile)
 
-        try:
-            newConfig = configparser.ConfigParser()
-            newConfig.read(self.configFile)
-            self.config = newConfig
-        except Exception as e:
-            if cmd:
-                cmd.warn('text=%s' % (qstr("failed to read the configuration file, old config untouched: %s" % (e))))
+    def _reloadConfiguration(self, cmd=None):
+        """"""
+        if self.etcConfigExists:
+            logging.info("reading etc config file %s", self.configFile)
+            try:
+                newConfig = configparser.ConfigParser()
+                newConfig.read(self.configFile)
+                self.config = newConfig
+            except Exception as e:
+                if cmd:
+                    cmd.warn('text=%s' % (qstr("failed to read etc config file, old config untouched: %s" % e)))
 
         try:
             newConfig = instconfig.InstConfig(self.name, idDict=self.idDict)
         except Exception as e:
             if cmd:
-                cmd.fail('text=%s' % (qstr("failed to load instdata configuration file, old config untouched: %s" % (e))))
+                cmd.fail('text=%s' % (qstr("failed to load pfs_instdata config file, old config untouched: %s" % e)))
             raise
 
         # setting both actorConfig and actorData
