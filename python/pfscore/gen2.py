@@ -6,7 +6,7 @@ class FetchVisitFromGen2(Exception):
         return f"{self.__class__.__name__}({self.reason})"
 
 
-def fetchVisitFromGen2(self, cmd=None, designId=None, nTry=1, maxTry=2, timeLim=30):
+def fetchVisitFromGen2(self, cmd=None, designId=None, timeLim=10):
     """Actually get a new visit from Gen2.
     What PFS calls a "visit", Gen2 calls a "frame".
     """
@@ -22,13 +22,7 @@ def fetchVisitFromGen2(self, cmd=None, designId=None, nTry=1, maxTry=2, timeLim=
                          timeLim=timeLim, forUserCmd=cmd)
 
     if ret.didFail:
-        failedMsg = f"failed to get a visit number in {timeLim}s after {nTry} try !"
-        # Be nice and retry.
-        if nTry < maxTry:
-            gen.warn(f"{failedMsg} Retrying now (maxTry:{maxTry})")
-            return fetchVisitFromGen2(self, cmd, designId, nTry=nTry + 1, maxTry=maxTry, timeLim=timeLim)
-        else:
-            raise FetchVisitFromGen2(failedMsg)
+        raise FetchVisitFromGen2(f"failed to get a visit number in {timeLim}s !")
 
     visit = self.models['gen2'].keyVarDict['visit'].valueList[0]
     return int(visit)
