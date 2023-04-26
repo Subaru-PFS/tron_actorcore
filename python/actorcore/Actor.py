@@ -521,8 +521,7 @@ class Actor(object):
         if self.cmdLog.level <= logging.DEBUG:
             self.cmdLog.debug('new cmd: %s' % (cmd))
         else:
-            dcmd = cmd.rawCmd if len(cmd.rawCmd) < 80 else cmd.rawCmd[:80] + "..."
-            self.cmdLog.info('new cmd: %s' % (dcmd))
+            self.cmdLog.info('new cmd: %s' % (cmd.rawCmd))
 
         # Empty cmds are OK; send an empty response...
         if len(cmd.rawCmd) == 0:
