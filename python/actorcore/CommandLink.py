@@ -117,10 +117,11 @@ class CommandLink(LineReceiver):
         """ Ship a command off to the hub. """
 
         e = "%d %d %s %s\n" % (cmd.cid, cmd.mid, flag, response)
-        if cmdLogger.level < logging.INFO or len(e) <= 2000:
+        loglineLimit = 2000
+        if cmdLogger.level < logging.INFO or len(e) <= loglineLimit:
             cmdLogger.info('> %s' % (e[:-1]))
         else:
-            cmdLogger.info('> %s...' % (e[:80]))
+            cmdLogger.info('> %s...' % (e[:loglineLimit]))
 
         with self.outputQueueLock:
             self.outputQueue.append(e)
