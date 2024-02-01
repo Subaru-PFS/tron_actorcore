@@ -14,7 +14,7 @@ Control actors.
 
 Options:
    -h, --help		Provide this paltry help
-   -l, --log DIR	Directory to write log files
+   -l, --logs DIR	Directory to write log files
    -v, --verbose	Be chatty
    --name               Added to actor args.
    --cam                Added to actor args.
@@ -30,7 +30,7 @@ while [ ! -z $1 ]; do
 	    usage
 	    exit 0;;
       -l|--logs)
-	    LOG_DIR=$1
+	    LOG_DIR=$2
 
 	    if [ -z $LOG_DIR ]; then
 		echo "Please specify a logging directory with the $1 flag" >&2
