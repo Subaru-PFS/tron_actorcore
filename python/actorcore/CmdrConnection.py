@@ -1,9 +1,3 @@
-from future import standard_library
-
-standard_library.install_aliases()
-from builtins import bytes
-from builtins import str
-from builtins import object
 import logging
 import threading
 import queue
@@ -15,7 +9,7 @@ from twisted.protocols.basic import LineReceiver
 import opscore.actor.cmdkeydispatcher as opsDispatcher
 import opscore.actor.model as opsModel
 import opscore.actor.keyvar as opsKeyvar
-
+from opscore.utility.qstr import qstr
 
 class CmdrConnection(LineReceiver):
     def __init__(self, readCallback, brains, logger=None, **argv):
@@ -133,6 +127,13 @@ class CmdrConnector(ReconnectingClientFactory):
 
 
 class Cmdr(object):
+    # Convert from RO severity levels to Python logging levels
+    severityLevels =  {-1:logging.DEBUG, 
+                       0:logging.INFO, 
+                       1:logging.WARNING, 
+                       2:logging.ERROR, 
+                       3:logging.FATAL}
+    
     def __init__(self, name, actor, loggerName='cmdr'):
         self.actor = actor
 
@@ -152,8 +153,17 @@ class Cmdr(object):
         logger.setLevel(dispatchLevel)
 
         def logFunc(msgStr, severity, actor, cmdr, keywords, cmdID=0, logger=logger):
-            logger.info("%s %s.%s %s %s" % (cmdr, actor, cmdID, severity, msgStr))
-
+            loggingLevel = self.severityLevels[severity]
+            logger.log(loggingLevel,
+                       "%s %s.%s %s (%s)" % (cmdr, actor, cmdID, msgStr, keywords))
+            if loggingLevel >= logging.INFO:
+                try:
+                    cmdFunc = self.actor.bcast.inform if loggingLevel == logging.INFO else self.actor.bcast.warn
+                    cmdMsg = 'text=%s' % qstr(msgStr)
+                    cmdFunc(actor, cmdMsg)
+                except:
+                    logging.error("failed to send inform or warn")
+                    
         self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, self.connector,
                                                             logFunc, includeName=True)
         opsModel.Model.setDispatcher(self.dispatcher)
