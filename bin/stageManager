@@ -112,29 +112,50 @@ get_pid() {
 
     PID=""
     pid=$(/bin/ps -e -ww -o pid,user,command | egrep -v 'awk|grep' | awk "/python\/${FULLACTOR}\/main.py${ACTORARGS}/ {print \$1}")
-    PID=$pid
+    PID=$(echo $pid)
 
     if [ "$print" = 1 -o $verbose != 0 ]; then
 	if test "$pid"; then
-            echo "$PRODUCT is running as process $pid"
+            echo "$PRODUCT is running as process " $pid
 	else
             echo "$PRODUCT is not running"
 	fi
     fi
 }
 
+wait_for_status() {
+    local desired_status=$1
+    local max_attempts=${2:-20}
+    local loopTime=0.5
+    local attempt=0
+
+    # echo -n "Waiting (20 iterations) for $PRODUCT to be $desired_status... "
+    while (( attempt < max_attempts )); do
+        get_pid
+        if [[ "$desired_status" == "stopped" && -z "$PID" ]] || [[ "$desired_status" == "started" && -n "$PID" ]]; then
+            if [[ $attempt > 0 ]]; then
+                echo
+            fi
+            return
+        fi
+        sleep $loopTime
+        ((attempt++))
+        echo -n -e "\rWaiting ${attempt}/${max_attempts}..."
+    done
+    echo -e "\nFAILED to wait for $PRODUCT to be $desired_status."
+}
+    
 # Start a new ICC. Complains if the ICC is already running,
 # and does not start a new one.
 #
 do_start() {
     get_pid
-
     if test "$PID"; then
-        echo "NOT starting new $PRODUCT. Use restart if you want a new one."
+        echo "$PRODUCT is already running. Use restart if you want a new one."
         return
     fi
 
-    printf "Starting new $PRODUCT..."
+    echo "Starting new $PRODUCT... "
 
     stdioLog=$LOG_DIR/stdio-`now`.log
     cd $PRODUCT_DIR
@@ -142,35 +163,49 @@ do_start() {
 
     # Check that it really started...
     #
-    sleep 2
-    get_pid
+    wait_for_status 'started'
 
-    if test "$PID"; then
-        echo " done."
-    else
-        echo " FAILED!" >&2
+    if test -z "$PID"; then
         cat $stdioLog >&2
+    else
+        echo "$PRODUCT is running with PID=$PID"
     fi
+    
 }
 
-# Stop any running ICC.
+# Stop any running ICC. Waits for it to actually stops, and switches to -KILL if necessary.
 #
 do_stop() {
+    local sig=${1:-"-TERM"}
+    
     get_pid
-
     if test ! "$PID"; then
         return
     fi
 
-    echo "Stopping $PRODUCT."
-    kill -TERM $PID
+    echo "Stopping $PRODUCT processes ($PID) with kill ${sig}... "
+    kill $sig $PID
+
+    # Wait a few seconds for it to die
+    #
+    wait_for_status 'stopped'
+    if test -z "$PID"; then
+        return
+    fi
+    
+    echo -e "\n ##### FAILED to kill the actor, trying 'kill -9'" >&2
+    kill -KILL $PID
+
+    # Wait a few more seconds for it to die painfully
+    #
+    wait_for_status 'stopped'
 }
+
 
 # Stop any running ICC fairly violently.
 #
 do_stopdead() {
     get_pid
-
     if test ! "$PID"; then
         return
     fi
@@ -187,11 +222,10 @@ do_stopdead() {
 #
 do_status() {
     get_pid 1
-    # Query it for essential liveness
 }
 
 while true; do
-    sleepTime=1
+    sleepTime=0.1
     case $1 in
         [0-9]*)
 	    sleepTime=$1
@@ -204,14 +238,13 @@ while true; do
             do_stop
             ;;
 	stopdead)
-            do_stopdead
+            do_stop -KILL
             ;;
 	status)
             do_status
             ;;
 	restart)
             do_stop
-            sleep 2
             do_start
             ;;
 	*)
@@ -223,9 +256,8 @@ while true; do
     if [ -z $1 ]; then
 	break
     fi
-
-    sleep $sleepTime
 done
+sleep $sleepTime
 
 exit 0
 
