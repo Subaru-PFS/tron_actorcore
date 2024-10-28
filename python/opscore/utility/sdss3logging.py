@@ -32,6 +32,7 @@ from builtins import range
 import logging
 import os
 import os.path
+import random
 import sys
 import time
 import types
@@ -165,33 +166,42 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         We also want a convenience current.log symbolic link to the new file.
         """
 
-        startTime=(record.created if record else None)
-        self._setTimes(startTime=startTime)
+        os.makedirs(self.dirname, 0o755, exists_ok=True)
 
-        # get the time that this sequence starts at and make it a TimeTuple
-        timeString = time.strftime("%Y-%m-%dT%H:%M:%S",
-                                   time.gmtime(self.startTime))
-        fracSecStr = f'{self.startTime % 1 :0.3f}'[1:]
-        filename = self.basename + timeString + fracSecStr + ".log"
+        # Avoid logfile name conflicts with other threads.
+        nRetries = 10
+        delayTime = 0.0
+        for delayTick in range(nRetries):
+            delayTime1 = random.randint(1,3) * 0.001
 
-        try:
-            os.makedirs(self.dirname, 0o755)
-        except OSError as e:
-            pass
+            if record:
+                delayTime += delayTime1
+                startTime = record.created + delayTime
+            else:
+                time.sleep(delayTime1)
+                startTime = None
+            self._setTimes(startTime=startTime)
 
-        path = os.path.join(self.dirname, filename)
+            # get the time that this sequence starts at and make it a TimeTuple
+            timeString = time.strftime("%Y-%m-%dT%H:%M:%S",
+                                       time.gmtime(self.startTime))
+            fracSecStr = f'{self.startTime % 1 :0.3f}'[1:]
+            filename = self.basename + timeString + fracSecStr + ".log"
+            path = os.path.join(self.dirname, filename)
 
-        if os.path.exists(path):
-            # Append? Raise?
-            raise RuntimeError("logfile %s already exists. Would append to it." % (path))
+            try:
+                newStream = open(path, 'x+')
+            except FileExistsError:
+                newStream = None
+                print("Failed to rollover to new logfile %s, try %d/%d" % (path,
+                                                                           delayTick,
+                                                                           nRetries),
+                      file=sys.stderr)
+            if newStream is not None:
+                break
 
         oldStream = self.stream
-        try:
-            self.stream = open(path, 'a+')
-        except Exception as e:
-            sys.stderr.write("Failed to rollover to new logfile %s: %s\n" % (path, e))
-            return
-
+        self.stream = newStream
         self.filename = path
 
         if oldStream:
@@ -202,13 +212,13 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         linkname = os.path.join(self.dirname, '%scurrent.log' % (self.basename))
         try:
             os.remove(linkname)
-        except:
+        except FileNotFoundError:
             pass
         try:
             os.symlink(filename, linkname)
-        except Exception as e:
-            print("Failed to create current.log symlink to %s" % (filename))
-
+        except FileExistsError:
+            print("Failed to create current.log symlink to %s" % (filename),
+                  file=sys.stderr)
 
 def makeOpsFileHandler(dirname, basename='', propagate=True):
     """ create a rotating file handler with APO-style filenames and timestamps..
