@@ -63,7 +63,7 @@ class CmdrConnector(ReconnectingClientFactory):
         self.readCallback = None
         self.stateCallback = None
 
-        self.maxDelay = 60
+        self.maxDelay = 15
         self.initialDelay = 0.5
         self.factor = 2
 
@@ -154,15 +154,16 @@ class Cmdr(object):
 
         def logFunc(msgStr, severity, actor, cmdr, keywords, cmdID=0, logger=logger):
             loggingLevel = self.severityLevels[severity]
+            # loggingLevel = logging.WARN
             logger.log(loggingLevel,
-                       "%s %s.%s %s (%s)" % (cmdr, actor, cmdID, msgStr, keywords))
+                       "%s %s.%s %s %s (%s)" % (severity, cmdr, actor, cmdID, msgStr, keywords))
             if loggingLevel >= logging.INFO:
                 try:
-                    cmdFunc = self.actor.bcast.inform if loggingLevel == logging.INFO else self.actor.bcast.warn
+                    cmdFunc = self.actor.bcast.inform if loggingLevel <= logging.INFO else self.actor.bcast.warn
                     cmdMsg = 'text=%s' % qstr(msgStr)
-                    cmdFunc(actor, cmdMsg)
-                except:
-                    logging.error("failed to send inform or warn")
+                    cmdFunc(cmdMsg)
+                except Exception as e:
+                    logging.error(f"failed to send inform or warn: {e}")
                     
         self.dispatcher = opsDispatcher.CmdKeyVarDispatcher(name, self.connector,
                                                             logFunc, includeName=True)
