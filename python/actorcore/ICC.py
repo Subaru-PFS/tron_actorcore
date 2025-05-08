@@ -4,7 +4,6 @@ from importlib import reload
 from importlib.util import find_spec, spec_from_file_location
 
 import actorcore.Actor as coreActor
-import opscore.utility.sdss3logging as opsLogging
 from opscore.utility.qstr import qstr
 
 
@@ -13,7 +12,6 @@ class ICC(coreActor.Actor):
         coreActor.Actor.__init__(self, name, **kwargs)
 
         # Create a separate logger for controller io
-        opsLogging.makeOpsFileLogger(os.path.join(self.logDir, "io"), 'io')
         self.iolog = logging.getLogger('io')
         self.iolog.setLevel(self.actorConfig['logging']['ioLevel'])
         self.iolog.propagate = False

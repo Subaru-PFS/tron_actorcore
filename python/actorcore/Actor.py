@@ -11,8 +11,7 @@ import traceback
 
 # This has to be set very early -- earlier than some imports, even.
 import RO.Comm.Generic
-# import our routines before logging itself.
-import opscore.utility.sdss3logging as opsLogging
+
 from twisted.internet import reactor
 
 RO.Comm.Generic.setFramework('twisted')
@@ -172,39 +171,41 @@ class Actor(object):
             # Call optional user hook.
             self.reloadConfiguration(cmd)
         except:
-            pass
+            self.logger.exception('failed to run user reloadConfiguration()')
+
+    def reloadConfiguration(self, cmd):
+        pass
 
     def configureLogs(self, cmd=None):
         """ (re-)configure our logs. """
         loggingConfig = self.actorConfig['logging']
-        # per actor log dir.
-        self.logDir = loggingConfig['logdir']
-        if not self.logDir:
-            raise RuntimeError("logdir must be set!")
 
         # Make the root logger go to a rotating file. All others derive from this.
-        opsLogging.setupRootLogger(self.logDir)
+        doRemote = loggingConfig.get('doRemote', False)
+        if doRemote:
+            import opscore.utility.pfslogging as opsLogging
+            logBase = self.name
+        else:
+            import opscore.utility.sdss3logging as opsLogging
 
-        # The real stderr/console filtering is actually done through the console Handler.
+            self.logDir = loggingConfig['logdir']
+            if not self.logDir:
+                raise RuntimeError("logdir must be set!")
+            logBase = self.logDir
+
+        # This is the important step, as it sets up the logger path.
         try:
-            consoleLevel = loggingConfig['consoleLevel']
+            opsLogging.setupRootLogger(logBase)
         except:
-            consoleLevel = loggingConfig['baseLevel']
-
-        opsLogging.setConsoleLevel(consoleLevel)
-
-        # self.console needs to be renamed ore deleted, I think.
-        self.console = logging.getLogger('')
-        self.console.setLevel(loggingConfig['baseLevel'])
+            logging.exception('failed to configure actor logs')
+            raise()         # No idea where this might go. Out of the actor's hands, though.
 
         self.logger = logging.getLogger('actor')
         self.logger.setLevel(loggingConfig['baseLevel'])
-        self.logger.propagate = True
         self.logger.info('(re-)configured root and actor logs')
 
         self.cmdLog = logging.getLogger('cmds')
         self.cmdLog.setLevel(loggingConfig['cmdLevel'])
-        self.cmdLog.propagate = True
         self.cmdLog.info('(re-)configured cmds log')
 
         if cmd:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import logging
 import os
 import socket
 import sys
@@ -113,7 +114,7 @@ class OurActor(actorcore.Actor.Actor):
 
         """
         self.cmdr.logger.setLevel(self.printLevel * 10 + 5)
-        self.bcast.inform('%s is connected to the hub.' % (self.name))
+        self.bcast.debug('%s is connected to the hub.' % (self.name))
         self.callAndPrint()
 
 #
