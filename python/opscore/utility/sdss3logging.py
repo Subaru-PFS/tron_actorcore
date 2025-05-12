@@ -275,13 +275,14 @@ def setupRootLogger(basedir, level=logging.INFO):
 
     # Shut stdout output down if we are not a terminal.
     for h in rootLogger.handlers:
+        logging.debug(f'root handler: {h} {h.__class__}')
         if isinstance(h, logging.StreamHandler) and h.stream == sys.stderr:
             consoleHandler = h
             if h.stream.isatty():
                 setConsoleLevel(level)
             else:
                 # Basically disable stderr output
-                rootLogger.warn('disabling all but critical stderr output')
+                rootLogger.debug('disabling all but critical stderr output')
                 setConsoleLevel(logging.CRITICAL + 1)
 
     return rootLogger
