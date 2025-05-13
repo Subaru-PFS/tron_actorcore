@@ -18,12 +18,9 @@ class OurActor(actorcore.Actor.Actor):
                  printLevel,
                  printTimes=False,
                  timelim=30,
-                 productName=None, configFile=None,
+                 productName=None,
                  modelNames=(),
                  debugLevel=40):
-
-        if configFile is None:
-            configFile = os.path.expandvars(os.path.join('$TRON_ACTORCORE_DIR', 'etc', 'oneCmd.cfg'))
 
         self.identifyingCmd = self._identifyOurself()
         self.cmdActor = cmdActor
@@ -41,11 +38,14 @@ class OurActor(actorcore.Actor.Actor):
         #
         actorcore.Actor.Actor.__init__(self, name, 
                                        productName=productName, 
-                                       configFile=configFile,
                                        acceptCmdrs=False,
                                        modelNames=modelNames)
-        self.logger.setLevel(self.printLevel * 10 + 5)
+        rootLogger = logging.getLogger()
+        rootLogger.setLevel(logging.ERROR)
 
+    def reloadConfiguration(self, cmd=None):
+        self.logger.setLevel(logging.WARNING)
+        
     def _identifyOurself(self):
         """ Create a CmdVar whose .cmdr string identifies the hostname and user.  """
 
@@ -68,7 +68,7 @@ class OurActor(actorcore.Actor.Actor):
         
     def TS(self):
         now = time.time()
-        basetime = time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(now))
+        basetime = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(now))
         fractime = int((now % 1) * 1000)
 
         return "%s.%03d " % (basetime, fractime)
@@ -113,7 +113,7 @@ class OurActor(actorcore.Actor.Actor):
         to connect back to us. We want to skip this step.
 
         """
-        self.cmdr.logger.setLevel(self.printLevel * 10 + 5)
+        # self.cmdr.logger.setLevel(self.printLevel * 10 + 5)
         self.bcast.debug('%s is connected to the hub.' % (self.name))
         self.callAndPrint()
 
