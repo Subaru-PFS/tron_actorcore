@@ -27,7 +27,8 @@ known to the base python logging module.
 
 # Configure the default formatter and logger. This does some magic internal logging module configuration.
 logging.basicConfig(datefmt = "%Y-%m-%d %H:%M:%S",
-                    format = "%(asctime)s.%(msecs)03dZ %(name)-16s %(levelno)s %(filename)s:%(lineno)d %(message)s")
+                    format = "%(asctime)s.%(msecs)03d %(name)-16s %(levelno)s %(filename)s:%(lineno)d %(message)s",
+                    level=logging.WARNING)
 
 class OpsLogFormatter(logging.Formatter):
     def __init__(self):
@@ -91,7 +92,7 @@ def setupRootLogger(basename, level=logging.INFO, serverAddr=('127.0.0.1', 11514
         if isinstance(h, logging.StreamHandler) and h.stream == sys.stderr:
             consoleHandler = h
             if h.stream.isatty():
-                rootLogger.info('copying all logging to stderr')
+                rootLogger.debug('copying all logging to stderr')
                 setConsoleLevel(logging.DEBUG)
             else:
                 # Basically disable stderr output

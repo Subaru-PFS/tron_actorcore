@@ -79,7 +79,7 @@ class CmdrConnector(ReconnectingClientFactory):
         self.logger = logger if logger else logging.getlogger('cmdr')
 
     def doStart(self):
-        self.logger.warn("in doStart")
+        self.logger.debug("in doStart")
 
     def buildProtocol(self, addr):
         """ A new connection has been established. Create a new Protocol. """
