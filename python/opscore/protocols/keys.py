@@ -7,11 +7,8 @@ from __future__ import print_function
 
 # Created 18-Nov-2008 by David Kirkby (dkirkby@uci.edu)
 
-from builtins import map
-from builtins import str
-from builtins import object
 import textwrap
-import imp
+import importlib.util as impUtil
 import re
 import sys
 import hashlib
@@ -410,12 +407,21 @@ class KeysDictionary(object):
     def load(dictname,forceReload=False):
         """
         Loads a KeysDictionary by name, returning the result
-        
+
         Uses an in-memory copy, if one is available, otherwise loads the
         dictionary from disk. Use forceReload to force the dictionary to
         be loaded from disk even if it is already in memory. Raises a
         KeysDictionaryError if a dictionary cannot be found for dictname.
         """
+
+        def _fileForDict(dictname):
+            """Return an open file for a given actorkeys module."""
+
+            spec = impUtil.find_spec('.'+dictname, 'actorkeys')
+            if spec is None:
+                raise ImportError(f'no actorkeys module for f{dictname}')
+            return open(spec.origin)
+
         if not forceReload and dictname in KeysDictionary.registry:
             return KeysDictionary.registry[dictname]
         # try to find a corresponding file on the import search path
@@ -429,7 +435,7 @@ class KeysDictionary(object):
         try:
             # open the file corresponding to the requested keys dictionary
             try:
-                (dictfile,name,description) = imp.find_module(dictname,keyspath)
+                dictfile = _fileForDict(dictname)
             except ImportError:
                 # Try to find model matching a sane prefix of the actor name
                 parts = dictname.split('_', 1)
@@ -441,7 +447,7 @@ class KeysDictionary(object):
                         raise RuntimeError("cannot find a dictionary for actor %s" % (dictname))
                     dictname = m.groups()[0]
 
-                (dictfile,name,description) = imp.find_module(dictname,keyspath)
+                dictfile = _fileForDict(dictname)
 
             # create a global symbol table for evaluating the keys dictionary expression
             symbols = {
