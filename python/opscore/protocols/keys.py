@@ -436,7 +436,7 @@ class KeysDictionary(object):
                 if len(parts) == 2:
                     dictname = parts[0]
                 else:
-                    m = re.match('^(.*[a-zA-Z])(\d+)$', dictname)
+                    m = re.match(r'^(.*[a-zA-Z])(\d+)$', dictname)
                     if not m:
                         raise RuntimeError("cannot find a dictionary for actor %s" % (dictname))
                     dictname = m.groups()[0]

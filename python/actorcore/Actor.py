@@ -444,8 +444,8 @@ class Actor(object):
         for f in dirlist:
             if os.path.isdir(f) and not f.startswith('.'):
                 self.attachAllCmdSets(path=f)
-            if re.match('^[a-zA-Z][a-zA-Z0-9_-]*Cmd\.py$', f):
-                self.attachCmdSet(f[:-3], [path])
+            if re.match(r'^[a-zA-Z][a-zA-Z0-9_-]*Cmd\.py$', f):
+                self.attachCmdSet(f[:-3], os.path.join(path, f))
 
     def cmdTraceback(self, e):
         eType, eValue, eTraceback = sys.exc_info()
