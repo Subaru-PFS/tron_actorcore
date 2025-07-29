@@ -76,7 +76,7 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=Tru
                 helpStr += "\n\n"
 
                 formatted = []
-                for para in re.split("\n\s*\n", moreHelp):
+                for para in re.split(r"\n\s*\n", moreHelp):
                     formatted.append(formatString(para, pageWidth))
 
                 helpStr += ("\n\n" + ("<P>" if html else "")).join(formatted)

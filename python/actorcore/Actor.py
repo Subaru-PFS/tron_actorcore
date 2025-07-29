@@ -1,5 +1,6 @@
 import configparser
-import imp
+import importlib
+import importlib.util as impUtil
 import inspect
 import logging
 import os
@@ -358,25 +359,19 @@ class Actor(object):
         """ For overriding. """
         pass
 
-    def attachCmdSet(self, cname, path=None):
+    def attachCmdSet(self, cname, path):
         """ (Re-)load and attach a named set of commands. """
-
-        if path is None:
-            path = [os.path.join(self.product_dir, 'python', self.name, 'Commands')]
 
         self.logger.info("attaching command set %s from path %s", cname, path)
 
-        file = None
         try:
-            file, filename, description = imp.find_module(cname, path)
+            spec = impUtil.spec_from_file_location(cname, path)
             self.logger.debug("command set file=%s filename=%s from path %s",
-                              file, filename, path)
-            mod = imp.load_module(cname, file, filename, description)
+                              cname, spec.name, spec.origin)
+            mod = impUtil.module_from_spec(spec)
+            spec.loader.exec_module(mod)
         except ImportError as e:
             raise RuntimeError('Import of %s failed: %s' % (cname, e))
-        finally:
-            if file:
-                file.close()
 
         # Instantiate and save a new command handler.
         cmdClass = getattr(mod, cname)
@@ -444,8 +439,8 @@ class Actor(object):
         for f in dirlist:
             if os.path.isdir(f) and not f.startswith('.'):
                 self.attachAllCmdSets(path=f)
-            if re.match('^[a-zA-Z][a-zA-Z0-9_-]*Cmd\.py$', f):
-                self.attachCmdSet(f[:-3], [path])
+            if re.match(r'^[a-zA-Z][a-zA-Z0-9_-]*Cmd\.py$', f):
+                self.attachCmdSet(f[:-3], os.path.join(path, f))
 
     def cmdTraceback(self, e):
         eType, eValue, eTraceback = sys.exc_info()
