@@ -1,0 +1,36 @@
+name: Pip install check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pip-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Upgrade pip and wheel
+        run: |
+          python -m pip install --upgrade pip wheel
+
+      - name: Install build-time helper (lsst-versions)
+        run: |
+          python -m pip install lsst-versions
+
+      - name: Install package with pip
+        run: |
+          python -m pip install .
+
+      - name: Verify import
+        run: |
+          python -c "from actorcore import help; print('Imported actorcore.help from:', help.__file__)"
+          python -c "import opscore.protocols.keys as keys; print('Imported import opscore.protocols.keys as keys from:', keys.__file__)"
+          python -c "from pfscore import SeqPath; print('Imported SeqPath:', SeqPath.__file__)"
+          python -c "from RO.Version import __version__; print('Imported RO version:', __version__)"
