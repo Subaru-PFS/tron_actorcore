@@ -15,7 +15,7 @@ class AstroTimeException(Exception):
 class AstroTime(datetime):
     """
     Enhanced version of datetime suitable for astronomical applications.
-    
+
     Wraps the datetime class to add support for leap-second adjustments
     specified via the timezone and conversion to/from Modified Julian
     Date formats.
@@ -25,7 +25,7 @@ class AstroTime(datetime):
     def __new__(cls,*args,**kargs):
         """
         Extends constructor to support up-casting from a datetime object.
-        
+
         AstroTime(datetime=dt)
         AstroTime(datetime=dt,deltasecs=+33)
         """
@@ -72,7 +72,7 @@ class AstroTime(datetime):
     def astimezone(self,tz):
         """
         Identical to datetime.astimezone() but returns an AstroTime.
-        
+
         Performs leap-second adjustments if necessary.
         """
         delta = self.__leapseconds(tz) - self.__leapseconds(self.tzinfo)
@@ -97,7 +97,7 @@ class AstroTime(datetime):
     def fromMJD(mjd,tz=None):
         """
         Returns an AstroTime initialized from an MJD value.
-        
+
         No timezone or leap-second adjustments are made since the MJD
         value is assumed to already be in the specified time zone.
         """
@@ -114,7 +114,7 @@ class AstroTime(datetime):
         return formatted
     def __repr__(self):
         return datetime.__repr__(self).replace('datetime.datetime',self.__class__.__name__)
-        
+
 ZERO = timedelta(0)
 
 class CoordinatedUniversalTime(tzinfo):
@@ -135,7 +135,7 @@ UTC = CoordinatedUniversalTime()
 class InternationalAtomicTime(CoordinatedUniversalTime):
     """
     A timezone class for tagging a datetime as being in TAI and converting to/from TAI.
-    
+
     Leapseconds are documented at ftp://maia.usno.navy.mil/ser7/tai-utc.dat
     """
     def tzname(self,dt):
@@ -154,7 +154,7 @@ class InternationalAtomicTime(CoordinatedUniversalTime):
         2017 JAN  1 =JD 2457754.5  TAI-UTC=  37.0       S + (MJD - 41317.) X 0.0      S
 
         """
-        
+
         if dt.year >= 2017:
             return 37
         elif dt.year > 2015 or dt.year == 2015 and dt.month >= 7:

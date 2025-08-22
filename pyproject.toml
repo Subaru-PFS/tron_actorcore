@@ -23,6 +23,7 @@ dev = [
     "isort",
     "lsst-versions",
     "pytest>=8.0",
+    "ruff",
 ]
 ro_extras = [
     "Pillow",

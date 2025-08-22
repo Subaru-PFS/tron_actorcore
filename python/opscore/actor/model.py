@@ -25,9 +25,9 @@ NumKeysToGetAtOnce = 20
 class Model(object):
     """Subclass for your actor. Your subclass must use a singleton pattern
     because this class may only be instantiated once per actor.
-    
+
     Before instantiating the first model, call setDispatcher (else you'll get a RuntimeError).
-    
+
     Note: only keyVars defined in the actor's dictionary are refreshed automatically.
     Any keyVars you add to the subclass are synthetic keyVars that you should set yourself.
     """
@@ -38,9 +38,9 @@ class Model(object):
         self._keyNameVarDict = dict()
         if actor in self._registeredActors:
             raise RuntimeError("%s model already instantiated" % (actor,))
-        
+
         self.actor = actor
-        if self.dispatcher == None:
+        if self.dispatcher is None:
             raise RuntimeError("Dispatcher not set")
 
         cachedKeyVars = []
@@ -52,7 +52,7 @@ class Model(object):
             else:
                 self.dispatcher.addKeyVar(keyVar)
             setattr(self, keyVar.name, keyVar)
-        
+
         for ind in range(0, len(cachedKeyVars), NumKeysToGetAtOnce):
             keyVars = cachedKeyVars[ind:ind+NumKeysToGetAtOnce]
             keyNames = [(keyVar.name) for keyVar in keyVars]
@@ -63,7 +63,7 @@ class Model(object):
                 self.dispatcher.addKeyVar(keyVar)
 
         self._registeredActors.add(actor)
-    
+
     @property
     def keyVarDict(self):
         """Return a dictionary of keyVar name:keyVar

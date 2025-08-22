@@ -9,7 +9,7 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=Tru
     """Return a help string for command cmdName, formatted for a line length of pageWidth"""
 
     cmdWord = cmdName.split(' ', 1)[0]
-    
+
     cmds = [p for p in vocab if ' '.join((p[0], p[1])).strip() == cmdName]
     if not cmds:
         return "Unknown command %s" % cmdName
@@ -44,7 +44,7 @@ def help(actorName, cmdName, vocab, keys, pageWidth=80, html=False, fullHelp=Tru
             helpStr += "\n    %s" % (docstring.split("\n")[0])
 
         if fullHelp or html:
-            if args: 
+            if args:
                 if html:
                     helpStr += "\n<TABLE>"
                 else:
@@ -97,7 +97,7 @@ class Cmd(object):
         else:
             names = name.split("|")
             self.key = [keys.get(n.lower(), self.StrType(n, 'no help')) for n in names]
-            
+
         self.__parseKeys()
 
     class StrType(object):

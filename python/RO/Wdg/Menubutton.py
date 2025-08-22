@@ -22,7 +22,7 @@ class Menubutton(tkinter.Menubutton, CtxMenuMixin):
         severity = RO.Constants.sevNormal,
     **kwArgs):
         """Creates a new Menubutton.
-        
+
         Inputs:
         - helpText  text for hot help
         - helpURL   URL for longer help
@@ -38,7 +38,7 @@ class Menubutton(tkinter.Menubutton, CtxMenuMixin):
         tkinter.Menubutton.__init__(self, master = master, **kwArgs)
 
         CtxMenuMixin.__init__(self, helpURL = helpURL)
-    
+
     def setEnable(self, doEnable):
         """Enable or disable widget
 
@@ -51,7 +51,7 @@ class Menubutton(tkinter.Menubutton, CtxMenuMixin):
             self["state"] = tkinter.NORMAL
         else:
             self["state"] = tkinter.DISABLED
-    
+
     def getEnable(self):
         """Return True if widget is enabled, False otherwise
 

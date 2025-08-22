@@ -176,7 +176,7 @@ FailTypes = "f!"
 
 class KeyVar(RO.AddCallback.BaseMixin):
     """Processes data associated with a keyword.
-    
+
     Inputs:
     - keyword: the keyword associated with this variable (a string)
     - nval: the number of values:
@@ -203,7 +203,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
     Converters are functions that take one argument and return the converted data.
     The data supplied will usually be a string, but pre-converted data should
     also be acceptable. The converter should raise ValueError or TypeError for invalid data.
-    
+
     There is an addCallback function that adds a callback function
     that is passed the following arguments whenever the KeyVar gets a reply
     or isCurrent goes false (as happens upon disconnection):
@@ -248,11 +248,11 @@ class KeyVar(RO.AddCallback.BaseMixin):
                     assert self.maxNVal >= self.minNVal
             except (ValueError, TypeError, AssertionError):
                 raise ValueError("invalid nval = %r for %s" % (nval, self))
-                
+
             if RO.SeqUtil.isSequence(converters) and self.maxNVal is not None and len(converters) > self.maxNVal:
                 raise ValueError("Too many converters (%d > %d=max) for %s" %
                     (len(converters), self.maxNVal, self))
-        
+
         #+
         # set self.cnvDescr (if necessary); this is used for __repr__ and error messages
         #-
@@ -270,7 +270,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
             else:
                 # number of values varies; return the range as a string
                 return "(%s-%s)" % (asStr(self.minNVal), asStr(self.maxNVal))
-        
+
         if not self.cnvDescr:
             if self.maxNVal == 0:
                 cnvDescr = "0"
@@ -284,19 +284,19 @@ class KeyVar(RO.AddCallback.BaseMixin):
             else:
                 cnvDescr = "%s, %s" % (nvalDescr(), RO.LangUtil.funcName(converters))
             self.cnvDescr = cnvDescr
-        
-        
+
+
         # handle refresh info; having a separate refreshActor
         # allows KeyVarFactory.setKeysRefreshCmd to set it to "keys"
         self.refreshActor = self.actor
         self.refreshCmd = refreshCmd
-        
+
         self.doPrint = doPrint
         self._msgDict = None    # message dictionary used to set KeyVar; can be None
         self._setTime = None
         self._refreshKeyCmd = None  # most recent command used to refresh
         self._valueList = []
-        
+
         RO.AddCallback.BaseMixin.__init__(self, defCallNow = True)
 
         # handle defaults
@@ -311,19 +311,19 @@ class KeyVar(RO.AddCallback.BaseMixin):
         self._restoreDefault()
 
         self._isCurrent = False
-        
+
         # if a keyword dispatcher is specified, add the keyword to it
         if dispatcher:
             dispatcher.addKeyVar(self)
-    
+
     def __repr__(self):
         return "%s(%r, %r, %s)" % \
             (self.__class__.__name__, self.actor, self.keyword, self.cnvDescr)
-    
+
     def __str__(self):
         return "%s(%r, %r)" % \
             (self.__class__.__name__, self.actor, self.keyword)
-    
+
     def _restoreDefault(self):
         """Set self._valueList to initial values but does not call callbacks."""
         if self._defValues is not None:
@@ -350,7 +350,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
     def addIndexedCallback(self, callFunc, ind=0, callNow=True):
         """Similar to addCallback, but the call function receives the value at one index.
         This simplifies callbacks a bit, especially for aggregate values (see PVTKeyVar).
-    
+
         Note: if the keyvariable has a variable # of values and the one specified
         by ind is not set, the callback is not called. In general, it is discouraged
         to use indexed callbacks for variable-length keyvariables.
@@ -370,7 +370,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
             RO.MathUtil.checkRange(ind+1, 1, self.maxNVal)
         except ValueError:
             raise ValueError("invalid ind=%r for %s" % (ind, self,))
-                
+
         def fullCallFunc(valueList, isCurrent, keyVar, ind=ind):
             try:
                 val = valueList[ind]
@@ -389,14 +389,14 @@ class KeyVar(RO.AddCallback.BaseMixin):
             self.addIndexedCallback (wdg.setDefault, ind)
         else:
             self.addIndexedCallback (wdg.set, ind)
-    
+
     def addROWdgSet (self, wdgSet, setDefault=False):
         """Adds a set of RO.Wdg wigets
-        
+
         There may be fewer widgets than values, but not more widgets.
 
         This should be more efficient than adding them one at a time with addROWdg.
-        
+
         Raise IndexError if there are more widgets than values.
         """
         if self.maxNVal is not None and len(wdgSet) > self.maxNVal:
@@ -425,14 +425,14 @@ class KeyVar(RO.AddCallback.BaseMixin):
         - isCurrent
         """
         return self._valueList[:], self._isCurrent
-    
+
     def getInd(self, ind):
         """Returns the data at index=ind as a tuple:
         - value: the value at index=ind
         - isCurrent
         """
         return self._valueList[ind], self._isCurrent
-    
+
     def getCmdrCmdID(self):
         """Return (cmdr, cmdID) of the most recent message,
         or None if no message ever received.
@@ -459,21 +459,21 @@ class KeyVar(RO.AddCallback.BaseMixin):
         if not self.lastType:
             return RO.Constants.sevNormal
         return TypeDict[self.lastType][1]
-    
+
     def hasRefreshCmd(self):
         """Return True if has a refresh command.
         """
         return bool(self.refreshCmd)
-        
+
     def isCurrent(self):
         return self._isCurrent
-    
+
     def isGenuine(self):
         """Return True if there is a message dict and it is from the actual actor.
         """
         actor = self.getMsgDict().get("actor")
         return actor == self.actor
-            
+
     def set(self, valueList, isCurrent=True, msgDict=None):
         """Sets the variable's value,
         then updates the time stamp and executes the callbacks (if any)
@@ -491,9 +491,9 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """
         if valueList is None:
             self._restoreDefault()
-        else: 
+        else:
             nout = self._countValues(valueList)
-    
+
             # set values
             self._valueList = [self._convertValueFromList(ind, valueList) for ind in range(nout)]
 
@@ -517,7 +517,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
 
         # apply callbacks, if any
         self._doCallbacks()
-    
+
     def setNotCurrent(self):
         """Clears the isCurrent flag
 
@@ -529,13 +529,13 @@ class KeyVar(RO.AddCallback.BaseMixin):
         # print to stderr, if requested
         if self.doPrint:
             sys.stderr.write ("%s=%r\n" % (self, self._valueList))
-        
+
         self._doCallbacks()
-    
+
     def _convertValueFromList(self, ind, valueList):
         """A utility function for use on list of raw (unconverted) values.
         Returns cnvValue for valueList[ind], or None if value cannot be converted.
-        
+
         Error handling:
         - If the value cannot be converted, complains and returns (valueList[ind], 0)
         - If the value does not exist in the list (or the converter does not exist),
@@ -554,7 +554,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
             # unknown error; this should not happen
             sys.stderr.write("could not convert %r for ind %d of %s: %s\n" % (rawValue, ind, self, e))
             return None
-    
+
     def _countValues(self, valueList):
         """Check length of valueList and return the number of values there should be after conversion.
         """
@@ -582,19 +582,19 @@ class KeyVar(RO.AddCallback.BaseMixin):
             return self._converterList[ind]
         except IndexError:
             return self._converterList[-1]
-    
+
     def __contains__(self, a):
         """Return a in values"""
         return a in self._valueList
-    
+
     def __getitem__(self, ind):
         """Return value[ind]"""
         return self._valueList[ind]
-    
+
     def __getslice__(self, i, j):
         """Return values[i:j]"""
         return self._valueList[i:j]
-    
+
     def __len__(self):
         """Return len(values)"""
         return len(self._valueList)
@@ -602,7 +602,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
 
 class PVTKeyVar(KeyVar):
     """Position, velocity, time tuple for a given # of axes.
-    
+
     To do: make regular callbacks optional for vel!=0 or remove entirely
     and ask the user to implement this directly.
 
@@ -650,14 +650,14 @@ class PVTKeyVar(KeyVar):
     def addROWdg (self, wdg, ind=0):
         """Adds an RO.Wdg; these format their own data via the set function"""
         self.addPosCallback (wdg.set, ind)
-    
+
     def addROWdgSet (self, wdgSet):
         """Adds a set of RO.Wdg wigets that are set to the current position.
-        
+
         There may be fewer widgets than values, but not more widgets.
 
         This should be more efficient than adding them one at a time with addROWdg.
-        
+
         Raise IndexError if there are more widgets than values.
         """
         if self.maxNVal is not None and len(wdgSet) > self.maxNVal:
@@ -670,12 +670,12 @@ class PVTKeyVar(KeyVar):
                 for ind in self.wdgInd:
                     wdgSet[ind].set(valueList[ind].getPos(), isCurrent=isCurrent, keyVar=keyVar)
         self.addCallback (callWdgSet(wdgSet))
-    
+
     def hasVel(self):
         """Return True if velocity known and nonzero for any axis
         """
         return self._hasVel
-    
+
     def set(self, *args, **kargs):
         self._hasVel = False
         KeyVar.set(self, *args, **kargs)
@@ -683,7 +683,7 @@ class PVTKeyVar(KeyVar):
     def _convertValueFromList(self, ind, valueList):
         """Returns converted value at index ind, given valueList,
         or a null PVT if cannot convert. Should only be called by set.
-        
+
         Error handling:
         - If the value cannot be converted, complains and returns a null PVT
         - If the value does not exist in the list (or the converter does not exist),
@@ -766,14 +766,14 @@ class CmdVar(object):
         - keyVars: a sequence of 0 or more keyword variables to monitor.
             Any data for those variables that arrives IN RESPONSE TO THIS COMMAND is saved
             and can be retrieved using cmdVar.getKeyVarData or cmdVar.getLastKeyVarData.
-        
+
         Note: timeLim and timeLimKeyword work together as follows:
         - The initial time limit for the command is timeLim
         - If timeLimKeyword is seen before timeLim seconds have passed
           then self.maxEndTime is updated with the new value
-          
+
         Also the time limit is a lower limit. The command is guaranteed to
-        expire no sooner than this 
+        expire no sooner than this
         """
         self.cmdStr = str(cmdStr)
         self.actor = str(actor)
@@ -799,7 +799,7 @@ class CmdVar(object):
 
         # the following is a list of (callTypes, callFunc)
         self.callTypesFuncList = []
-        
+
         # if a timeLimKeyword specified
         # set up a callback, but only for non-final message types
         # (changing the time limit for the final message is a waste of time)
@@ -808,10 +808,10 @@ class CmdVar(object):
 
         if callFunc:
             self.addCallback(callFunc, callTypes)
-        
+
         if dispatcher:
             dispatcher.executeCmd(self)
-    
+
     def abort(self):
         """Abort the command, including:
         - deregister the command from the dispatcher
@@ -842,12 +842,12 @@ class CmdVar(object):
             cmdVar (by name): this command variable
         """
         self.callTypesFuncList.append((callTypes.lower(), callFunc))
-    
+
     def didFail(self):
         """Return True if the command failed, False otherwise.
         """
         return self.lastType in FailTypes
-    
+
     def getSeverity(self):
         """Return severity of most recent message,
         or RO.Constants.sevNormal if no messages received.
@@ -855,28 +855,28 @@ class CmdVar(object):
         if not self.lastType:
             return RO.Constants.sevNormal
         return TypeDict[self.lastType][1]
-    
+
     def getKeyVarData(self, keyVar):
         """Return all data seen for a given keyword variable,
         or [] if the keyVar was not seen.
-        
+
         Inputs:
         - keyVar: the keyword variable for which to return data
-    
+
         Returns a list of time-ordered keyword data
         (the first entry for the first time the keyword was seen, etc.).
         Each entry is a list of keyword data.
         Thus retVal[-1] is the most recent list of data
         and retval[-1][0] is the first item of the most recent list of data.
-        
+
         Raises KeyError if the keyword variable was not specified at creation.
         """
         return self.keyVarDict[self._keyVarID(keyVar)]
-    
+
     def getLastKeyVarData(self, keyVar, ind=0):
         """Return that most recent keyword data,
         or None if the keyVar was not seen.
-        
+
         Inputs:
         - keyVar: the keyword variable for which to return data
         - ind: index of desired value; None for all values
@@ -890,7 +890,7 @@ class CmdVar(object):
         if ind is None:
             return lastVal
         return lastVal[ind]
-    
+
     def isDone(self):
         """Return True if the command is finished, False otherwise.
         """
@@ -903,7 +903,7 @@ class CmdVar(object):
         Inputs:
         - callFunc  callback function to remove
         - doRaise   raise exception if unsuccessful? True by default.
-        
+
         If doRaise true:
         - Raises ValueError if callback not found
         - Raises RuntimeError if executing callbacks when called
@@ -916,7 +916,7 @@ class CmdVar(object):
         if doRaise:
             raise ValueError("Callback %r not found" % callFunc)
         return False
-    
+
     def reply(self, msgDict):
         """Call command callbacks.
         Warn and do nothing else if called after the command has finished.
@@ -936,7 +936,7 @@ class CmdVar(object):
                     traceback.print_exc(file=sys.stderr)
         if self.lastType in DoneTypes:
             self._cleanup()
-    
+
     def _checkForTimeLimKeyword(self, msgType, msgDict, **kargs):
         """Looks for self.timeLimKeyword in the message dictionary
         and updates self.maxEndTime if found.
@@ -968,7 +968,7 @@ class CmdVar(object):
                 pass
         if self.timeLimKeyword:
             self.removeCallback(self._checkForTimeLimKeyword, doRaise=False)
-    
+
     def _setStartInfo(self, dispatcher, cmdID):
         """Called by the dispatcher when dispatching the command.
         """
@@ -979,7 +979,7 @@ class CmdVar(object):
             self.maxEndTime = self.startTime + self.timeLim
 
         for keyVar in self.keyVars:
-            keyVar.addCallback(self._keyVarCallback)        
+            keyVar.addCallback(self._keyVarCallback)
 
     def _keyVarCallback(self, values, isCurrent, keyVar):
         """Keyword seen; archive the data.
@@ -992,15 +992,15 @@ class CmdVar(object):
         if keyCmdID != self.cmdID:
             return
         self.keyVarDict[self._keyVarID(keyVar)].append(values)
-    
+
     def _keyVarID(self, keyVar):
         """Return an ID suitable for use in a dictionary.
         """
         return id(keyVar)
-    
+
     def __repr__(self):
         return "%s(cmdID=%r, actor=%r, cmdStr=%r)" % (self.__class__.__name__, self.cmdID, self.actor, self.cmdStr)
-    
+
     def __str__(self):
         return "%s %r" % (self.actor, self.cmdStr)
 
@@ -1010,7 +1010,7 @@ class KeyVarFactory(object):
 
     It allows one to specify default values for parameters
     and override them as desired.
-    
+
     Inputs are the default values for the key variable type plus:
     - keyVarType: the desired type (KeyVar by default)
     - allowRefresh: default for allowRefresh (see __call__)
@@ -1036,7 +1036,7 @@ class KeyVarFactory(object):
         # and don't have an explicit refresh command
         self._actorKeyVarsRefreshDict = RO.Alg.ListDict()
         self._actorOptKeywordsRefreshDict = RO.Alg.ListDict()
-        
+
     def __call__(self,
         keyword,
         isLocal = False,
@@ -1055,7 +1055,7 @@ class KeyVarFactory(object):
                     no attention if it fails to update the keyword.
                     It is ignored if allowRefresh is False
                     and requires at least one other keyword be updated for this actor.
-        
+
         Raises RuntimeError if allowRefresh true and:
         - isLocal True
         - refreshCmd specified in this call (the default is irrelevant)
@@ -1063,7 +1063,7 @@ class KeyVarFactory(object):
         if isLocal:
             keyArgs["dispatcher"] = None
             keyArgs["refreshCmd"] = None
-        
+
         netKeyArgs = self._defKeyArgs.copy()
         netKeyArgs.update(keyArgs)
         keyVar = self._keyVarType(keyword, **netKeyArgs)
@@ -1078,7 +1078,7 @@ class KeyVarFactory(object):
             if isLocal:
                 raise RuntimeError("%s: isLocal prohibited if allowRefresh true" % (keyVar,))
             keyArgs["refreshCmd"] = None
-        
+
         if allowRefresh and (not isLocal) and ("refreshCmd" not in netKeyArgs):
             if refreshOptional:
                 self._actorOptKeywordsRefreshDict[keyVar.actor] = keyword
@@ -1092,7 +1092,7 @@ class KeyVarFactory(object):
         - are not local
         - do not have an explicit refresh command
         - produced since the last call to setKeysRefreshCmd
-        
+
         Inputs:
         - getAllKeys: if True, gets all keys for this actor;
             the refresh command becomes: keys getFor=<actor>
@@ -1122,7 +1122,7 @@ if __name__ == "__main__":
     doBasic = True
     doFmt = True
     import RO.Astro.Tm
-    
+
     root = tkinter.Tk()
 
     if doBasic:
@@ -1185,10 +1185,10 @@ if __name__ == "__main__":
                     print(repr(dict["text"]))
             except Exception as e:
                     print(e)
-    
+
     # test PVT callback
     print("\nrunning pvt callback test; hit ctrl-C to end")
-    
+
     def pvtCallback(valList, isCurrent, keyVar):
         if valList is None:
             return

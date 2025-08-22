@@ -9,11 +9,11 @@ class OurActor(actorcore.Actor.Actor):
                  debugLevel=30):
 
         """ Setup an Actor instance. See help for actorcore.Actor for details. """
-        
+
         # This sets up the connections to/from the hub, the logger, and the twisted reactor.
         #
-        actorcore.Actor.Actor.__init__(self, name, 
-                                       productName=productName, 
+        actorcore.Actor.Actor.__init__(self, name,
+                                       productName=productName,
                                        configFile=configFile,
                                        modelNames=modelNames)
 

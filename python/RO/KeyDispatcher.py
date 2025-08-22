@@ -16,7 +16,7 @@ History:
 2003-03-26 ROwen    Prevented infinite repeat of failed refresh requests, whether
                     cmd failed or cmd succeeded but did not refresh the keyVar;
                     added ignoreFailed flag to refreshAllVar
-                    
+
 2003-05-08 ROwen    Modified to use RO.CnvUtil.
 2003-06-09 ROwen    Modified to look up commands purely by command ID, not by actor;
                     this allows us to detect some hub rejections of commands.
@@ -122,7 +122,7 @@ def logToStdOut(msgStr, severity, actor, cmdr):
 class KeyDispatcher(object):
     """
     A keyword dispatcher sets keyword variables based on keyword/value data.
-    
+
     Inputs:
     - name: used as the actor when the dispatcher reports errors
     - connection: an RO.Conn.HubConnection object or similar;
@@ -147,7 +147,7 @@ class KeyDispatcher(object):
 
         # keyVarListDict keys are (actor, keyword) tuples and values are lists of KeyVariables
         self.keyVarListDict = {}
-        
+
         # cmdDict keys are command ID and values are KeyCommands
         self.cmdDict = {}
 
@@ -155,12 +155,12 @@ class KeyDispatcher(object):
         # key is: actor, refresh command, e.g. as returned by keyVar.getRefreshInfo()
         # refresh command: set of keyVars that use this command
         self.refreshCmdDict = {}
-        
+
         self._checkCmdTimer = Timer()
         self._checkRemCmdTimer = Timer()
         self._refreshAllTimer = Timer()
         self._refreshNextTimer = Timer()
-        
+
         if connection:
             self.connection = connection
             self.connection.addReadCallback(self.doRead)
@@ -170,18 +170,18 @@ class KeyDispatcher(object):
         self._isConnected = self.connection.isConnected
         self.userCmdIDGen = RO.Alg.IDGen(1, _CmdNumWrap)
         self.refreshCmdIDGen = RO.Alg.IDGen(_CmdNumWrap + 1, 2 * _CmdNumWrap)
-        
-        self.setLogFunc(logFunc)        
-        
+
+        self.setLogFunc(logFunc)
+
         self.refreshAllVar()
         self.checkCmdTimeouts()
-        
+
     def abortCmdByID(self, cmdID):
         """Abort the command with the specified ID.
-        
+
         Issue the command specified by cmdVar.abortCmdStr, if present.
         Report the command as failed.
-        
+
         Has no effect if the command was never dispatched (cmdID is None)
         or has already finished.
         """
@@ -195,7 +195,7 @@ class KeyDispatcher(object):
         # check isDone
         if cmdVar.isDone():
             return
-        
+
         # if relevant, issue abort command, with no callbacks
         if cmdVar.abortCmdStr and self._isConnected:
             abortCmd = RO.KeyVariable.CmdVar(
@@ -203,7 +203,7 @@ class KeyDispatcher(object):
                 actor = cmdVar.actor,
             )
             self.executeCmd(abortCmd)
-            
+
         # report command as aborted
         errMsgDict = self.makeMsgDict (
             cmdID = cmdVar.cmdID,
@@ -245,16 +245,16 @@ class KeyDispatcher(object):
     def checkCmdTimeouts(self):
         """Check all pending commands for timeouts"""
 #       print "RO.KeyDispatcher.checkCmdTimeouts()"
-        
+
         # cancel pending update, if any
         self._checkCmdTimer.cancel()
         self._checkRemCmdTimer.cancel()
-        
+
         # iterate over a copy of the values
         # so we can modify the dictionary while checking command timeouts
         cmdVarIter = iter(list(self.cmdDict.values()))
         self._checkRemCmdTimeouts(cmdVarIter)
-        
+
     def dispatch(self, msgDict):
         """
         Updates the appropriate entries based on the supplied message data.
@@ -269,7 +269,7 @@ class KeyDispatcher(object):
             data_tuple is always a tuple, even if it contains one or zero values
         """
 #       print "dispatching", msgDict
-        
+
         # extract user number, command number and data dictionary; die if absent
         cmdr  = msgDict["cmdr"]
         cmdID   = msgDict["cmdID"]
@@ -300,10 +300,10 @@ class KeyDispatcher(object):
             if cmdVar is not None:
                 # send reply but don't log (that's already been done)
                 self._replyCmdVar(cmdVar, msgDict, doLog=False)
-                    
+
     def doRead(self, sock, msgStr):
         """Reads, parses and dispatches a message from the hub
-        
+
         Sets self.readUnixTime to time.time()
         """
         # parse message; if it fails, log it as an error
@@ -316,17 +316,17 @@ class KeyDispatcher(object):
                 severity = RO.Constants.sevError,
             )
             return
-        
+
         # log message
         self.logMsgDict(msgDict)
-        
+
         # dispatch message
         try:
             self.dispatch(msgDict)
         except Exception as e:
             sys.stderr.write("Could not dispatch: %r\n" % (msgDict,))
             traceback.print_exc(file=sys.stderr)
-                
+
     def executeCmd(self, cmdVar):
         """Executes the command (of type RO.KeyVariable.CmdVar) by performing the following tasks:
         - Sets the command number
@@ -336,7 +336,7 @@ class KeyDispatcher(object):
 
         Inputs:
         - cmdVar: the command, of class RO.KeyVariable.CmdVar
-            
+
         Note:
         - we always increment cmdID since every command must have a unique command ID
           (even commands that go to different actors); this simplifies the
@@ -350,7 +350,7 @@ class KeyDispatcher(object):
             )
             self._replyCmdVar(cmdVar, errMsgDict)
             return
-        
+
         while True:
             if cmdVar.isRefresh:
                 cmdID = next(self.refreshCmdIDGen)
@@ -360,7 +360,7 @@ class KeyDispatcher(object):
                 break
         self.cmdDict[cmdID] = cmdVar
         cmdVar._setStartInfo(self, cmdID)
-    
+
         try:
             fullCmd = "%d %s %s" % (cmdVar.cmdID, cmdVar.actor, cmdVar.cmdStr)
             self.connection.writeLine (fullCmd)
@@ -381,12 +381,12 @@ class KeyDispatcher(object):
     @staticmethod
     def getMaxUserCmdID():
         """Return the maximum user command ID number.
-        
+
         User command ID numbers range from 1 through getMaxUserCmdID()
         Refresh command ID numbers range from getMaxUserCmdID() + 1 through 2 * getMaxUserCmdID()
         """
         return _CmdNumWrap
-        
+
     def logMsg(self,
         msgStr,
         severity = RO.Constants.sevNormal,
@@ -395,10 +395,10 @@ class KeyDispatcher(object):
         cmdID = 0,
     ):
         """Writes a message to the log.
-        
+
         If no logFunc was supplied then the message is printed to stderr.
         On error, prints a message to stderr and returns normally.
-        
+
         Inputs:
         - msgStr: message to display; a final \n is appended
         - severity: message severity (an RO.Constants.sevX constant)
@@ -421,7 +421,7 @@ class KeyDispatcher(object):
             sys.stderr.write("Could not log: %r; severity=%r; actor=%r; cmdr=%r\n" % \
                 (msgStr, severity, actor, cmdr))
             traceback.print_exc(file=sys.stderr)
-    
+
     def logMsgDict(self, msgDict):
         try:
             msgType = msgDict["msgType"].lower()
@@ -436,7 +436,7 @@ class KeyDispatcher(object):
         except Exception:
             sys.stderr.write("Could not log message dict:\n%r\n" % (msgDict,))
             traceback.print_exc(file=sys.stderr)
-        
+
     def makeMsgDict(self,
         cmdr = None,
         cmdID = 0,
@@ -468,11 +468,11 @@ class KeyDispatcher(object):
             msgDict["msgStr"] = msgStr
             msgDict["data"] = {}
             return msgDict
-    
+
     def refreshAllVar(self, resetAll=True):
         """Examines all keywords, looking for ones that need updating
         and issues the appropriate refresh commands.
-        
+
         Inputs:
         - resetAll: reset all keyword variables to notCurrent
         """
@@ -481,7 +481,7 @@ class KeyDispatcher(object):
         # cancel pending update, if any
         self._refreshAllTimer.cancel()
         self._refreshNextTimer.cancel()
-    
+
         if resetAll:
             # clear the refresh command dict
             # and invalidate all keyVars
@@ -489,7 +489,7 @@ class KeyDispatcher(object):
             for keyVarList in list(self.keyVarListDict.values()):
                 for keyVar in keyVarList:
                     keyVar.setNotCurrent()
-        
+
         self._sendNextRefreshCmd()
 
     def removeKeyVar(self, keyVar):
@@ -509,7 +509,7 @@ class KeyDispatcher(object):
         if keyVar not in keyVarList:
             return None
         keyVarList.remove(keyVar)
-        
+
         # remove refresh command, if present
         keyVarSet = self.refreshCmdDict.get(keyVar.getRefreshInfo())
         if keyVarSet and keyVar in keyVarSet:
@@ -521,12 +521,12 @@ class KeyDispatcher(object):
 
     def setLogFunc(self, logFunc=None):
         """Sets the log output device, or clears it if none specified.
-        
+
         The function must take the following arguments: (msgStr, severity, actor, cmdr)
         where the first argument is positional and the others are by name
         """
         self.logFunc = logFunc
-    
+
     def _updateRefreshCmds(self):
         """Update the cache of refresh commands by scanning the keyVars.
         """
@@ -580,7 +580,7 @@ class KeyDispatcher(object):
                     break
             if errMsgDict:
                 self._replyCmdVar(cmdVar, errMsgDict)
-    
+
                 # schedule myself to run again shortly
                 # (thereby giving other time to other events)
                 # continuing where I left off
@@ -629,14 +629,14 @@ class KeyDispatcher(object):
             # all of the keyVars were removed or there is a bug
             errMsg = "Warning: refresh command %s %s finished but no keyVars found\n" % refreshInfo
             self.logMsg(errMsg, severity=RO.Constants.sevWarning)
-    
+
     def _replyCmdVar(self, cmdVar, msgDict, doLog=True):
         """Send a message to a command variable and optionally log it.
 
         If the command is done, delete it from the command dict.
         If the command is a refresh command and is done,
         update the refresh command dict accordingly.
-        
+
         Inputs:
         - cmdVar    command variable (RO.KeyVariable.CmdVar)
         - msgDict   message to send
@@ -653,10 +653,10 @@ class KeyDispatcher(object):
 
     def _sendNextRefreshCmd(self, refreshCmdItemIter=None):
         """Helper function for refreshAllVar.
-        
+
         Plow through a keyVarList iterator until a refresh command is found that is wanted, issue it,
         then schedule a call for myself for ASAP (giving other events a chance to execute first).
-        
+
         Inputs:
         - refreshCmdItemIter: iterator over items in refreshCmdDict;
           if None then set to self.refreshCmdDict.iteritems()
@@ -687,7 +687,7 @@ class KeyDispatcher(object):
             sys.stderr.write("%s._sendNextRefreshCmd: refresh command %s failed:\n" % (self.__class__.__name__, cmdVar,))
             traceback.print_exc(file=sys.stderr)
         self._refreshNextTimer.start(_ShortInterval, self._sendNextRefreshCmd, refreshCmdItemIter)
-    
+
 
 if __name__ == "__main__":
     print("\nTesting RO.KeyDispatcher\n")
@@ -741,11 +741,11 @@ if __name__ == "__main__":
 
     for var in varList:
         var.addCallback(showVal)
-    
+
     # command callback
     def cmdCall(msgType, msgDict, cmdVar):
         print("command callback for actor=%s, cmdID=%d, cmdStr=%r called with code '%s'" % (cmdVar.actor, cmdVar.cmdID, cmdVar.cmdStr, msgType))
-    
+
     # command
     cmdVar = RO.KeyVariable.CmdVar(
         cmdStr = "THIS IS A SAMPLE COMMAND",
