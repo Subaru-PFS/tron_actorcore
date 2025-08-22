@@ -123,7 +123,7 @@ def isSequence(item):
 def isString(item):
     """Return True if the input is a string-like sequence.
     Strings include str, unicode and UserString objects.
-    
+
     From Python Cookbook, 2nd ed.
     """
     return isinstance(item, (basestring, collections.UserString))
@@ -138,7 +138,7 @@ def oneOrNAsList (
     returning a copy.
 
     Raises ValueError if the input is a sequence of the wrong length.
-    
+
     Inputs:
     - oneOrNVal one value or sequence of values
     - n desired number of values
@@ -164,14 +164,14 @@ def removeDups(aSeq):
             return False
         tempDict[val] = None
         return True
-    
+
     return [val  for val in aSeq if isUnique(val)]
 
 def matchSequences(a, b, rtol=1.0e-5, atol=RO.SysConst.FAccuracy):
     """Compares sequences a and b element by element,
     returning a list of indices for non-matching value pairs.
     The test for matching is compareFloats
-    
+
     This is essentially the same as numpy.allclose,
     but returns a bit more information.
     """
@@ -186,7 +186,7 @@ if __name__ == '__main__':
     class OldStyleClass(object):
         pass
     osc = OldStyleClass()
-    
+
     dataDict = {
         isSequence: (
             (nsc, False),

@@ -97,7 +97,7 @@ class Text(str):
             # be safely enclosed in single quotes.
             code = escape(code).replace("'",'&apos;')
         return str.__new__(cls,code)
-        
+
 class Entity(Text):
     """
     Declares text elements corresponding to the valid (X)HTML entities.
@@ -175,7 +175,7 @@ class Element(object):
     def setRoot(self,root):
         """
         Assigns or reassigns this element to a document root.
-        
+
         An element can be added to multiple documents or multiple times to the
         same document (unless it has an 'id' attribute).
         """
@@ -197,7 +197,7 @@ class Element(object):
     def __str__(self):
         """
         Return a string representation of this element.
-        
+
         Note that the returned string will contain double quotes around all attribute
         values but will not contain any single quotes (except possibly via an
         un-escaped text node), so can be safely enclosed in single quotes.

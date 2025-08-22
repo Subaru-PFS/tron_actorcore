@@ -19,7 +19,7 @@ import opscore.actor.keyvar as opsKeyvar
 
 class CmdrConnection(LineReceiver):
     def __init__(self, readCallback, brains, logger=None, **argv):
-        """ The Commander twisted Protocol: sends command lines and passes on replies. 
+        """ The Commander twisted Protocol: sends command lines and passes on replies.
         """
 
         self.MAX_LENGTH = 64 * 1024
@@ -199,10 +199,10 @@ class Cmdr(object):
         reactor.callFromThread(self.dispatcher.executeCmd, cmdvar)
 
     def call(self, **argv):
-        """ Send a command and generate all its output. 
+        """ Send a command and generate all its output.
 
         The arguments are passed right through to the keyvar.CmdVar. If the callCodes is
-        set to keyvar.AllCodes, this function generates all the individual response lines, 
+        set to keyvar.AllCodes, this function generates all the individual response lines,
         otherwise it returns all the lines at once.
         """
 

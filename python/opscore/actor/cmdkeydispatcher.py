@@ -11,7 +11,7 @@ History:
 2003-03-26 ROwen    Prevented infinite repeat of failed refresh requests, whether
                     cmd failed or cmd succeeded but did not refresh the keyVar;
                     added ignoreFailed flag to refreshAllVar
-                    
+
 2003-05-08 ROwen    Modified to use RO.CnvUtil.
 2003-06-09 ROwen    Modified to look up commands purely by command ID, not by actor;
                     this allows us to detect some hub rejections of commands.
@@ -103,7 +103,7 @@ History:
                     Moved logToStdOut function to KeyDispatcher.
 2011-02-02 ROwen    Moved logReplyStr to KeyDispatcher.
                     Modified to let KeyDispatcher log replies.
-2011-05-04 ROwen    Made makeReply a bit more robust by detecting cmdID == None and changing it to 0. 
+2011-05-04 ROwen    Made makeReply a bit more robust by detecting cmdID == None and changing it to 0.
 2011-06-13 ROwen    Added static method getMaxUserCmdID.
                     Changed to log cmdID when issuing a command.
 2011-07-28 ROwen    Modified to not log commands as they are sent; use cmds actor data instead.
@@ -155,7 +155,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         delayCallbacks = False,
     ):
         """Create a new CmdKeyVarDispatcher
-    
+
         Inputs:
         - name: dispatcher name; must be a valid actor name (_ is OK; avoid other punctuation and whitespace).
             Used as the default actor for logMsg.
@@ -184,17 +184,17 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         Raises ValueError if name cannot be used as an actor name
         """
         keydispatcher.KeyVarDispatcher.__init__(self, name=name, logFunc=logFunc)
-        
+
         self.includeName = bool(includeName)
         self.delayCallbacks = bool(delayCallbacks)
         self.readUnixTime = 0
-        
+
         self.parser = protoParse.ReplyParser()
         self._isConnected = False
 
         # cmdDict keys are command ID and values are KeyCommands
         self.cmdDict = dict()
-        
+
         # refreshCmdDict contains information about keyVar refresh commands:
         # key is: actor, refresh command, e.g. as returned by keyVar.refreshInfo
         # refresh command: set of keyVars that use this command
@@ -204,13 +204,13 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._runningRefreshCmdSet = set()
         self._allRefreshCmdsSent = False
         self._enableCallbacks = not self.delayCallbacks
-        
+
         # timers for various scheduled callbacks
         self._checkCmdTimer = Timer()
         self._checkRemCmdTimer = Timer()
         self._refreshAllTimer = Timer()
         self._refreshNextTimer = Timer()
-        
+
         if connection:
             self.connection = connection
             self.connection.addReadCallback(self._readCallback)
@@ -224,27 +224,27 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             self._isConnected = self.connection.isConnected
         self.userCmdIDGen = RO.Alg.IDGen(1, _CmdNumWrap)
         self.refreshCmdIDGen = RO.Alg.IDGen(_CmdNumWrap + 1, 2 * _CmdNumWrap)
-        
+
         try:
             self.makeReply(dataStr="TestName")
         except Exception as e:
             raise ValueError("Invalid name=%s cannot be parsed as an actor name; error: %s" % \
                 (name, RO.StringUtil.strFromException(e)))
-        
+
         # start background tasks (refresh variables and check command timeout)
         self.refreshAllVar()
         self.checkCmdTimeouts()
-    
+
     def abortCmdByID(self, cmdID):
         """Abort the command with the specified ID.
-        
+
         Issue the command specified by cmdVar.abortCmdStr, if present.
         Report the command as failed.
-        
+
         Has no effect if the command was never dispatched (cmdID == None)
         or has already finished.
         """
-        if cmdID == None:
+        if cmdID is None:
             return
 
         cmdVar = self.cmdDict.get(cmdID)
@@ -254,7 +254,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         # check isDone
         if cmdVar.isDone:
             return
-        
+
         # if relevant, issue abort command, with no callbacks
         if cmdVar.abortCmdStr and self._isConnected:
             abortCmd = keyvar.CmdVar(
@@ -262,7 +262,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 actor = cmdVar.actor,
             )
             self.executeCmd(abortCmd)
-            
+
         # report command as aborted
         errReply = self.makeReply (
             cmdID = cmdVar.cmdID,
@@ -272,7 +272,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
     def addKeyVar(self, keyVar):
         """Add a keyword variable (opscore.actor.keyvar.KeyVar) to the collection.
-        
+
         Inputs:
         - keyVar: the keyword variable (opscore.actor.keyvar.KeyVar)
         """
@@ -291,26 +291,26 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     def checkCmdTimeouts(self):
         """Check all pending commands for timeouts"""
 #       print "opscore.actor.CmdKeyVarDispatcher.checkCmdTimeouts()"
-        
+
         # cancel pending update, if any
         self._checkCmdTimer.cancel()
         self._checkRemCmdTimer.cancel()
-        
+
         # iterate over a copy of the values
         # so we can modify the dictionary while checking command timeouts
         cmdVarIter = iter(list(self.cmdDict.values()))
         self._checkRemCmdTimeouts(cmdVarIter)
-    
+
     def dispatchReply(self, reply):
         """Log the reply, set KeyVars and CmdVars.
-        
+
         reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
          - header.program: name of the program that triggered the message (string)
-         - header.commandId: command ID that triggered the message (int) 
+         - header.commandId: command ID that triggered the message (int)
          - header.actor: the actor that generated the message (string)
          - header.code: the message type code (opscore.protocols.types.Enum)
          - string: the original unparsed message (string)
-         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
+         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
         # log message and set KeyVars
@@ -320,13 +320,13 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         if self.replyIsMine(reply):
             # get the command for this command id, if any
             cmdVar = self.cmdDict.get(reply.header.commandId, None)
-            if cmdVar != None:
+            if cmdVar is not None:
                 # send reply but don't log (that's already been done)
                 self._replyToCmdVar(cmdVar, reply, doLog=False)
-                
+
     def executeCmd(self, cmdVar):
         """Execute a command (of type opscore.actor.keyvar.CmdVar).
-        
+
         Performs the following tasks:
         - Sets the command ID number
         - Sets the start time
@@ -335,7 +335,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
         Inputs:
         - cmdVar: the command, of class opscore.actor.keyvar.CmdVar
-            
+
         Note:
         - Always increments cmdID because every command must have a unique command ID
           (even commands that go to different actors); this simplifies the
@@ -348,7 +348,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             )
             self._replyToCmdVar(cmdVar, errReply)
             return
-        
+
         while True:
             if cmdVar.isRefresh:
                 cmdID = next(self.refreshCmdIDGen)
@@ -358,7 +358,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                 break
         self.cmdDict[cmdID] = cmdVar
         cmdVar._setStartInfo(self, cmdID)
-    
+
         try:
             if self.includeName:
                 # internal actor; must specify the commander
@@ -388,12 +388,12 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
     @staticmethod
     def getMaxUserCmdID():
         """Return the maximum user command ID number.
-        
+
         User command ID numbers range from 1 through getMaxUserCmdID()
         Refresh command ID numbers range from getMaxUserCmdID() + 1 through 2 * getMaxUserCmdID()
         """
         return _CmdNumWrap
-        
+
     def makeReply(self,
         cmdr = None,
         cmdID = 0,
@@ -402,23 +402,23 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         dataStr = "",
     ):
         """Generate a Reply object (opscore.protocols.messages.Reply) based on the supplied data.
-        
+
         Useful for reporting internal errors.
         """
 #        print "%s.makeReply(cmdr=%s, cmdID=%s, actor=%s, msgCode=%s, dataStr=%r)" % \
 #            (self.__class__.__name__, cmdr, cmdID, actor, msgCode, dataStr)
         msgStr = None
         try:
-            if cmdr == None:
+            if cmdr is None:
                 if self.includeName:
                     cmdr = "%s.%s" % (self.connection.cmdr, self.connection.cmdr)
                 else:
                     cmdr = self.connection.cmdr or "me.me"
-            if actor == None:
+            if actor is None:
                 actor = self.name
-            if cmdID == None:
+            if cmdID is None:
                 cmdID = 0
-    
+
             headerStr = "%s %d %s %s" % (cmdr, cmdID, actor, msgCode)
             msgStr = " ".join((headerStr, dataStr))
             reply = self.parser.parse(msgStr)
@@ -431,7 +431,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
             try:
                 newDataStr = "Text=%s" % (RO.StringUtil.quoteStr(dataStr))
                 newMsgStr = " ".join((headerStr, newDataStr))
-                reply = self.parser.parse(newMsgStr)            
+                reply = self.parser.parse(newMsgStr)
             except Exception:
                 sys.stderr.write("%s.makeReply could not make reply from simplified msgStr=%r; giving up\n" % \
                     (self.__class__.__name__, newMsgStr,))
@@ -445,7 +445,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
     def refreshAllVar(self, resetAll=True):
         """Issue all keyVar refresh commands after optionally setting them all to notCurrent.
-        
+
         Inputs:
         - resetAll: reset all keyword variables to notCurrent
         """
@@ -457,12 +457,12 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         self._enableCallbacks = not self.delayCallbacks
         self._runningRefreshCmdSet = set()
         self._allRefreshCmdsSent = False
-        
+
         if resetAll:
             for keyVarList in list(self.keyVarListDict.values()):
                 for keyVar in keyVarList:
                     keyVar.setNotCurrent()
-    
+
         self._sendNextRefreshCmd()
 
     def removeKeyVar(self, keyVar):
@@ -494,7 +494,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
     def sendAllKeyVarCallbacks(self, includeNotCurrent=False):
         """Send all keyVar callbacks.
-        
+
         Inputs:
         - includeNotCurrent: issue callbacks for keyVars that are not current?
         """
@@ -550,7 +550,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
                         )
                     if errReply:
                         self._replyToCmdVar(cmdVar, errReply)
-            
+
                         # schedule myself to run again shortly
                         # (thereby giving other time to other events)
                         # continuing where I left off
@@ -577,7 +577,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
     def _nextKeyVarCallback(self, keyVarListIter, includeNotCurrent=True):
         """Issue next keyVar callback
-        
+
         Input:
         - keyVarListIter: iterator over values in self.keyVarListDict
         """
@@ -628,14 +628,14 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 #         print "using delayCallbacks and the last refresh command has finished; refresh all variables"
         self._enableCallbacks = True
         self.sendAllKeyVarCallbacks(includeNotCurrent=False)
-    
+
     def _replyToCmdVar(self, cmdVar, reply, doLog=True):
         """Send a message to a command variable and optionally log it.
 
         If the command is done, delete it from the command dict.
         If the command is a refresh command and is done,
         update the refresh command dict accordingly.
-        
+
         Inputs:
         - cmdVar    command variable (opscore.actor.keyvar.CmdVar)
         - reply     Reply object (opscore.protocols.messages.Reply) to send
@@ -643,7 +643,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         if doLog:
             self.logReply(reply)
         cmdVar.handleReply(reply)
-        if cmdVar.isDone and cmdVar.cmdID != None:
+        if cmdVar.isDone and cmdVar.cmdID is not None:
             try:
                 del (self.cmdDict[cmdVar.cmdID])
             except KeyError:
@@ -652,10 +652,10 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
 
     def _sendNextRefreshCmd(self, refreshCmdItemIter=None):
         """Helper function for refreshAllVar.
-        
+
         Plow through a keyVarList iterator until a refresh command is found that is wanted, issue it,
         then schedule a call for myself for ASAP (giving other events a chance to execute first).
-        
+
         Inputs:
         - refreshCmdItemIter: iterator over items in refreshCmdDict;
           if None then set to self.refreshCmdDict.iteritems()
@@ -664,7 +664,7 @@ class CmdKeyVarDispatcher(keydispatcher.KeyVarDispatcher):
         if not self._isConnected:
             return
 
-        if refreshCmdItemIter == None:
+        if refreshCmdItemIter is None:
             refreshCmdItemIter = iter(self.refreshCmdDict.items())
 
         try:
@@ -693,7 +693,7 @@ class NullConnection(object):
     Always acts as if it is connected (so one can write data),
     but prohibits explicit connection (maybe not necessary,
     but done to make it clear to users that it is a fake).
-    
+
     cmdr = "me.me"
     """
     def __init__ (self):
@@ -702,10 +702,10 @@ class NullConnection(object):
 
     def connect(self):
         raise RuntimeError("NullConnection is always connected")
-    
+
     def disconnect(self):
         raise RuntimeError("NullConnection cannot disconnect")
-    
+
     def isConnected(self):
         return True
 
@@ -718,7 +718,7 @@ class NullConnection(object):
 
     def writeLine(self, str):
         sys.stdout.write("Null connection asked to write: %s\n" % (str,))
-    
+
 
 if __name__ == "__main__":
     print("\nTesting opscore.actor.CmdKeyVarDispatcher\n")
@@ -727,7 +727,7 @@ if __name__ == "__main__":
     import tkinter
     root = tkinter.Tk()
     twisted.internet.tksupport.install(root)
-    
+
     kvd = CmdKeyVarDispatcher()
 
     def showVal(keyVar):
@@ -745,12 +745,12 @@ if __name__ == "__main__":
     for keyVar in keyVarList:
         keyVar.addCallback(showVal)
         kvd.addKeyVar(keyVar)
-    
+
     # command callback
     def cmdCall(cmdVar):
         print("command callback for actor=%s, cmdID=%d, cmdStr=%r, isDone=%s" % \
             (cmdVar.actor, cmdVar.cmdID, cmdVar.cmdStr, cmdVar.isDone))
-    
+
     # command
     cmdVar = keyvar.CmdVar(
         cmdStr = "THIS IS A SAMPLE COMMAND",
@@ -798,6 +798,6 @@ if __name__ == "__main__":
     )
     print("\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:")
     kvd.dispatchReply(reply)
-    
+
     print("\nTesting keyVar refresh")
     kvd.refreshAllVar()

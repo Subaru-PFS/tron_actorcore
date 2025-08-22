@@ -51,7 +51,7 @@ from . import Text
 
 class PythonWdg(tkinter.Frame):
     """A frame containing text window into which you may enter Python code.
-    
+
     Inputs:
     - master    master Tk widget -- typically a frame or window
     - filePath  if specified, the widget starts out containing that file
@@ -155,7 +155,7 @@ class PythonWdg(tkinter.Frame):
 
 if __name__ == '__main__':
     root = tkinter.Tk()
-    
+
     testFrame = PythonWdg(root)
     root.geometry("+0+450")
     testFrame.pack(expand=tkinter.YES, fill=tkinter.BOTH)

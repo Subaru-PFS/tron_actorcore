@@ -35,7 +35,7 @@ class Consumer(object):
         if self.debug:
             print('%s%r << %r' % (' '*Consumer.indent,self,what))
             Consumer.indent += 1
-            
+
     def passed(self,what):
         if self.debug:
             Consumer.indent -= 1
@@ -148,7 +148,7 @@ class TypedValues(Consumer):
             return True
         except (IndexError,ValueError,TypeError,OverflowError):
             return False
-    
+
     def describeAsHTML(self):
         content = utilHtml.Div(
             utilHtml.Div(
@@ -162,7 +162,7 @@ class TypedValues(Consumer):
             content.append(utilHtml.Div(utilHtml.Entity('nbsp'),className='separator'))
             content.extend(vtype.describeAsHTML().children)
         return content
-    
+
     def describe(self):
         text = '%12s: %s\n' % ('Values',self.descriptor)
         for vtype in self.vtypes:
@@ -173,7 +173,7 @@ class TypedValues(Consumer):
 class Key(Consumer):
     """
     Base class for a command or reply keyword consumer
-    
+
     Inputs:
     - name: keyword name
     - a list of one or more value types
@@ -194,7 +194,7 @@ class Key(Consumer):
 
     def __repr__(self):
         return 'Key(%s)' % self.name
-        
+
     def consume(self,keyword):
         self.trace(keyword)
         # perform a case-insensitive name matching
@@ -208,7 +208,7 @@ class Key(Consumer):
     def create(self,*values):
         """
         Returns a new Keyword using this Key as a template
-        
+
         Any keyword values must match the expected types or else this
         method returns None. The returned keyword will have typed
         values.
@@ -220,10 +220,10 @@ class Key(Consumer):
             raise KeysError('value types do not match for keyword %s: %r'
                 % (self.name,values))
         return keyword
-    
+
     def describeAsHTML(self):
         content = utilHtml.Div(
-            utilHtml.Div(self.name,className='keyname'),            
+            utilHtml.Div(self.name,className='keyname'),
             className='key'
         )
         desc = utilHtml.Div(className='keydesc')
@@ -235,8 +235,8 @@ class Key(Consumer):
                 className='key descriptor'
             ))
         desc.extend(self.typedValues.describeAsHTML().children)
-        return content      
-    
+        return content
+
     def describe(self):
         text = '%12s: %s\n' % ('Keyword',self.name)
         if self.help:
@@ -257,30 +257,30 @@ class KeysManager(object):
     def setKeys(cls,kdict):
         cls.keys = {}
         cls.addKeys(kdict)
-        
+
     @classmethod
     def addKeys(cls,kdict):
         if not isinstance(kdict,KeysDictionary):
             raise KeysError('Cmd keys must be provided as a KeysDictionary')
         cls.keys[kdict.name] = kdict
-        
+
     @classmethod
     def getKey(cls,name):
         for kdict in list(cls.keys.values()):
             if name in kdict:
                 return kdict[name]
         raise KeysError('No such registered keyword <%s>' % name)
-        
+
 class CmdKey(Consumer,KeysManager):
     """
     Consumes a command keyword
     """
     def __init__(self,key):
         self.key = key
-    
+
     def __repr__(self):
         return 'CmdKey(%s)' % self.key.name
-    
+
     def consume(self,where):
         self.trace(where)
         keyword = where.keyword()
@@ -290,7 +290,7 @@ class CmdKey(Consumer,KeysManager):
             return self.failed('no match for command keyword')
         where.advance()
         return self.passed(where)
-        
+
 class RawKey(Consumer):
     """
     Consumes the special 'raw' keyword in a command
@@ -312,7 +312,7 @@ class KeysDictionaryError(KeysError):
 class KeysDictionary(object):
     """
     A collection of Keys associated with a given name
-    
+
     The dictionary name is typically the name of an actor. Contains a
     registry of all known KeysDictionaries, for use by the load method.
     """
@@ -321,7 +321,7 @@ class KeysDictionary(object):
     def __init__(self,name,version,*keys):
         """
         Creates a new named keys dictionary
-        
+
         Overwrites any existing dictionary with the same name. The
         version should be specified as a (major,minor) tuple of
         integers. Dictionary names must be lower case.
@@ -377,7 +377,7 @@ class KeysDictionary(object):
 
     def __contains__(self,name):
         return name.lower() in self.keys
-        
+
     def describe(self):
         """
         Generates text describing all of our keys in alphabetical order
@@ -386,7 +386,7 @@ class KeysDictionary(object):
         for name in sorted(self.keys):
             text += '\n' + self.keys[name].describe()
         return text
-        
+
     def describeAsHTML(self):
         """
         Generates HTML describing all of our keys in alphabetical order

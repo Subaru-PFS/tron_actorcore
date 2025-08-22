@@ -24,7 +24,7 @@ class CommandLink(LineReceiver):
     # How we match a command...
     #     1. optional cmdrName
     #     2. optional MID
-    #     3. command string 
+    #     3. command string
     cmdRe = re.compile(r"""
     ^\s*
     (?:(?P<cmdrName>(?:[a-z][a-z0-9_]*)?(?:\.(?:[a-z][a-z0-9_]*))+)\s+)?
@@ -36,7 +36,7 @@ class CommandLink(LineReceiver):
         """ Receives what should be atomic commands, parses them, and passes them on.
         """
         # LineReceiver.__init__(self) # How can they live without?
-        
+
         self.MAX_LENGTH = 256*1024
         self.brains = brains
         self.connID = connID
@@ -44,9 +44,9 @@ class CommandLink(LineReceiver):
         self.delimiterChecked = False
         self.outputQueue = []
         self.outputQueueLock = threading.Lock()
-        
+
         self.mid = 1                    # In case we need to self-assign MIDs
-        
+
     def connectionMade(self):
         """ Called when our connection has been established. """
 
@@ -54,7 +54,7 @@ class CommandLink(LineReceiver):
         cmdrName = 'self.%d' % self.connID
         cmd = Command(self.factory, cmdrName, self.connID, 0, '')
         cmd.finish('yourUserNum=%d' % self.connID)
-        
+
     def lineReceived(self, cmdString):
         """ Called when a complete line has been read from the hub. """
 
@@ -66,7 +66,7 @@ class CommandLink(LineReceiver):
                 self.delimiter = cmdString[-1]+self.delimiter
                 cmdString = cmdString[:-1]
             self.delimiterChecked = True
-            
+
         # Parse the header...
         m = self.cmdRe.match(cmdString)
         if not m:
@@ -77,10 +77,10 @@ class CommandLink(LineReceiver):
 
         # Look for, or create, an integer MID.
         rawMid = cmdDict['mid']
-        if rawMid == '' or rawMid == None: # Possibly self-assign a MID
+        if rawMid == '' or rawMid is None: # Possibly self-assign a MID
             mid = self.mid
             self.mid += 1
-        else:    
+        else:
             try:
                 mid = int(rawMid)
             except Exception as e:
@@ -89,9 +89,9 @@ class CommandLink(LineReceiver):
                 return
         if mid >= self.mid:
             self.mid += 1
-        
+
         cmdrName = cmdDict['cmdrName']
-        if cmdrName == '' or cmdrName == None:
+        if cmdrName == '' or cmdrName is None:
             cmdrName = 'self.%d' % (self.connID) # Fabricate a connection ID.
 
         # And hand it upstairs.
@@ -99,20 +99,20 @@ class CommandLink(LineReceiver):
             cmd = Command(self.factory, cmdrName, self.connID, mid, cmdDict['cmdString'])
             self.brains.newCmd(cmd)
         except Exception as e:
-            self.brains.bcast.fail('text=%s' % (qstr("cannot process command: %s (exception=%s)" % 
+            self.brains.bcast.fail('text=%s' % (qstr("cannot process command: %s (exception=%s)" %
                                                      (cmdDict['cmdString'], e))))
             cmdLogger.warn(tback('lineReceived', e))
 
     def sendQueuedResponses(self):
         """ method for the twisted reactor to call when we tell it there is output from this thread. """
-        
+
         cmdLogger.debug('flushing queue to all outputs...')
         with self.outputQueueLock:
             while len(self.outputQueue) > 0:
                 e = self.outputQueue.pop(0)
                 cmdLogger.debug('flushing queue line: %s' % (e[:-1]))
                 self.transport.write(bytes(e, 'latin-1'))
-                
+
     def sendResponse(self, cmd, flag, response):
         """ Ship a command off to the hub. """
 
@@ -126,16 +126,16 @@ class CommandLink(LineReceiver):
         with self.outputQueueLock:
             self.outputQueue.append(e)
         reactor.callFromThread(self.sendQueuedResponses)
-            
+
     def shutdown(self, why="cuz"):
         """ Called from above when we want to drop the connection. """
-        
+
         self.brains.bcast.respond('text=%s' % (qstr("shutting connection %d down" % (self.connID))))
         actorLogger.info("CommandLink.shutdown because %s", why)
         self.transport.loseConnection()
-        
+
     def connectionLost(self, reason="cuz"):
         """ Called from below when the connection is dropped. """
-        
+
         actorLogger.info("connectionLost of %s because %s", self, reason)
         self.factory.loseConnection(self)

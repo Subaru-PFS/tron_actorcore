@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pfs-tron-actorcore"
+description = "Common code base for the PFS MHS actor system"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "astropy",
+    "future",
+    "numpy",
+    "ply",
+    "pycryptodome",
+    "twisted",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "isort",
+    "lsst-versions",
+    "pytest>=8.0",
+    "ruff",
+]
+ro_extras = [
+    "Pillow",
+    "pywin32; sys_platform == 'win32'",
+    "py2exe; sys_platform == 'win32'",
+]
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["actorcore*", "opscore*", "pfscore*", "RO*"]
+
+[tool.black]
+line-length = 110
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 110
+known_first_party = ["actorcore", "opscore", "pfscore", "RO"]
+
+[tool.lsst_versions]
+write_to = "python/actorcore/version.py"
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"  # Recommended as best practice
+
+[tool.pydocstyle]
+convention = "numpy"

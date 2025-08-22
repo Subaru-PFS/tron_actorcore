@@ -65,7 +65,7 @@ class CoreCmd(object):
         return key
 
     def connect(self, cmd):
-        """ Reload controller objects. 
+        """ Reload controller objects.
 
         If the controllers argument is not passed in, all controllers are reloaded.
         """

@@ -62,7 +62,7 @@ class VMSTelnet(TCPConnection):
             stateCallback: function to call whenever the socket
                 connects or disconnected; it will be sent two arguments:
                     is connected flag (true if connected, false if not)
-                    this connection object      
+                    this connection object
         """
         TCPConnection.__init__(self,
             host=host,
@@ -73,9 +73,9 @@ class VMSTelnet(TCPConnection):
             authReadCallback = self._authRead,
             authReadLines = False,
         )
-        
+
         self._initData()
-    
+
     def _initData(self):
         """Initialize extra fields."""
         self._iac = 0
@@ -103,22 +103,22 @@ class VMSTelnet(TCPConnection):
         self._username = username
 
         TCPConnection.connect(self, host, port)
-    
+
     def connectDialog (self, master, username, host=None):
         """Prompt for a password and then connect.
         """
         if host:
             self.host = host
-    
+
         class PasswordDialog(RO.Wdg.ModalDialogBase):
             def body(self, master):
-        
+
                 RO.Wdg.StrLabel(master, text="Password:").grid(row=0, column=0)
-        
+
                 self.pwdEntry = RO.Wdg.StrEntry(master, show="*")
                 self.pwdEntry.grid(row=0, column=1)
                 return self.pwdEntry # initial focus
-        
+
             def setResult(self):
                 self.result = self.pwdEntry.get()
 
@@ -130,14 +130,14 @@ class VMSTelnet(TCPConnection):
                 username = username,
                 password = passwd,
             )
-        
+
     def _authRead (self, sock, readData):
         """Handle username/password authentication and telnet negotiation.
-        
+
         - Handles telnet negotiation by denying all requests.
         - If negotation fails, closes the connection (and so calls the
           connection state callback function).
-        
+
         Intended to be the read callback function while negotiation the connection.
         """
         for c in readData:
@@ -218,7 +218,7 @@ if __name__ == "__main__":
             print(state)
 
     myConn = VMSTelnet(
-        host = host, 
+        host = host,
         readCallback = readCallback,
         stateCallback = stateCallback,
     )
@@ -227,7 +227,7 @@ if __name__ == "__main__":
     sendText.pack(fill=tkinter.X, expand=tkinter.YES)
     sendText.focus_set()
 
-    tkinter.Button(root, text="Disconnect", command=myConn.disconnect).pack()   
+    tkinter.Button(root, text="Disconnect", command=myConn.disconnect).pack()
 
     def sendCmd (evt):
         try:

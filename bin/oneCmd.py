@@ -36,8 +36,8 @@ class OurActor(actorcore.Actor.Actor):
 
         # This sets up the connections to/from the hub, the logger, and the twisted reactor.
         #
-        actorcore.Actor.Actor.__init__(self, name, 
-                                       productName=productName, 
+        actorcore.Actor.Actor.__init__(self, name,
+                                       productName=productName,
                                        acceptCmdrs=False,
                                        modelNames=modelNames)
         rootLogger = logging.getLogger()
@@ -45,12 +45,12 @@ class OurActor(actorcore.Actor.Actor):
 
     def reloadConfiguration(self, cmd=None):
         self.logger.setLevel(logging.WARNING)
-        
+
     def _identifyOurself(self):
         """ Create a CmdVar whose .cmdr string identifies the hostname and user.  """
 
         tr = ''.maketrans('-.', '__')
-        
+
         try:
             login = os.getlogin()
         except:
@@ -60,12 +60,12 @@ class OurActor(actorcore.Actor.Actor):
         host = socket.gethostname()
         host = host.split('.',1)[0]
         host = host.translate(tr)
-        
+
         cmdvar = opsKeyvar.CmdVar()
         cmdvar.cmdr = f"{user}_{host}"
 
         return cmdvar
-        
+
     def TS(self):
         now = time.time()
         basetime = time.strftime('%Y-%m-%dT%H:%M:%S', time.localtime(now))
@@ -107,7 +107,7 @@ class OurActor(actorcore.Actor.Actor):
         reactor.callLater(0, self.cmdr.dispatcher.executeCmd, cmdvar)
 
     def _connectionMade(self):
-        """twisted arranges to call this when self.cmdr has been established. 
+        """twisted arranges to call this when self.cmdr has been established.
 
         Usually, the Actor starts up by sending a command to the hub
         to connect back to us. We want to skip this step.
@@ -130,7 +130,7 @@ def main(argv=None):
         argv = shlex.split(argv)
 
     parser = argparse.ArgumentParser(description="Send a single actor command")
-    parser.add_argument('--level', 
+    parser.add_argument('--level',
                         choices={'d','i','w','f'},
                         default='i',
                         help='minimum reply level [d(ebug),i(nfo),w(arn),f(ail)]. Default=i')

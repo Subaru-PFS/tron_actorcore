@@ -88,7 +88,7 @@ Exceptions:
 #           print "char at nextInd =", astr[nextInd]
 #       else:
 #           print ""
-        
+
         if nextInd is None:
             # done with line
             break

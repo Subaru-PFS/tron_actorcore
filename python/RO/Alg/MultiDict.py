@@ -30,10 +30,10 @@ class ListDict(UserDict):
             self.data[key].append(val)
         else:
             self.data[key] = [val]
-    
+
     def addList(self, key, valList):
         """Append values to the list of values for a given key, creating a new entry if necessary.
-        
+
         Inputs:
         - valList: an iterable collection (preferably ordered) of values
         """
@@ -55,12 +55,12 @@ class SetDict(ListDict):
     """A dictionary whose values are a set of items, meaning
     a list of unique items. Duplicate items are silently not added.
     """
-    
+
     def __setitem__(self, key, val):
         """Add a value to the set of values for a given key, creating a new entry if necessary.
-        
+
         Duplicate values are silently ignored.
-        
+
         Supports the notation: aListDict[key] = val
         """
         valSet = self.data.get(key)
@@ -68,12 +68,12 @@ class SetDict(ListDict):
             self.data[key] = set([val])
         else:
             valSet.add(val)
-    
+
     def addList(self, key, valList):
         """Add values to the set of values for a given key, creating a new entry if necessary.
-        
+
         Duplicate values are silently ignored.
-        
+
         Inputs:
         - valList: an iterable collection of values
         """
@@ -103,7 +103,7 @@ if __name__ == "__main__":
     print((RO.StringUtil.prettyDict(ad)))
     print("listdict copy (modified):")
     print((RO.StringUtil.prettyDict(ad2)))
-    
+
 
     ad = SetDict()
     ad["a"] = "foo a"

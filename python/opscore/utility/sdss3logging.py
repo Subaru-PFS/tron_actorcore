@@ -76,7 +76,7 @@ class OpsRotatingFileHandler(logging.StreamHandler):
         self.basename = basename
         self.formatter = OpsLogFormatter()
 
-        if rolloverTime == None:
+        if rolloverTime is None:
             self.rolloverTime = self.APOrolloverHour * 3600.0
         else:
             self.rolloverTime = rolloverTime

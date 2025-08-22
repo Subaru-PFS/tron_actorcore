@@ -33,7 +33,7 @@ class TopCmd(object):
         """Report camera status and actor version. """
 
         self.actor.sendVersionKey(cmd)
-        
+
         cmd.inform('text="Present!"')
         cmd.finish()
 

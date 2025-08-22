@@ -1,4 +1,4 @@
-# import our routines before logging itself. 
+# import our routines before logging itself.
 from builtins import object
 try:
     import opscore.utility.sdss3logging as opsLogging
@@ -10,7 +10,7 @@ import logging
 class FakeCommand(object):
     def __init__(self, logger=None):
         self.logger = logger if logger else logging.getLogger()
-        
+
     def respond(self, s):
         self.logger.info("fake.inform: %s" % (s))
     def inform(self, s):

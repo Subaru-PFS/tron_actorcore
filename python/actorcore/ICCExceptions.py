@@ -22,7 +22,7 @@ class ICCError(exceptions.Exception):
             self.args = (error, details)
         else:
             self.args = (error,)
-            
+
 class CmdError(exceptions.Exception):
     """ A exception due to commands sent to the ICC. Anything can throw one, passing a one line
         error message. The top-level event loop will close/cleanup/destroy any running command
@@ -43,11 +43,11 @@ class CmdError(exceptions.Exception):
             self.args = (error, details)
         else:
             self.args = (error,)
-                 
+
 class CommError(exceptions.Exception):
     """ An exception that specifies that a low-level communication error occurred. These should only
         be thrown for serious communications errors. The top-level event loop will close/cleanup/destroy
-        any running command. The error message will be returned on text. 
+        any running command. The error message will be returned on text.
     """
 
     def __init__(self, device, error, details=None):
@@ -66,4 +66,4 @@ class CommError(exceptions.Exception):
             self.args = (device, error, details)
         else:
             self.args = (device, error)
-            
+

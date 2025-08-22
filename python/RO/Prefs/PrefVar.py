@@ -135,7 +135,7 @@ class PrefVar(object):
     - cnvFunc: a conversion function for text values to internal values;
         it should also return values in the final format unchanged.
         Users almost never need to specify this, as subclasses chose a suitable default.
-        
+
     Subclasses should provide useful defaults for the formatStr and cnvFunc arguments,
     and should override these methods:
     - checkValue
@@ -171,13 +171,13 @@ class PrefVar(object):
         self.doPrint = doPrint
         self.cnvFunc = cnvFunc or RO.CnvUtil.nullCnv
         self._callbackList = []
-        
+
         try:
             self.setDefValue(defValue)
         except (ValueError, TypeError) as e:
             sys.stderr.write("Default rejected for %s %s: %s\n" % \
                 (self.__class__.__name__, name, e))
-    
+
         # check values
         if self.validValues is not None:
             for val in self.validValues:
@@ -191,7 +191,7 @@ class PrefVar(object):
         # if a callback function is specified, add a callback to it
         if callFunc:
             self.addCallback(callFunc, callNow)
-    
+
     def addCallback(self, callFunc, callNow = True):
         """Executes the given function whenever the variable is set or invalidated.
 
@@ -205,7 +205,7 @@ class PrefVar(object):
         if callNow:
             callFunc(self.value, self)
         self._callbackList.append(callFunc)
-    
+
     def checkValue(self, value):
         """Override to provide different checks; if you just want to add checks
         then override locCheckValue instead.
@@ -215,28 +215,28 @@ class PrefVar(object):
         if self.validValues:
             if value not in self.validValues:
                 raise ValueError("value %r not in %r" % (value, self.validValues))
-        
+
         # apply local checks
         self.locCheckValue(value)
-        
+
         # check that the value can be formatted for output
         try:
             self.asStr(value)
         except Exception:
             raise ValueError("value %r could not be formatted with string %r" % (value, self.formatStr))
-    
+
     def getDefValue(self):
         """Return the current default value"""
         return self.defValue
-    
+
     def getDefValueStr(self):
         """Return the default value as a string"""
         return self.asStr(self.defValue)
-    
+
     def getEditWdg(self, master, var=None, ctxConfigFunc=None):
         """Return a Tkinter widget that allows the user to edit the
         value of the preference variable.
-        
+
         Inputs:
         - master: master for returned widget
         - var: a Tkinter variable to be used in the widget
@@ -253,21 +253,21 @@ class PrefVar(object):
         if ctxConfigFunc:
             editWdg.ctxSetConfigFunc(ctxConfigFunc)
         return editWdg
-        
+
     def getRangeStr(self):
         """Return a brief description of the variable's range or other restrictions"""
         return ""
-    
+
     def getValue(self):
         """Return the current value"""
         return self.value
-    
+
     def getValueStr(self):
         """Return the current value as a string
         sufficient to reconstruct the value.
         """
         return self.asStr(self.value)
-    
+
     def locCheckValue(self, value):
         """Override to provide additional checks here
         Raises a ValueError exception if the value is invalid.
@@ -281,7 +281,7 @@ class PrefVar(object):
         defValue = self.asValue(rawValue)
         self.checkValue(defValue)
         self.defValue = defValue
-        
+
     def setValue (self, rawValue):
         """Accepts values of the correct type or a string representation"""
         if isinstance(rawValue, basestring):
@@ -298,7 +298,7 @@ class PrefVar(object):
         # apply callbacks, if any
         for callFunc in self._callbackList:
             callFunc(self.value, self)
-    
+
     def asValue(self, rawValue):
         """Converts a raw value (string or value) to the internal representation.
         """
@@ -311,12 +311,12 @@ class PrefVar(object):
         if rawValue is None:
             return ""
         return self.formatStr % (self.asValue(rawValue),)
-    
+
     def asSummary(self, rawValue):
         """Converts a raw value (internal rep. or string) to a brief summary.
         """
         return self.asStr(rawValue)
-    
+
     def __str__(self):
         return ("%s " + self.formatStr) % (self.name, self.value)
 
@@ -342,7 +342,7 @@ class StrPrefVar(PrefVar):
 
         self.finalPattern = finalPattern
         self.partialPattern = partialPattern
-        
+
         # cache the valid pattern for local testing
         # (the edit widget handles the partial pattern itself)
         self.validRE = None
@@ -358,7 +358,7 @@ class StrPrefVar(PrefVar):
             defValue = defValue,
             **kargs
         )
-    
+
     def locCheckValue(self, value):
         """Test that the string matches the desired pattern, if any.
         Raise a ValueError exception if the value is invalid.
@@ -366,7 +366,7 @@ class StrPrefVar(PrefVar):
         if self.validRE:
             if self.validRE.match(value) is None:
                 raise ValueError("%r does not match pattern %r" % (value, self.finalPattern))
-    
+
     def getRangeStr(self):
         """Return a brief description of the variable's range or other restrictions.
         For strings there is nothing straightforward to return --
@@ -377,7 +377,7 @@ class StrPrefVar(PrefVar):
     def getEditWdg(self, master, var=None, ctxConfigFunc=None):
         """Return a Tkinter widget that allows the user to edit the
         value of the preference variable.
-        
+
         Inputs:
         - master: master for returned widget
         - var: a Tkinter variable to be used in the widget
@@ -429,7 +429,7 @@ class DirectoryPrefVar(StrPrefVar):
             if not os.path.exists(value):
                 raise ValueError("%r does not exist on this file system" % (value,))
             raise ValueError("%r is not a directory" % (value,))
-    
+
 
 class FilePrefVar(StrPrefVar):
     """Contains a path to an existing file.
@@ -471,11 +471,11 @@ class FilePrefVar(StrPrefVar):
             if not os.path.exists(value):
                 raise ValueError("%r does not exist on this file system" % (value,))
             raise ValueError("%r is not a file" % (value,))
-    
+
 
 class SoundPrefVar(FilePrefVar):
     """Contains an RO.Wdg.SoundPlayer object, which plays a sound file or a series of beeps.
-    
+
     If the sound file is not specified or cannot be played*
     then RO.Wdg.SoundPlayer will play a default bell sequence instead.
 
@@ -517,11 +517,11 @@ class SoundPrefVar(FilePrefVar):
 #           fileTypes = typeList,
             fileDescr = "sound",
         **kargs)
-    
+
     def play(self):
         if self._snd:
             self._snd.play()
-        
+
     def setValue (self, rawValue):
         FilePrefVar.setValue(self, rawValue)
         self._snd = RO.Wdg.SoundPlayer(
@@ -548,7 +548,7 @@ class BoolPrefVar(PrefVar):
         kargs.setdefault("cnvFunc", RO.CnvUtil.asBool)
         kargs["validValues"] = None
         kargs["suggValues"] = None
-        
+
         PrefVar.__init__(self,
             name = name,
             category = category,
@@ -558,7 +558,7 @@ class BoolPrefVar(PrefVar):
 
     def getEditWdg(self, master, var=None, ctxConfigFunc=None):
         """Return a Tkinter widget that allows the user to edit the value of the preference variable.
-        
+
         Inputs:
         - master: master for returned widget
         - var: a Tkinter variable to be used in the widget
@@ -587,7 +587,7 @@ class BoolPrefVar(PrefVar):
             return 'True'
         else:
             return 'False'
-    
+
 
 class IntPrefVar(PrefVar):
     """An integer-valued PrefVar.
@@ -609,9 +609,9 @@ class IntPrefVar(PrefVar):
 
         self.minValue = minValue
         self.maxValue = maxValue
-        
+
         kargs.setdefault("cnvFunc", RO.CnvUtil.asInt)
-        
+
         PrefVar.__init__(self,
             name = name,
             category = category,
@@ -628,7 +628,7 @@ class IntPrefVar(PrefVar):
     def getEditWdg(self, master, var=None, ctxConfigFunc=None):
         """Return a Tkinter widget that allows the user to edit the
         value of the preference variable.
-        
+
         Inputs:
         - master: master for returned widget
         - var: a Tkinter variable to be used in the widget
@@ -644,7 +644,7 @@ class IntPrefVar(PrefVar):
             helpText = self.helpText,
             width = self.editWidth,
         )
-        editWdg.set(self.getValue())        
+        editWdg.set(self.getValue())
         if ctxConfigFunc:
             editWdg.ctxSetConfigFunc(ctxConfigFunc)
         return editWdg
@@ -659,10 +659,10 @@ class IntPrefVar(PrefVar):
             return (">= " + self.formatStr) % (self.minValue,)
         else:
             return ("[" + self.formatStr + ", " + self.formatStr + "]") % (self.minValue, self.maxValue)
-    
+
 
 class FloatPrefVar(PrefVar):
-    """A float-valued PrefVar. 
+    """A float-valued PrefVar.
 
     Inputs: same as PrefVar plus:
     - minValue: minimum allowed value (None if no limit)
@@ -686,7 +686,7 @@ class FloatPrefVar(PrefVar):
         self.allowExp = allowExp
 
         kargs.setdefault("cnvFunc", RO.CnvUtil.asFloat)
-        
+
         PrefVar.__init__(self,
             name = name,
             category = category,
@@ -703,7 +703,7 @@ class FloatPrefVar(PrefVar):
     def getEditWdg(self, master, var=None, ctxConfigFunc=None):
         """Return a Tkinter widget that allows the user to edit the
         value of the preference variable.
-        
+
         Inputs:
         - master: master for returned widget
         - var: a Tkinter variable to be used in the widget
@@ -739,7 +739,7 @@ class FloatPrefVar(PrefVar):
 class ColorUpdate(object):
     def __init__(self):
         self.varDict = {}
-        
+
         # we'll need a Tkinter widget so we can call tk_setPalette
         # but don't get it yet -- Tk is probably not running!
         self.wdg = None
@@ -795,7 +795,7 @@ class ColorPrefVar(PrefVar):
         if wdgOption:
             global theColorUpdater
             theColorUpdater.addVar(wdgOption, self)
-    
+
     def locCheckValue(self, value):
         """Test that the string matches the desired pattern, if any.
         Raise a ValueError exception if the value is invalid.
@@ -813,15 +813,15 @@ class FontPrefVar(PrefVar):
     - defWdg: a widget whose font is used for the default value.
     - defValue: defaults for one or more widget characteristics; see note on value below.
     - optionPatterns: entries to add to the option database.
-    
+
     The value of a prefFont is a dictionary containing one or more of the following keys:
         "family", "overstrike", "size", "slant", "underline", "weight"
     Warning: unlike many PrefVars, a string representation of a dictionary is NOT acceptable.
     It must actually be a dictionary.
-    
+
     The default value dict is obtained by starting with a set of internal defaults
     and then updating it with the following inputs, in order: font, defWdg and defValue.
-    
+
     Option patterns:
     - Each listed entry is added to the option database using option_add(ptn, font).
     - The FontPref then controls all widgets matching any of these patterns, so long as the widgets
@@ -831,7 +831,7 @@ class FontPrefVar(PrefVar):
         - fonts for menu widgets: ("*Menu.font", "*Menubutton.font", "*OptionMenu.font")
     - Always put the more general patterns into the database first. This applies both to
       the order of creation of WdgFontPrefVars and to the order of entries in optionPatterns.
-    
+
     Notes:
     - Allowing the data to be expressed in modern Tk form (name, size, style-tuple)
         would be nice, but is too much trouble. One can create a Font objects using this notation,
@@ -864,8 +864,8 @@ class FontPrefVar(PrefVar):
             slant = "roman",
             underline = False,
             overstrike = False,
-        ) 
-        
+        )
+
         # apply defaults in the correct order
         netDefValue = self._internalDefFontDict.copy()
         if font:
@@ -890,7 +890,7 @@ class FontPrefVar(PrefVar):
         # if optionPatterns supplied, add font to option database
         for ptn in optionPatterns:
             tkinter.Label().option_add(ptn, self.font)
-    
+
     def getDefValue(self):
         """Return the current default value"""
         return self.defValue.copy()
@@ -913,7 +913,7 @@ class FontPrefVar(PrefVar):
         self.checkValue(partialValue)
         self.font.configure(**partialValue)
         self.value = self.font.configure()
-        
+
         # the following keep data in a standard format
         # between Python 2.2 (all values as strings) and 2.3
         for key, cnvFunc in (
@@ -930,7 +930,7 @@ class FontPrefVar(PrefVar):
         # apply callbacks, if any
         for callFunc in self._callbackList:
             callFunc(self.value, self)
-    
+
     def asSummary(self, rawValue):
         value = self.asValue(rawValue)
         # list named characteristics and their default value (if any)
@@ -948,7 +948,7 @@ class FontPrefVar(PrefVar):
 
 class FontSizePrefVar(PrefVar):
     """Tk Font preference variable that controls only the size.
-    
+
     This is useful for graphical elements that you want to display using the default font
     (for a standard appearance) while allowing sight-impaired people to use a larger font size.
 
@@ -957,12 +957,12 @@ class FontSizePrefVar(PrefVar):
     - defWdg: a widget whose font is used for the default value.
     - defValue: defaults for one or more widget characteristics; see note on value below.
     - optionPatterns: entries to add to the option database.
-    
+
     The default value is obtained by applying inputs in the following order
     (the last one wins): font, defWdg, defValue
-    
+
     The value is an integer.
-    
+
     Option patterns:
     - Each listed entry is added to the option database using option_add(ptn, font).
     - The FontPref then controls all widgets matching any of these patterns, so long as the widgets
@@ -972,7 +972,7 @@ class FontSizePrefVar(PrefVar):
         - fonts for menu widgets: ("*Menu.font", "*Menubutton.font", "*OptionMenu.font")
     - Always put the more general patterns into the database first. This applies both to
       the order of creation of WdgFontSizePrefVars and to the order of entries in optionPatterns.
-    
+
     Notes:
     - the formatStr and cnvFunc arguments are set internally; your values will be ignored.
     """
@@ -990,7 +990,7 @@ class FontSizePrefVar(PrefVar):
         self.font = tkinter.font.Font()
         kargs["formatStr"] = "%s"
         kargs["cnvFunc"] = int
-        
+
         # apply defaults in the correct order
         netDefValue = None
         if font:
@@ -1013,7 +1013,7 @@ class FontSizePrefVar(PrefVar):
         # if optionPatterns supplied, add font to option database
         for ptn in optionPatterns:
             tkinter.Label().option_add(ptn, self.font)
-    
+
     def locCheckValue(self, value):
         """Test that the value is valid.
         """
@@ -1040,7 +1040,7 @@ class FontSizePrefVar(PrefVar):
 
 class PrefSet(object):
     """A set of PrefVars that supports easy retrieval and file I/O.
-    
+
     Note that PrefVars stored in a PrefSet must each have unique names, ignoring case.
     In particular, PrefVars in separate categories must still have globally unique names.
 
@@ -1074,45 +1074,45 @@ class PrefSet(object):
                         raise RuntimeError("Invalid oldPrefInfo %s: %s; nonexistent new pref name" %
                             (oldPrefName, newPrefName))
                 self.oldPrefDict[oldPrefName.lower()] = newPrefName.lower()
-                
+
     def addPrefVar(self, prefVar):
         """Adds the preference variable, using as a key the variable's name converted to lowercase
         (so one can easily extract the name in a case-blind fashion).
         """
         self.prefDict[prefVar.name.lower()] = prefVar
-    
+
     def getPrefVar(self, name, default=None):
         """Returns the preference variable, or default if not found"""
         return self.prefDict.get(name.lower(), default)
-    
+
     def getValue(self, name):
         """Returns the preference variable; raises an exception if not found"""
         return self.prefDict[name.lower()].value
-    
+
     def getCategoryDict(self):
         """Returns on RO.Alg.OrderedDict (a dictionary whose keys remain in the order added).
         Each key is a category and each value is a list of PrefVars in that category.
         """
         catDict = RO.Alg.OrderedDict()
-        
+
         for prefVar in self.prefDict.values():
             catDict.setdefault(prefVar.category, []).append(prefVar)
         return catDict
-    
+
     def restoreDefault(self):
         """Restores all preferences to their default value.
         """
         for pref in self.prefDict.values():
             pref.restoreDefault()
-    
+
     def readFromFile(self, fileName=None):
         """Reads the preferences from a file, if the file exists.
         If there is an error in the file, prints a warning to stderr.
-        
+
         Inputs:
         - fileName: path name of file, as a string; if omitted, the default filename is used
             (if available, else an exception is raised).
-        
+
         Each line of data consists of:
         - one or more spaces
         - a preference name (without double quotes)
@@ -1120,14 +1120,14 @@ class PrefSet(object):
         - the data for the preference (strings must include double quotes)
         - if you wish a comment, then follow that with 0 (ick) or more spaces, # and the comment
         Blank lines and lines starting with a # (in any column) are ignored.
-        
+
         Example:
         # header line 1
           # header line 2 followed by a blank line
-          
+
         pref1 'value of pref 1' # comment for pref 1
           pref2      2          # comment
-          
+
         Details:
         It may help to know how data is recognized. The trick is removing the optional
         trailing comment (without getting confused on tricky data or comments).
@@ -1148,7 +1148,7 @@ class PrefSet(object):
         except Exception as e:
             sys.stderr.write("Could not open preference file %r; error: %s\n" % (fileName, e))
             return
-            
+
         try:
             for line in inFile:
                 # if line starts with #, it is a comment, skip it
@@ -1182,10 +1182,10 @@ class PrefSet(object):
                     continue
         finally:
             inFile.close()
-    
+
     def writeToFile(self, fileName=None, header=None, maskDefault=1):
         """Writes the preferences to a file in a format that can be read by readFromFile.
-        
+
         Inputs:
         - fileName: the file to receive the data; if omitted, the default file is used.
         - header: an optional header string; if omitted, the default is used (if specified).
@@ -1214,7 +1214,7 @@ class PrefSet(object):
                     outFile.write("%s = %r\n" % (prefVar.name, prefVar.getValue()))
         finally:
             outFile.close()
-    
+
     def __getFileName(self, fileName=None):
         """Returns the name of the file, which is fileName, if supplied,
         else the default fileName, if supplied, else a RuntimeError is rasied.
@@ -1240,9 +1240,9 @@ if __name__ == "__main__":
         callNow=True,
     )
     print("created a PrefVar with default value 0; value =", pv.getValue())
-    
+
     pv.setValue("aString")
     print("set value to 'aString'; value =", pv.getValue())
-        
+
     pv.restoreDefault()
     print("restored default; value =", pv.getValue())

@@ -10,10 +10,10 @@ import logging
 def tback(system, e, info=None, logger=None):
         """ Log a decently informative traceback. """
 
-        if logger == None:
+        if logger is None:
             logger = logging
         exc_type, exc_value, exc_traceback = sys.exc_info()
-	
+
         try:
             frames = inspect.trace()
             toptrace = inspect.trace()[-1]
@@ -21,11 +21,11 @@ def tback(system, e, info=None, logger=None):
             one_liner = "%s: %s: %s" % (e, exc_type, exc_value)
             logger.critical("======== %s exception botch: %s" % (system, one_liner))
             return
-        
+
         tr_list = []
         tr_list.append("\n\n====== trace:\n")
         tr_list.append(pprint.pformat(toptrace))
-        
+
         i = 0
         frames.reverse()
         for f in frames:
@@ -36,4 +36,4 @@ def tback(system, e, info=None, logger=None):
         ex_list = traceback.format_exception(exc_type, exc_value, exc_traceback)
         logger.warn("\n======== %s exception: %s\n" % (system, ''.join(ex_list)))
         logger.warn(''.join(tr_list))
-        
+

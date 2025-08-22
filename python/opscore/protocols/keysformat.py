@@ -22,13 +22,13 @@ class Group(Consumer):
     def __init__(self,positioned,floating):
         self.positioned = positioned
         self.floating = floating
-    
+
     def __repr__(self):
         return 'Group{%s;%s}' % (
             ','.join([repr(x) for x in self.positioned]),
             ','.join([repr(x) for x in self.floating])
         )
-        
+
     def consume(self,where):
         self.trace(where)
         # loop over positioned initial keys
@@ -59,7 +59,7 @@ class Group(Consumer):
                 if next:
                     return self.failed('missing floating %s before %s' % (key,next))
                 else:
-                    return self.failed('missing floating %s' % key)     
+                    return self.failed('missing floating %s' % key)
         return self.passed(where)
 
 class OneOf(Consumer):
@@ -68,7 +68,7 @@ class OneOf(Consumer):
     """
     def __init__(self,*keys):
         self.keys = list(keys)
-        
+
     def __repr__(self):
         return '(%s)' % '|'.join([repr(key) for key in self.keys])
 
@@ -84,17 +84,17 @@ class OneOf(Consumer):
         # restore the keyword to its original state
         keyword.copy(self.checkpoint)
         return self.failed('no keys match %s' % keyword)
-    
+
 class Optional(Consumer):
     """
     Declares that a consumer is optional
     """
     def __init__(self,group):
         self.group = group
-    
+
     def __repr__(self):
         return '?%r' % self.group
-        
+
     def consume(self,where):
         self.trace(where)
         # remember the current state of the remaining keywords in case we have to
@@ -110,7 +110,7 @@ class KeysFormatParser(object):
     Parses a command keyword format string
     """
     debug = False
-    
+
     # single-character literals
     literals = "()[]<>@|"
 
@@ -119,26 +119,26 @@ class KeysFormatParser(object):
 
     # a keyword name
     t_NAME = r'[A-Za-z][A-Za-z0-9._]*'
-    
+
     # lexical tokens
     tokens = ('WS','NAME')
 
     def p_KeysGroup(self,t):
         "Group : Positioned WS Floating"
         t[0] = Group(t[1],t[3])
-    
+
     def p_KeysGroupNoPositioned(self,t):
         "Group : Floating"
         t[0] = Group([],t[1])
-    
+
     def p_KeysGroupNoFloating(self,t):
         "Group : Positioned"
         t[0] = Group(t[1],[])
-    
+
     def p_PositionedKey(self,t):
         "Positioned : '@' Keyword"
         t[0] = [t[2]]
-        
+
     def p_PositionedKeys(self,t):
         "Positioned : Positioned WS '@' Keyword"
         t[0] = t[1]
@@ -147,7 +147,7 @@ class KeysFormatParser(object):
     def p_FloatingKey(self,t):
         "Floating : Keyword"
         t[0] = [t[1]]
-    
+
     def p_FloatingKeys(self,t):
         "Floating : Floating WS Keyword"
         t[0] = t[1]
@@ -160,7 +160,7 @@ class KeysFormatParser(object):
     def p_KeywordRequiredGroup(self,t):
         "Keyword : '(' Group ')'"
         t[0] = t[2]
-        
+
     def p_NonGroupedKeyword(self,t):
         """Keyword : KeywordOr
                    | OneKeyword"""
@@ -170,7 +170,7 @@ class KeysFormatParser(object):
         "KeywordOr : KeywordOr '|' OneKeyword"
         t[0] = t[1]
         t[0].keys.append(t[3])
-        
+
     def p_KeywordOr(self,t):
         "KeywordOr : OneKeyword '|' OneKeyword"
         t[0] = OneOf(t[1],t[3])
@@ -185,7 +185,7 @@ class KeysFormatParser(object):
             t[0] = RawKey()
         else:
             t[0] = CmdKey(Key(t[1]))
-    
+
     def p_error(self,tok):
         """
         Handles parse errors

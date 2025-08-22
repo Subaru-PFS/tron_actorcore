@@ -36,14 +36,14 @@ Asynchronous calls:
 
 class QMsg(object):
     def __init__(self, method, returnQueue=None, **argd):
-        """ Create a new QMsg, which will resolve to method(*argl, **argd). 
+        """ Create a new QMsg, which will resolve to method(*argl, **argd).
 
         d = {}
         qm = QMsg(d.__setitem__, 'abc', 42)
 
         qt = QThread(....)
         qm = QMsg(qt.pingMsg, cmd)
-        
+
         """
 
         self.returnQueue = returnQueue
@@ -59,7 +59,7 @@ class PriorityOverrideQueue(queue.PriorityQueue):
         self.lock = threading.Lock()
 
     def __str__(self):
-        return ("POQ(size=%d, locked=%s)" % 
+        return ("POQ(size=%d, locked=%s)" %
                 (self.qsize(), self.lock.locked()))
 
     def put(self, item, urgent=False):
@@ -73,7 +73,7 @@ class PriorityOverrideQueue(queue.PriorityQueue):
             queue.PriorityQueue.put(self, (counter, item))
             self.counter += 1
         #print("lv put(%s) of %s" % (item, self))
-        
+
     def putUrgent(self, item):
         """ Put an urgent message at the front of our queue. """
 
@@ -81,7 +81,7 @@ class PriorityOverrideQueue(queue.PriorityQueue):
             counter = self.urgentCounter
             queue.PriorityQueue.put(self, (counter, item))
             self.urgentCounter -= 1
-        
+
     def get(self, *args, **kwargs):
         _, item = queue.PriorityQueue.get(self, *args, **kwargs)
         return item
@@ -119,7 +119,7 @@ class QThread(threading.Thread):
         raise RuntimeError("failed to start thread %s")
 
     def putMsg(self, method, urgent=False, **argd):
-        """ send ourself a new message. 
+        """ send ourself a new message.
 
         Args:
             method: a function or bound method to call
@@ -129,9 +129,9 @@ class QThread(threading.Thread):
         #print(("putMsg(%s, %s) %d", method, argd, self.queue.qsize()))
         qmsg = QMsg(method, **argd)
         self.queue.put(qmsg, urgent=urgent)
-        
+
     def call(self, method, callTimeout=None, urgent=False, **argd):
-        """ send ourself a new message, then wait for and return a single response. 
+        """ send ourself a new message, then wait for and return a single response.
 
         Arguments
         ---------
@@ -150,12 +150,12 @@ class QThread(threading.Thread):
         ------
         RuntimeError if out mechanism has name conflicts with argd.
         """
-        
+
         if threading.currentThread() == self:
             raise RuntimeError("cannot .call() a QThread from its own thread of control.")
 
         returnQueue = queue.Queue()
-        
+
         qmsg = QMsg(method, returnQueue=returnQueue, **argd)
         self.queue.put(qmsg, urgent=urgent)
 
@@ -166,7 +166,7 @@ class QThread(threading.Thread):
             raise queue.Empty("empty return from %s in %s" % (qmsg, self))
 
         if isinstance(ret, Exception):
-            self._realCmd(None).diag('text="%s thead call() raising %s "' % 
+            self._realCmd(None).diag('text="%s thead call() raising %s "' %
                                      (self.name, ret))
             raise ret
         else:
@@ -177,16 +177,16 @@ class QThread(threading.Thread):
 
         def _push(queue=self.queue, msg=msg):
             queue.put(msg)
-            
+
         t = threading.Timer(deltaTime, _push)
         t.start()
 
         return t
-        
+
     def handleTimeout(self):
         """ Called when the .get() times out. Intended to be overridden. """
 
-        self._realCmd(None).diag('text="%s thead is alive (timeout=%0.5f, queue=%s, exiting=%s)"' % 
+        self._realCmd(None).diag('text="%s thead is alive (timeout=%0.5f, queue=%s, exiting=%s)"' %
                                  (self.name, self.timeout, self.queue, self.exitASAP))
         if self.exitASAP:
             raise SystemExit()
@@ -208,7 +208,7 @@ class QThread(threading.Thread):
         """ handler for the 'ping' message. """
 
         self._realCmd(cmd).inform('text="thread %s is alive!"' % (self.name))
-    
+
     def run(self):
         """ Main run loop for this thread. """
 
@@ -216,7 +216,7 @@ class QThread(threading.Thread):
         while True:
             try:
                 msg = self.queue.get(timeout=self.timeout)
-                    
+
                 qlen = self.queue.qsize()
                 if qlen > 0:
                     self._realCmd(None).diag("%s thread has %d items after a .get()" % (self.name, qlen))
@@ -226,7 +226,7 @@ class QThread(threading.Thread):
                     method = msg.method
                     returnQueue = msg.returnQueue
                 else:
-                    raise AttributeError("thread %s received a message of an unhanded type(s): %s" % 
+                    raise AttributeError("thread %s received a message of an unhanded type(s): %s" %
                                          (self, type(msg), msg))
                 ret = None
                 try:
@@ -234,7 +234,7 @@ class QThread(threading.Thread):
                 except SystemExit:
                     return
                 except Exception as e:
-                    self._realCmd(None).warn('text="%s: uncaught exception running %s: %s"' % 
+                    self._realCmd(None).warn('text="%s: uncaught exception running %s: %s"' %
                                              (self, method, e))
                     ret = e
                 finally:

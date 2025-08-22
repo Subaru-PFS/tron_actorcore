@@ -55,7 +55,7 @@ class Gridder(object):
         sticky="e",
     ):
         """Create an object that grids a set of data widgets.
-        
+
         Inputs:
         - master    Master widget into which to grid
         - row       Starting row
@@ -69,7 +69,7 @@ class Gridder(object):
         self._nextCol = col
         self._maxNextCol = col
         self._allGridded = False
-        
+
         # support for showing and hiding widgets by category
         # - _showHideWdgDict keys are widgets and values are lists of categories
         # - _showHideCatDict keys are categories and values are True (show) or False (hide)
@@ -83,17 +83,17 @@ class Gridder(object):
     @property
     def master(self):
         return self._master
-    
+
     def addShowHideControl(self, cat, ctrl):
         """Adds A show/hide control (RO.Wdg.Checkbuttons)
         for a given category (replacing the existing control, if any).
         If all controls are gridded, then updates the show/hide status.
-        
+
         Inputs:
         cat: category
         ctrl: one RO.Wdg.Checkbutton control (sequence not allowed)
         doCallback: apply control (else wait until _showHideCallback called)
-        
+
         Error Conditions:
         - Raises TypeError if any widget cannot be used
           (in which case the call has no effect)
@@ -103,12 +103,12 @@ class Gridder(object):
             raise TypeError("widget %r does not have addCallback method" % cat)
         if not hasattr(ctrl, "getBool"):
             raise TypeError("widget %r does not have getBool method" % cat)
-        
-        # record show/hide controls 
+
+        # record show/hide controls
         self._showHideControlDict[cat] = ctrl
         for ctrl in self._showHideControlDict.values():
             ctrl.addCallback(self._showHideWdgCallback)
-        
+
         # add category, if necessary
         self._showHideCatDict.setdefault(cat, False)
 
@@ -118,9 +118,9 @@ class Gridder(object):
 
     def addShowHideWdg(self, cat, wdg=None):
         """Adds one or more show/hide categories to one or more widgets.
-        
+
         If the widget(s) already have categories, the new ones are added.
-        
+
         Inputs:
         - cat   one or more categories
         - wdg   one or more widgets; if any widget is None then it is ignored
@@ -130,7 +130,7 @@ class Gridder(object):
         for wdg in wdgSet:
             if wdg:
                 self._showHideWdgDict.addList(wdg, RO.SeqUtil.asList(cat))
-        
+
         # add category to _showHideCatDict (if not already present)
         self._showHideCatDict.setdefault(cat, False)
 
@@ -152,10 +152,10 @@ class Gridder(object):
         helpURL = True,
     **kargs):
         """Grid a set of objects in a row, adding label, enable and units widgets as desired.
-        
+
         Returns a _GridSet object that allows easy access to the various widgets and related information.
         Increments the row counter.
-        
+
         Inputs:
         - label         label text, variable, widget, None, False or "" (see Notes)
         - dataWdg       a widget or sequence of widgets; each of which can be None or False (see Notes)
@@ -168,7 +168,7 @@ class Gridder(object):
         - sticky        sticky option for each of the data widgets
         - helpText      help text for any created widgets; if True then copied from the first dataWdg
         - helpURL       help URL for any created widgets; if True then copied from the first dataWdg
-        
+
         Notes:
         - If a widget is None or False then nothing is gridded or added to gs.wdgSet for that widget,
           but space is handled differently in the two cases:
@@ -192,33 +192,33 @@ class Gridder(object):
         if cat is not None:
             self.addShowHideWdg(cat, gs.wdgSet)
         return gs
-    
+
     def getDefCol(self):
         """Returns the default column for calls to gridWdg
         """
         return self._defCol
-    
+
     def getMaxNextCol(self):
         """Return the column following all widgets gridded so far
         """
         return self._maxNextCol
-    
+
     def getNextCol(self):
         """Returns the column following the most recently gridded widgets
         """
         return self._nextCol
-    
+
     def getNextRow(self):
         """Returns the the default row for the next call to gridWdg
         (typically the row following the most recently gridded widgets).
         """
         return self._nextRow
-    
+
     def isAllGridded(self):
         """Returns True if all gridded, False otherwise.
         """
         return self._allGridded
-    
+
     def setDefCol(self, col):
         """Sets the default column for the next call to gridWdg.
         This also increases nextCol and maxNextCol if necessary.
@@ -226,24 +226,24 @@ class Gridder(object):
         self._defCol = int(col)
         self._nextCol = max(self._defCol, self._nextCol)
         self._maxNextCol = max(self._nextCol, self._maxNextCol)
-    
+
     def setNextRow(self, row):
         """Sets the next row, the default row for the next call to gridWdg.
         """
         self._nextRow = int(row)
-    
+
     def showHideWdg(self, **kargs):
         """Shows and hides widgets as appropriate.
-        
+
         Inputs: one or more category=doShow pairs:
         - cat1 = doShow1
         - cat2 = doShow2
         ...
         where doShow is True for show or False for hide
-        
+
         Any categories omitted are left in their current state.
         Only widgets for which all categories are True are shown.
-        
+
         Errors:
         Raises KeyError if a specified category does not already exist.
         """
@@ -253,7 +253,7 @@ class Gridder(object):
             self._showHideCatDict[cat]
             # set the category
             self._showHideCatDict[cat] = doShow
-            
+
         # use _showHideCatDict to show or hide widgets
         for wdg, catList in self._showHideWdgDict.items():
             for cat in catList:
@@ -261,7 +261,7 @@ class Gridder(object):
                     wdg.grid_remove()
                     break
                 wdg.grid()
-    
+
     def startNewCol(self, row=0, col=None, spacing=0):
         """Start a new column.
         Inputs:
@@ -270,7 +270,7 @@ class Gridder(object):
                     default is one after maxNextCol
                     (to leave room for a spacer)
         - spacing   desired spacing between this column and the last
-        
+
         Error Conditions:
         - if spacing and col both specified,
           then col must be > max next column.
@@ -282,7 +282,7 @@ class Gridder(object):
             newDefCol = int(col)
         else:
             newDefCol = self._maxNextCol + 1
-        
+
         if spacing:
             spaceCol = newDefCol - 1
             if spaceCol < self._maxNextCol:
@@ -324,14 +324,14 @@ class _BaseGridSet(object):
         This class does nothing by itself; you should subclass
         and call the various methods (plus add your own methods as needed)
         to do the gridding.
-        
+
         Inputs:
         - master    Master widget into which to grid the widgets
         - row       The row in which to grid the widgets
         - col       The starting column
         - helpText  help text for any created widgets (or None)
         - helpURL   help URL for any created widgets (or None)
-          
+
         Attributes include:
         - wdgSet: the complete set of widgets as a sequence,
             in left-to-right order. This is only widgets;
@@ -339,7 +339,7 @@ class _BaseGridSet(object):
         - row: the row in which the widgets were gridded
         - begCol: the first column containing a widget or space for a widget
         - nextCol: 1 + the last column containing a widget or space for a widget
-        
+
         Also, the various functions add these, if called:
         - labelWdg: the label widget, or None if none
         - dataWdg: the widget or set of widgets, or None if none
@@ -353,11 +353,11 @@ class _BaseGridSet(object):
         self.wdgSet = []
         self.helpText = helpText
         self.helpURL = helpURL
-    
+
     def _gridWdg(self, wdg, sticky, colSpan=1):
         """Grids one or more widgets,
         adding non-None widgets to self.wdgSet
-        
+
         Each widget may be a widget or:
         - None: nothing is gridded but the column advances by colSpan
         - False: nothing is gridded and the column does not advance
@@ -388,7 +388,7 @@ class _BaseGridSet(object):
         elif isinstance(wdgInfo, tkinter.Widget):
             # a widget; assume it's a Label widget of some kind
             return wdgInfo
-        
+
         if isinstance(wdgInfo, tkinter.Variable):
             # a Tkinter variable
             wdg = Label.StrLabel(
@@ -418,10 +418,10 @@ class _BaseGridSet(object):
             self.helpText = getattr(firstWdg, "helpText", None)
         if self.helpURL is True:
             self.helpURL = getattr(firstWdg, "helpURL", None)
-    
+
     def __getitem__(self, ind):
         """Implement keyVar[ind] to return the specified value from the wdgSet.
-        
+
         @throw IndexError if ind is out of range
         """
         return self.wdgSet[ind]
@@ -454,7 +454,7 @@ class _GridSet (_BaseGridSet):
         - a descriptive label
         - one or more data widgets
         - a units label
-        
+
         Inputs:
         - label         label text, variable, widget or None
         - dataWdg       one or a sequence of widgets
@@ -473,7 +473,7 @@ class _GridSet (_BaseGridSet):
           but everything else still goes in the appropriate column.
           If you want an empty Label widget for label or units
           (e.g. for later alteration) then specify a value of "".
-          
+
         Attributes are those from _BaseGridSet plus:
         - labelWdg: the label widget, or None if none
         - dataWdg: the widget or set of widgets
@@ -487,20 +487,20 @@ class _GridSet (_BaseGridSet):
             helpURL = helpURL,
         )
         self._setHelpFromDataWdg(dataWdg)
-        
+
         self.labelWdg = self._makeWdg(label)
         self._gridWdg(self.labelWdg, sticky="e", colSpan=1)
 
         self.dataWdg = dataWdg
         self._gridWdg(self.dataWdg, sticky=sticky, colSpan=colSpan)
-        
+
         self.unitsWdg = self._makeWdg(units)
         self._gridWdg(self.unitsWdg, sticky="w", colSpan=1)
 
 if __name__ == "__main__":
     from . import PythonTk
     root = PythonTk.PythonTk()
-    
+
     wdgFrame = tkinter.Frame(root)
     gr = Gridder(wdgFrame)
     gr.gridWdg (
@@ -529,6 +529,6 @@ if __name__ == "__main__":
         dataWdg = [tkinter.Entry(wdgFrame, width=5) for ii in range(2)],
     )
     wdgFrame.pack()
-    
+
 
     root.mainloop()
