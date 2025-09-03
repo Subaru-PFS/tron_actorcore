@@ -43,11 +43,11 @@ class ProductConfig(configparser.SafeConfigParser):
             configFiles.append(os.path.join(os.getcwd(),fileName))
         # read all available INI config parameters
         self.foundFiles = self.read(configFiles)
-        
+
     def getValue(self,optionName,getType=None):
         """
         Returns the named option value using a typed accessor.
-        
+
         Supported types include 'int', 'boolean' and 'float'. The
         default return type is a string. Raises a ConfigError if the
         option is not defined or this object was initialized with an
@@ -65,7 +65,7 @@ class ConfigOptionGroup(optparse.OptionGroup):
     """
     def add_option(self,*args,**kwargs):
         """
-        Adds an option for command line processing        
+        Adds an option for command line processing
         """
         # use our parent parser for preprocessing
         kwargs = self.parser.preprocess_option(args,kwargs)
@@ -134,13 +134,13 @@ class ConfigOptionParser(optparse.OptionParser):
 
     def add_option(self,*args,**kwargs):
         """
-        Adds an option for command line processing        
+        Adds an option for command line processing
         """
         # preprocess
         kwargs = self.preprocess_option(args,kwargs)
         # do the normal option processing
         return optparse.OptionParser.add_option(self,*args,**kwargs)
-        
+
     def parse_args(self,args=None,values=None,
         passphrase=None,prompt='Enter the pass phrase: '):
         """
@@ -183,7 +183,7 @@ class ConfigOptionParser(optparse.OptionParser):
                 setattr(options,secret,data[0:-npad])
         # return the parse results
         return (options,args)
-    
+
     def get_config_info(self):
         """
         Returns a multi-line string describing our config setup
@@ -199,7 +199,7 @@ class ConfigOptionParser(optparse.OptionParser):
                     default_value = opt.default
                 text += '  %20s: %s\n' % (str(opt),default_value)
         return text
-    
+
     def print_help(self,*args,**kwargs):
         """
         Appends config info to the standard OptionParser help
@@ -207,8 +207,8 @@ class ConfigOptionParser(optparse.OptionParser):
         retval = optparse.OptionParser.print_help(self,*args,**kwargs)
         print('\n' + self.get_config_info())
         return retval
-    
-    @staticmethod    
+
+    @staticmethod
     def bin2hex(data):
         """
         Returns an ASCII hexadecimal representation of binary data

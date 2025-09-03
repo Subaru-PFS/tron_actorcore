@@ -50,14 +50,14 @@ MsgCodeSeverity = {
 
 class KeyVar(RO.AddCallback.BaseMixin):
     """Container for keyword data.
-    
+
     A keyword variable is iterable and indexable over its values.
-    
+
     Callback functions receive one argument: this object
     """
     def __init__(self, actor, key, doPrint=False):
         """Create a KeyVar.
-        
+
         Inputs are:
         - actor: the name of the actor issuing this keyword (string)
         - key: keyword description (opscore.protocols.keys.Key)
@@ -81,7 +81,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
             self.refreshActor = None
             self.refreshCmd = None
         RO.AddCallback.BaseMixin.__init__(self, defCallNow = True)
-    
+
     def __repr__(self):
         """Return a long str representation of a KeyVar
         """
@@ -95,7 +95,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
 
     def __getitem__(self, ind):
         """Implement keyVar[ind] to return the specified value from the valueList.
-        
+
         @raise IndexError if ind is out of range
         """
         return self.valueList[ind]
@@ -112,7 +112,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
 
     def addValueCallback(self, callFunc, ind=0, cnvFunc=None, callNow=True):
         """Similar to addCallback, but the callback function receives 3 arguments including the specified value.
-        
+
         This is useful for tying objects such as widgets directly to KeyVars.
 
         Inputs:
@@ -123,17 +123,17 @@ class KeyVar(RO.AddCallback.BaseMixin):
         - ind: index of KeyVar value
         - cnvFunc: a conversion function applied to the value before issuing the callback
         - callNow: if true, execute callFunc immediately, else wait until the keyword is seen
-    
+
         Note: if the KeyVar has a variable number of values and the one specified by ind is not supplied,
         then the callback is not called.
-        
+
         Raise IndexError if not 0 <= ind < maxVals
         """
         RO.MathUtil.checkRange(ind, 0, self.maxVals, "%s ind" % (self,))
-        
+
         if not cnvFunc:
             cnvFunc = lambda x: x
-                
+
         def adapterFunc(keyVar, callFunc=callFunc, ind=ind, cnvFunc=cnvFunc):
             try:
                 val = keyVar.valueList[ind]
@@ -157,19 +157,19 @@ class KeyVar(RO.AddCallback.BaseMixin):
         - startInd: index of first KeyVar value
         - cnvFunc: a conversion function applied to each value before issuing the callback
         - callNow: if true, execute callFunc immediately, else wait until the keyword is seen
-    
+
         Note: if the KeyVar has a variable number of values and some are not supplied
         then the associated functions are not called.
-        
+
         Raise IndexError if 0 startInd < 0 or startInd + len(callFuncList) >= maxVals
         """
         endInd = startInd + len(callFuncList) - 1
         RO.MathUtil.checkRange(startInd, 0, None, "%s startInd" % (self,))
         RO.MathUtil.checkRange(endInd, None, self.maxVals, "%s end index" % (self,))
-        
+
         if not cnvFunc:
             cnvFunc = lambda x: x
-                
+
         def adapterFunc(keyVar, callFuncList=callFuncList, startInd=startInd, cnvFunc=cnvFunc):
             for ind, callFunc in enumerate(callFuncList[startInd:]):
                 try:
@@ -178,7 +178,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
                     return
                 callFunc(cnvFunc(val), isCurrent=keyVar.isCurrent, keyVar=keyVar)
         self.addCallback(adapterFunc, callNow)
-    
+
     def doCallbacks(self):
         """Execute callbacks
         """
@@ -189,7 +189,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """Return True if has a refresh command.
         """
         return bool(self.refreshCmd)
-    
+
     @property
     def refreshInfo(self):
         """Return refreshActor, refreshCmd"""
@@ -213,7 +213,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         unless you use the KewyordDispatcher or a replacement!
         """
         return self._isGenuine
-    
+
     @property
     def maxVals(self):
         """Return the maximum number of (converted) values for this KeyVar, or None if no limit
@@ -231,7 +231,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         """Return the time (in unix seconds, e.g. time.time()) at which value was last set, or 0 if not set.
         """
         return self._timeStamp
-    
+
     def set(self, valueList, isCurrent=True, isGenuine=True, reply=None, doCallbacks=True):
         """Set the values, converting from strings as necessary.
 
@@ -241,7 +241,7 @@ class KeyVar(RO.AddCallback.BaseMixin):
         - isGenuine: set True if data came from the actor, False if it came from a data cache
         - reply: a parsed Reply object (opscore.protocols.messages.Reply)
         - doCallbacks: if True then issue callbacks
-        
+
         @raise TypeError if the values cannot be set.
         """
         valueList = list(valueList)
@@ -263,12 +263,12 @@ class KeyVar(RO.AddCallback.BaseMixin):
 
     def setNotCurrent(self):
         """Clear the isCurrent flag
-        
+
         Note: the flag is set automatically when you call "set", so there is no method to set it.
         """
         self._isCurrent = False
         self._basicDoCallbacks(self)
-     
+
     def getValue(self, doRaise=True):
         """Return the "value" of the KeyVar, as follows:
         - raise ValueError if keyVar is unknown (valueList contains None) and doRaise is True
@@ -323,12 +323,12 @@ class CmdVar(object):
         - forUserCmd: this command is being sent due to the specified command from a user.
             forUserCmd must have one attribute: cmdr. The command string sent to the hub
             will start with: <forUsreCmd.cmdr>.<dispatcher.name> instead of <dispatcher.name>.
-        
+
         Note: timeLim and timeLimKeyInfo work together as follows:
         - The initial time limit for the command is timeLim
         - If timeLimKeyInfo is seen before timeLim seconds have passed
           then self.maxEndTime is updated with the new value
-          
+
         Also the time limit is a lower limit. The command is guaranteed to expire no sooner than this.
         """
         self.cmdStr = cmdStr
@@ -361,7 +361,7 @@ class CmdVar(object):
 
         if callFunc:
             self.addCallback(callFunc, callCodes)
-    
+
     def abort(self):
         """Abort the command, including:
         - deregister the command from the dispatcher
@@ -388,13 +388,13 @@ class CmdVar(object):
         """
         upCallCodes = callCodes.upper()
         self.callCodesFuncList.append((upCallCodes, callFunc))
-    
+
     @property
     def didFail(self):
         """Return True if the command failed, False otherwise.
         """
         return self.lastCode in FailedCodes
-    
+
     @property
     def severity(self):
         """Return severity of most recent message, or RO.Constants.sevNormal if no messages received.
@@ -402,31 +402,31 @@ class CmdVar(object):
         if not self.lastCode:
             return RO.Constants.sevNormal
         return TypeDict[self.lastCode][1]
-    
+
     def getKeyVarData(self, keyVar):
         """Return a list of data seen for the specified keyword variable, or [] if no data seen.
-        
+
         Inputs:
         - keyVar: the keyword variable for which to return data
-    
+
         Returns a list of data seen for the specified keyVar that was in response to this command,
         in the order received (oldest to most recent). Each entry is the list of values seen for the keyword.
         For example:
             getKeyVarData(keyVar)[-1] is the most recent list of data
                 (or an index error if the keyVar was not seen was seen!)
-        
+
         Warning: the return value is NOT a copy. Please do not modify it.
-        
+
         Raises KeyError if the keyVar is not being monitored for this command.
         """
         return self.keyVarDataDict[keyVar]
-    
+
     def getLastKeyVarData(self, keyVar):
         """Return the most recent list of values seen for the specified keyword variable, or None if no data seen.
-        
+
         Inputs:
         - keyVar: the keyword variable for which to return data
-        
+
         Returns the most recent list of values seen for the specified keyVar, or None if no data seen.
         Note: returns None instead of [] because this allows one to tell the difference between
         the keyword value list being itself empty and no data seen for the keyword.
@@ -439,7 +439,7 @@ class CmdVar(object):
         if not allVals:
             return None
         return allVals[-1]
-    
+
     def handleReply(self, reply):
         """Handle a reply (opscore.protocols.Reply) from the dispatcher.
 
@@ -462,7 +462,7 @@ class CmdVar(object):
                     traceback.print_exc(file=sys.stderr)
         if self.lastCode in DoneCodes:
             self._cleanup()
-    
+
     @property
     def isDone(self):
         """Return True if the command is finished, False otherwise.
@@ -484,7 +484,7 @@ class CmdVar(object):
         Inputs:
         - callFunc  callback function to remove
         - doRaise   raise exception if unsuccessful? True by default.
-        
+
         If doRaise true:
         - Raises ValueError if callback not found
         - Raises RuntimeError if executing callbacks when called
@@ -497,10 +497,10 @@ class CmdVar(object):
         if doRaise:
             raise ValueError("Callback %r not found" % callFunc)
         return False
-    
+
     def _timeLimKeyVarCallback(self, keyVar):
         """Handle callback from the time limit keyVar.
-        
+
         Update self.maxEndTime (adding self.timeLim as a margin if timeLim was specified).
 
         Raises ValueError if the keyword exists but the value is invalid.
@@ -519,7 +519,7 @@ class CmdVar(object):
 
     def _cleanup(self):
         """Call when command is finished to remove callbacks.
-        
+
         This reduces the chance of memory leaks.
         """
         self.callCodesFuncList = []
@@ -527,7 +527,7 @@ class CmdVar(object):
             keyVar.removeCallback(self._keyVarCallback, doRaise=False)
         if self._timeLimKeyVar:
             self._timeLimKeyVar.removeCallback(self._timeLimKeyVarCallback, doRaise=False)
-    
+
     def _setStartInfo(self, dispatcher, cmdID):
         """Called by the dispatcher when dispatching the command.
         """
@@ -560,15 +560,15 @@ class CmdVar(object):
         if not self._keyVarIsMine(keyVar):
             return
         self.keyVarDataDict[keyVar].append(keyVar.valueList)
-    
+
     def _keyVarID(self, keyVar):
         """Return an ID suitable for use in a dictionary.
         """
         return id(keyVar)
-    
+
     def __repr__(self):
         return "%s(cmdID=%r, actor=%r, cmdStr=%r)" % (self.__class__.__name__, self.cmdID, self.actor, self.cmdStr)
-    
+
     def __str__(self):
         return "%s %r" % (self.actor, self.cmdStr)
 

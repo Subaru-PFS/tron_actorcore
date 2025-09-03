@@ -22,14 +22,14 @@ class Timer(object):
         *args: arguments for callFunc
         **keyArgs: keyword arguments for callFunc; must not include "sec" or "callFunc"
         """
-        if sec != None:
+        if sec is not None:
             self._timer = _reactor.callLater(sec, callFunc, *args, **keyArgs)
         else:
             self._timer = None
-    
+
     def start(self, sec, callFunc, *args, **keyArgs):
         """Start or restart the timer, cancelling a pending timer if present
-        
+
         Inputs:
         - sec: interval, in seconds (float)
         - callFunc: function to call when timer fires
@@ -41,7 +41,7 @@ class Timer(object):
 
     def cancel(self):
         """Cancel the timer; a no-op if the timer is not active"""
-        if self._timer != None and self._timer.active():
+        if self._timer is not None and self._timer.active():
             self._timer.cancel()
 
     def active(self):

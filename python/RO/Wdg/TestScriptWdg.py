@@ -16,7 +16,7 @@ def init(sr):
     """Run once when the script runner window is created.
     """
     gr = RO.Wdg.Gridder(sr.master)
-    
+
     niterWdg = RO.Wdg.IntEntry(
         sr.master,
         minValue = 0,
@@ -25,7 +25,7 @@ def init(sr):
         helpText = "number of iterations",
     )
     gr.gridWdg("# Iter", niterWdg)
-    
+
     delayWdg = RO.Wdg.FloatEntry(
         sr.master,
         minValue = 0,
@@ -35,13 +35,13 @@ def init(sr):
         helpText = "delay between each iteration",
     )
     gr.gridWdg("Delay", delayWdg, "sec")
-    
+
     sr.globals.niterWdg = niterWdg
     sr.globals.delayWdg = delayWdg
 
 def run(sr):
     """The main script. Run when the Start button is pushed.
-    
+
     The widgets are read each time through to give the user
     the maximum control. However, note that it is all too easy
     to accidentally set the delay to 0 (causing the script

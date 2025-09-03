@@ -30,7 +30,7 @@ from . import WdgPrefs
 class SeverityMixin(object):
     """Mixin class that adds a severity attribute
     and adjusts foreground color based on severity.
-    
+
     Valid severitys are:
     - RO.Constants.sevDebug
     - RO.Constants.sevNormal
@@ -42,7 +42,7 @@ class SeverityMixin(object):
     - "Foreground Color"
     - "Warning Color"
     - "Error Color"
-    
+
     Adds these attributes, all private:
     self._severity
     self._severityPrefDict
@@ -53,15 +53,15 @@ class SeverityMixin(object):
 
         if severity != RO.Constants.sevNormal:
             self.setSeverity(severity)
-        
+
     def getSeverity(self):
         """Return current severity, one of: RO.Constants.sevNormal, sevWarning or sevError.
         """
         return self._severity
-        
+
     def setSeverity(self, severity):
         """Update severity information.
-        
+
         Raise ValueError if severity is not one of
         RO.Constants.sevDebug, sevNormal, sevWarning or sevError.
         """
@@ -82,10 +82,10 @@ class SeverityMixin(object):
                     raise ValueError("Invalid severity %r" % (severity,))
             self._severity = severity
             self._updateSeverityColor()
-    
+
     def _updateSeverityColor(self, *args):
         """Apply the current color appropriate for the current severity.
-        
+
         Called automatically. Do NOT call manually.
         """
         color = self._severityPrefDict[self._severity].getValue()
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     import tkinter
     from . import PythonTk
     root = PythonTk.PythonTk()
-    
+
     class ColorButton(tkinter.Button, SeverityActiveMixin):
         def __init__(self, *args, **kargs):
             tkinter.Button.__init__(self, *args, **kargs)
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         def __init__(self, *args, **kargs):
             tkinter.OptionMenu.__init__(self, *args, **kargs)
             SeverityActiveMixin.__init__(self)
-        
+
     def setSeverity(*args):
         severityStr = severityVar.get()
         severity = {"Normal": RO.Constants.sevNormal,
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     severityVar = tkinter.StringVar()
     severityVar.set("Normal")
     severityVar.trace_variable("w", setSeverity)
-    
+
     entryVar = tkinter.StringVar()
     entryVar.set("Entry")
     wdgSet = (
@@ -181,5 +181,5 @@ if __name__ == "__main__":
     )
     for wdg in wdgSet:
         wdg.pack(fill=tkinter.X)
-            
+
     root.mainloop()

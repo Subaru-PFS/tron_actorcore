@@ -46,7 +46,7 @@ class KeyVarDispatcher(object):
         logFunc = None,
     ):
         """Create a new KeyVarDispatcher
-        
+
         Inputs:
         - name: dispatcher name; must be a valid actor name (_ is OK; avoid other punctuation and whitespace).
             Used as the default actor for logMsg.
@@ -68,12 +68,12 @@ class KeyVarDispatcher(object):
         # set of actors for which loadActorDictionary has been called
         self.loadedActors = set()
 
-        self.setLogFunc(logFunc)        
-    
+        self.setLogFunc(logFunc)
+
     def addKeyVar(self, keyVar):
         """
         Adds a keyword variable (opscore.actor.keyvar.KeyVar) to the collection.
-        
+
         Inputs:
         - keyVar: the keyword variable (opscore.actor.keyvar.KeyVar)
         """
@@ -86,22 +86,22 @@ class KeyVarDispatcher(object):
 
     def dispatchReply(self, reply, doCallbacks=True):
         """Log the reply and set KeyVars based on the supplied Reply
-        
+
         reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
          - header.program: name of the program that triggered the message (string)
-         - header.commandId: command ID that triggered the message (int) 
+         - header.commandId: command ID that triggered the message (int)
          - header.actor: the actor that generated the message (string)
          - header.code: the message type code (opscore.protocols.types.Enum)
          - string: the original unparsed message (string)
-         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
+         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
         self.logReply(reply)
         self.setKeyVarsFromReply(reply, doCallbacks=doCallbacks)
-                    
+
     def dispatchReplyStr(self, replyStr):
         """Read, parse and dispatch a message from the hub.
-        
+
         If parsing fails then log an error message.
         If dispatching fails then log an error message and print a traceback to stderr.
         """
@@ -115,7 +115,7 @@ class KeyVarDispatcher(object):
                 severity = RO.Constants.sevError,
             )
             return
-        
+
         # dispatch message
         try:
             self.dispatchReply(reply)
@@ -126,17 +126,17 @@ class KeyVarDispatcher(object):
 
     def getKeyVarList(self, actor, keyName):
         """Return the list of KeyVars by this name and actor; return [] if no match.
-        
+
         Do not modify the returned list. It may not be a copy.
         """
         return self.keyVarListDict.get(self._makeDictKey(actor, keyName), [])
 
     def getKeyVar(self, actor, keyName):
         """Return a keyVar by this name and actor.
-        
+
         If there are multiple matching keyVars returns the first registered;
         to get a different keyVar use getKeyVarList.
-        
+
         Raise LookupError if no such keyword found.
         """
         keyVarList = self.getKeyVarList(actor, keyName)
@@ -156,7 +156,7 @@ class KeyVarDispatcher(object):
         """Writes a message to the log.
         On error, prints an error message that includes the original message data
         plus a traceback to stderr and returns normally.
-        
+
         Inputs:
         - msgStr: message to display; a final \n is appended
         - severity: message severity (an RO.Constants.sevX constant)
@@ -167,9 +167,9 @@ class KeyVarDispatcher(object):
             warning: this is not KeyVars from the model; it is lower-level data
         - fallbackToStdOut: if True and there is no logFunc then prints the message to stdout.
         """
-        if actor == None:
+        if actor is None:
             actor = self.name
-        if keywords == None:
+        if keywords is None:
             keywords = opscore.protocols.messages.Keywords()
 
         if not self.logFunc:
@@ -197,7 +197,7 @@ class KeyVarDispatcher(object):
             sys.stderr.write("Could not log msgStr=%r; severity=%r; actor=%r; cmdr=%r; keywords=%r\n    error: %s\n" % \
                 (msgStr, severity, actor, cmdr, keywords, RO.StringUtil.strFromException(e)))
             traceback.print_exc(file=sys.stderr)
-    
+
     def logReply(self, reply, fallbackToStdOut = False):
         """Log a reply (an opscore.protocols.messages.Reply)
 
@@ -208,7 +208,7 @@ class KeyVarDispatcher(object):
           - header.actor: the actor that generated the message (string)
           - header.code: the message type code (opscore.protocols.types.Enum)
           - string: the original unparsed message (string)
-          - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
+          - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)
           Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         - fallbackToStdOut: if True and there is no logFunc then prints the message to stdout.
         """
@@ -250,14 +250,14 @@ class KeyVarDispatcher(object):
 
     def setKeyVarsFromReply(self, reply, doCallbacks=True):
         """Set KeyVars based on the supplied Reply
-        
+
         reply is a parsed Reply object (opscore.protocols.messages.Reply) whose fields include:
          - header.program: name of the program that triggered the message (string)
-         - header.commandId: command ID that triggered the message (int) 
+         - header.commandId: command ID that triggered the message (int)
          - header.actor: the actor that generated the message (string)
          - header.code: the message type code (opscore.protocols.types.Enum)
          - string: the original unparsed message (string)
-         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)        
+         - keywords: an ordered dictionary of message keywords (opscore.protocols.messages.Keywords)
         Refer to https://trac.sdss3.org/wiki/Ops/Protocols for details.
         """
 #         print "dispatchReply(reply=%s, doCallbacks=%s)" % (reply, doCallbacks)
@@ -285,7 +285,7 @@ class KeyVarDispatcher(object):
 
     def setLogFunc(self, logFunc=None):
         """Set the log output device, or clears it if None specified.
-        
+
         The function must take the following arguments: (msgStr, severity, actor, cmdr)
         where the first argument is positional and the others are by name
         """
@@ -303,7 +303,7 @@ if __name__ == "__main__":
     import opscore.protocols.types as protoTypes
     import opscore.protocols.keys as protoKeys
     import twisted.internet.reactor
-    
+
     kvd = KeyVarDispatcher()
 
     def showVal(keyVar):
@@ -321,7 +321,7 @@ if __name__ == "__main__":
     for keyVar in keyVarList:
         keyVar.addCallback(showVal)
         kvd.addKeyVar(keyVar)
-    
+
     dataList = [
         "StringKey=hello",
         "IntKey=1",
@@ -335,5 +335,5 @@ if __name__ == "__main__":
     replyStr = "myprog.me 11 test : " + dataStr
     print("\nDispatching message correctly; CmdVar done so only KeyVar callbacks should be called:")
     kvd.dispatchReplyStr(replyStr)
-    
+
     twisted.internet.reactor.run()

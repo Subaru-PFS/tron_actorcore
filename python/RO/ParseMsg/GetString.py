@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 History:
-2003-03-20 ROwen    Added translation of \\->\, \<q> -> <q>
+2003-03-20 ROwen    Added translation of \\->\\, \\<q> -> <q>
                     where <q> is the quote character for this particular string
 2004-05-18 ROwen    Modified test code to use astr instead of str.
 2015-09-24 ROwen    Replace "== None" with "is None" to modernize the code.
@@ -108,7 +108,7 @@ def getString(astr, begInd=0):
 #       print "stripping double backslash from %r" % retStr
         retStr = retStr.replace("\\\\", "\\")
     if stripBslashQuote:
-#       print "stripping backslash %s from %r" % (quoteChar, retStr) 
+#       print "stripping backslash %s from %r" % (quoteChar, retStr)
         retStr = retStr.replace("\\" + quoteChar, quoteChar)
     return (retStr, nextInd)
 

@@ -20,7 +20,7 @@ class TestLogic(object):
         self.stack.append(item)
         if pause is not None:
             time.sleep(pause)
-        
+
     def clearMsg(self):
         ret = self.stack
         self.stack = []
