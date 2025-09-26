@@ -2,6 +2,7 @@
 
 """ Wrap top-level ACTOR functions. """
 
+import logging
 import re
 import sys
 
@@ -37,6 +38,12 @@ class CoreCmd(object):
                                                  help='file for output'),
                                         keys.Key("cmds", types.String(),
                                                  help="A regexp matching commands"),
+                                        keys.Key("logger", types.String(),
+                                                 help="The name of a python logging logger"),
+                                        keys.Key("level", types.Enum('NOTSET', 'DEBUG',
+                                                                     'INFO', 'WARNING',
+                                                                     'ERROR', 'CRITICAL'),
+                                                 help="One of the python logging level names"),
                                         keys.Key("html", help="Generate HTML"),
                                         keys.Key("full", help="Generate full help for all commands"),
                                         keys.Key("pageWidth", types.Int(),
@@ -51,6 +58,8 @@ class CoreCmd(object):
             ('connect', '<controller> [<name>]', self.connect),
             ('disconnect', '<controller>', self.disconnect),
             ('version', '', self.version),
+            ('listLoggers', '', self.listLoggers),
+            ('setLogLevel', '<logger> <level>', self.setLogLevel),
             ('exitexit', '', self.exitCmd),
             ('ipdb', '', self.ipdbCmd),
             ('ipython', '', self.ipythonCmd),
@@ -192,6 +201,51 @@ class CoreCmd(object):
 
         # Finish by redeclaring the version, since we are probably a live version.
         self.version(cmd)
+
+    def _showOneLogger(self, cmd, logName):
+        """Generate a description of a single logger."""
+
+        mgr = logging.Logger.manager
+        if logName == 'root':
+            logger = logging.getLogger(logName)
+        else:
+            logger = mgr.loggerDict[logName]
+        if isinstance(logger, logging.PlaceHolder):
+            # Internal tree nodes.
+            level = logging.getLevelName(logging.NOTSET)
+            effectiveLevel = logging.getLevelName(logging.NOTSET)
+        else:
+            level = logging.getLevelName(logger.level)
+            effectiveLevel = logging.getLevelName(logger.getEffectiveLevel())
+        cmd.inform(f'text="name={logName} level={level} effectiveLevel={effectiveLevel}"')
+
+    def listLoggers(self, cmd, doFinish=True):
+        """Show all defined loggers and their levels"""
+
+        mgr = logging.Logger.manager
+        self._showOneLogger(cmd, 'root')
+        for logName in sorted(mgr.loggerDict.keys()):
+            self._showOneLogger(cmd, logName)
+        if doFinish:
+            cmd.finish()
+
+    def setLogLevel(self, cmd):
+        """Set the logging level for a given logger."""
+
+        cmdKeys = cmd.cmd.keywords
+        logName = cmdKeys['logger'].values[0]
+        level = cmdKeys['level'].values[0]
+
+        mgr = logging.Logger.manager
+        if logName not in mgr.loggerDict and logName != 'root':
+            cmd.warn(f'text="unknown logger: {logName}"')
+            self.listLoggers(cmd, doFinish=False)
+            cmd.fail('')
+            return
+        logger = logging.getLogger(logName)
+        logger.setLevel(level)
+        self._showOneLogger(cmd, logName)
+        cmd.finish('')
 
     def reloadConfiguration(self, cmd):
         """ Reload the configuration.
